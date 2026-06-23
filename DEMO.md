@@ -170,5 +170,5 @@ All components described in this document are implemented and working:
 - Two-panel Pay Demo tab in the UI showing both agents live with action feeds
 - Payment flow debugger showing the full request → 402 → payment → delivery sequence
 - Web frontend mode via `cargo run` + `npm run dev` (no Tauri required)
-- TypeScript agent runtime in `packages/agent-core-ts/` (identical concepts to Rust)
-- HTTP SDK in `packages/sdk/` for calling coral-server from any JS/TS project
+- TypeScript agent runtime in `typescript_sdk/agent-core-ts/` (identical concepts to Rust)
+- HTTP SDK in `typescript_sdk/sdk/` for calling coral-server from any JS/TS project

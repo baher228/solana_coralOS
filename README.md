@@ -108,7 +108,7 @@ cd ../src-tauri && cargo tauri dev
 
 **TypeScript agent runtime**
 ```sh
-cd packages/agent-core-ts && npm install
+cd typescript_sdk/agent-core-ts && npm install
 # write your strategy, run with ts-node or compile
 ```
 
@@ -152,8 +152,8 @@ cd coral-server && cargo build --release
 | `agent_demo/src-tauri/` | Tauri backend: IPC commands, CoralOS HTTP client |
 | `agent_demo/src-ui/` | React frontend: Vite + Tailwind + @xyflow/react |
 | `coral-server/` | Axum REST API wrapping agent-core (port 8080) |
-| `packages/agent-core-ts/` | TypeScript agent runtime — identical concepts to agent-core |
-| `packages/sdk/` | TypeScript HTTP client for coral-server |
+| `typescript_sdk/agent-core-ts/` | TypeScript agent runtime — identical concepts to agent-core |
+| `typescript_sdk/sdk/` | TypeScript HTTP client for coral-server |
 | `ref/` | Read-only reference implementations — do not modify |
 
 ## Key Technical Constraints

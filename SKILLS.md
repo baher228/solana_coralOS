@@ -38,6 +38,7 @@ Adds five Claude Code slash commands for working with CoralOS multi-agent sessio
 ### Installation
 
 Inside Claude Code:
+
 ```
 /plugin marketplace add Coral-Protocol/coral-skill-set
 /reload-plugins
@@ -45,13 +46,13 @@ Inside Claude Code:
 
 ### Commands
 
-| Command | What it does |
-|---------|-------------|
-| `/coral-setup` | Install and configure a local CoralOS server into `~/.coral/coral-server` |
-| `/coral-built-in-agent-setup` | Add pre-built agents (Claude Code, Hermes, Puppet) to a CoralOS session |
-| `/coralize-your-agent` | Connect your existing agent project to CoralOS (supports Mastra and custom frameworks) |
-| `/coral-agent-swarm` | Orchestrate a multi-agent session — spawn agents, send tasks, collect results |
-| `/coral-encyclopedia` | Query CoralOS concepts, API reference, and agent development patterns |
+| Command                         | What it does                                                                           |
+| ------------------------------- | -------------------------------------------------------------------------------------- |
+| `/coral-setup`                | Install and configure a local CoralOS server into`~/.coral/coral-server`             |
+| `/coral-built-in-agent-setup` | Add pre-built agents (Claude Code, Hermes, Puppet) to a CoralOS session                |
+| `/coralize-your-agent`        | Connect your existing agent project to CoralOS (supports Mastra and custom frameworks) |
+| `/coral-agent-swarm`          | Orchestrate a multi-agent session — spawn agents, send tasks, collect results         |
+| `/coral-encyclopedia`         | Query CoralOS concepts, API reference, and agent development patterns                  |
 
 ### How it applies to this repo
 
@@ -62,11 +63,11 @@ Inside Claude Code:
 
 ### Connection to this codebase
 
-| Coral Skill | This Repo |
-|-------------|-----------|
-| `/coral-setup` | Starts the server that provides `CORAL_CONNECTION_URL` used by `agent_demo/coral-agents/` |
-| `/coral-agent-swarm` | Drives the `CoralMcpSession` in `agent-core/src/coral_mcp.rs` and `packages/agent-core-ts/src/coral_mcp.ts` |
-| `/coralize-your-agent` | Connects a new strategy implementation to `POST /api/v1/coralos/mcp/join` in coral-server |
+| Coral Skill              | This Repo                                                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `/coral-setup`         | Starts the server that provides`CORAL_CONNECTION_URL` used by `agent_demo/coral-agents/`                     |
+| `/coral-agent-swarm`   | Drives the`CoralMcpSession` in `agent-core/src/coral_mcp.rs` and `typescript_sdk/agent-core-ts/src/coral_mcp.ts` |
+| `/coralize-your-agent` | Connects a new strategy implementation to`POST /api/v1/coralos/mcp/join` in coral-server                       |
 
 ---
 
@@ -83,32 +84,33 @@ npx skills add https://github.com/solana-foundation/solana-dev-skill
 ```
 
 Or clone manually:
+
 ```sh
 git clone https://github.com/solana-foundation/solana-dev-skill skills/solana-skill
 ```
 
 ### What it adds
 
-| Category | Tools / Knowledge |
-|----------|------------------|
-| **Frontend** | `@solana/kit` (v5.x), `@solana/web3-compat`, React wallet hooks |
-| **Program dev** | Anchor framework, Pinocchio (high-performance programs) |
-| **Testing** | LiteSVM (unit tests), Mollusk, Surfpool (integration with mainnet state) |
-| **Client generation** | Codama IDL → type-safe TypeScript clients |
-| **Tokens** | Token-2022 extensions, confidential transfers (ZK proofs) |
-| **Payments** | Commerce Kit (checkout flows), Solana Pay integration |
-| **Security** | Vulnerability patterns, pre-deployment checklists |
+| Category                    | Tools / Knowledge                                                        |
+| --------------------------- | ------------------------------------------------------------------------ |
+| **Frontend**          | `@solana/kit` (v5.x), `@solana/web3-compat`, React wallet hooks      |
+| **Program dev**       | Anchor framework, Pinocchio (high-performance programs)                  |
+| **Testing**           | LiteSVM (unit tests), Mollusk, Surfpool (integration with mainnet state) |
+| **Client generation** | Codama IDL → type-safe TypeScript clients                               |
+| **Tokens**            | Token-2022 extensions, confidential transfers (ZK proofs)                |
+| **Payments**          | Commerce Kit (checkout flows), Solana Pay integration                    |
+| **Security**          | Vulnerability patterns, pre-deployment checklists                        |
 
 ### How it applies to this repo
 
-| Solana Skill | Where it helps |
-|--------------|---------------|
-| Anchor framework | Write a custom escrow program for trustless agent-to-agent payments |
-| `@solana/kit` | Upgrade `packages/agent-core-ts` from legacy `@solana/web3.js` to the modern kit |
-| LiteSVM | Unit-test `agent-core/src/solana_pay/` strategies without a live devnet |
-| Commerce Kit | Add a checkout flow to `agent_demo/src-ui` so humans can pay agents from a browser |
-| Token-2022 | Accept USDC or other SPL tokens as payment instead of native SOL |
-| Codama | Auto-generate TypeScript types from a custom Anchor program IDL |
+| Solana Skill     | Where it helps                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| Anchor framework | Write a custom escrow program for trustless agent-to-agent payments                 |
+| `@solana/kit`  | Upgrade`typescript_sdk/agent-core-ts` from legacy `@solana/web3.js` to the modern kit |
+| LiteSVM          | Unit-test`agent-core/src/solana_pay/` strategies without a live devnet            |
+| Commerce Kit     | Add a checkout flow to`agent_demo/src-ui` so humans can pay agents from a browser |
+| Token-2022       | Accept USDC or other SPL tokens as payment instead of native SOL                    |
+| Codama           | Auto-generate TypeScript types from a custom Anchor program IDL                     |
 
 ---
 
@@ -162,6 +164,7 @@ Seller → claimFunds(escrow PDA)  → funds released atomically with delivery
 ```
 
 New files this would add:
+
 ```
 programs/
   escrow/
@@ -171,7 +174,7 @@ programs/
 agent_demo/agent-core/src/
   anchor_escrow.rs      ← Rust instruction builders
 
-packages/agent-core-ts/src/strategies/
+typescript_sdk/agent-core-ts/src/strategies/
   anchor_escrow.ts      ← TypeScript strategy using @coral-xyz/anchor
 ```
 
@@ -180,6 +183,7 @@ The `HeliusMonitorStrategy` already watches account changes — point it at the 
 ### On-chain agent registry
 
 An Anchor PDA that stores:
+
 - Agent public key
 - Agent role (`Seller`, `Buyer`, `Monitor`)
 - Reputation score
@@ -195,12 +199,13 @@ An Anchor program that acts as the verify/settle step for the x402 HTTP 402 paym
 
 ## Submodule Reference
 
-| Path | Repo | Purpose |
-|------|------|---------|
-| `skills/coral-skills/` | `Coral-Protocol/coral-skill-set` | Claude Code skills for CoralOS |
+| Path                     | Repo                                   | Purpose                                 |
+| ------------------------ | -------------------------------------- | --------------------------------------- |
+| `skills/coral-skills/` | `Coral-Protocol/coral-skill-set`     | Claude Code skills for CoralOS          |
 | `skills/solana-skill/` | `solana-foundation/solana-dev-skill` | Solana SDK + Anchor + testing knowledge |
 
 To update skills to latest:
+
 ```sh
 git submodule update --remote skills/coral-skills
 git submodule update --remote skills/solana-skill

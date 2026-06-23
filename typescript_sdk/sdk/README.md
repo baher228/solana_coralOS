@@ -23,7 +23,7 @@ Typed HTTP client for [coral-server](../../coral-server) — the Axum REST API w
 ## Installation
 
 ```bash
-cd packages/sdk
+cd typescript_sdk/sdk
 npm install
 npm run build
 ```
@@ -37,7 +37,7 @@ import { CoralClient } from '@pay/sdk'
 Or directly:
 
 ```typescript
-import { CoralClient } from '../packages/sdk/src/index.js'
+import { CoralClient } from '../typescript_sdk/sdk/src/index.js'
 ```
 
 ---
