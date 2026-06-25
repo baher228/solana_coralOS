@@ -78,3 +78,34 @@ export async function payFromUrl(solanaPayUrl: string, maxSol: number): Promise<
   console.error(`[buyer-agent] paid ${amountSol} SOL → ${recipient.toBase58()} sig=${sig}`)
   return sig
 }
+
+/**
+ * Send a SOL transfer to `recipient`, optionally tagging it with a Solana Pay `reference`
+ * public key (written to the transaction as a ReadOnly account, so the seller can confirm it
+ * on-chain via `findReference` without parsing memos). Returns the confirmed signature.
+ *
+ * This is the payment primitive the LLM buyer uses to satisfy an HTTP 402 challenge.
+ *
+ * @param recipient - Base58 recipient pubkey from the challenge.
+ * @param amountSol - Amount from the challenge (already budget-checked by the caller).
+ * @param reference - Optional base58 reference key from the challenge.
+ */
+export async function signTransfer(recipient: string, amountSol: number, reference?: string): Promise<string> {
+  const keypair = loadKeypair()
+  const conn = new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com')
+
+  const ix = SystemProgram.transfer({
+    fromPubkey: keypair.publicKey,
+    toPubkey: new PublicKey(recipient),
+    lamports: Math.round(amountSol * LAMPORTS_PER_SOL),
+  })
+  // Tag the transfer with the reference key as a non-signer, read-only account.
+  if (reference) {
+    ix.keys.push({ pubkey: new PublicKey(reference), isSigner: false, isWritable: false })
+  }
+
+  const tx = new Transaction().add(ix)
+  const sig = await sendAndConfirmTransaction(conn, tx, [keypair], { commitment: 'confirmed' })
+  console.error(`[buyer-agent] paid ${amountSol} SOL → ${recipient} ref=${reference ?? 'none'} sig=${sig}`)
+  return sig
+}
