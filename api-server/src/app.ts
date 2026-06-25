@@ -8,7 +8,7 @@
 import express from 'express'
 import cors from 'cors'
 import { manager, makeStrategy } from './registry.js'
-import { WeatherStrategy } from '../../sdk/agent-runtime/src/strategies/weather.js'
+import { WeatherStrategy } from '../../packages/agent-runtime/src/strategies/weather.js'
 
 const app = express()
 app.use(cors())

@@ -23,7 +23,7 @@ Typed HTTP client for the Axum REST API (`api/`) wrapping `agent-core`. Every en
 ## Installation
 
 ```bash
-cd sdk/coral-client
+cd packages/coral-client
 npm install
 npm run build
 ```
@@ -37,7 +37,7 @@ import { CoralClient } from '@pay/coral-client'
 Or directly:
 
 ```typescript
-import { CoralClient } from '../sdk/coral-client/src/index.js'
+import { CoralClient } from '../packages/coral-client/src/index.js'
 ```
 
 ---

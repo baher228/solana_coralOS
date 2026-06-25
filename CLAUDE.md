@@ -13,8 +13,8 @@ A TypeScript-first monorepo for a Solana agent-economy starter kit. Agents reque
 | `examples/agent-economy/` | **The track.** `autonomous/` (agent↔agent starter), `bridge/` (human→user-proxy Phantom front door), `config/coral.toml` (wallet-free MCP config), `quickstart/` (no-Docker bare-metal 402) |
 | `coral-agents/` | Agents coral-server launches: `seller-agent` (fork `service.ts`), `buyer-agent`, `echo-agent` (TypeScript); `user_proxy` (Python — the human's session stand-in, driven via the puppet API) |
 | `api-server/` | Express REST API — secondary server (port 8081) |
-| `sdk/agent-runtime/` | TypeScript agent runtime: `AgentManager`, `Strategy`, `MessageBus`, `SharedState`, `WorkflowEngine`, CoralOS MCP client, Solana Pay strategies |
-| `sdk/coral-client/` | `CoralClient` — typed HTTP wrapper for `api-server/` |
+| `packages/agent-runtime/` | TypeScript agent runtime: `AgentManager`, `Strategy`, `MessageBus`, `SharedState`, `WorkflowEngine`, CoralOS MCP client, Solana Pay strategies |
+| `packages/coral-client/` | `CoralClient` — typed HTTP wrapper for `api-server/` |
 | `web/` | Next.js marketplace UI — Phantom wallet flow (port 3000) |
 | `docs/`, `.claude/` | Design documents + the `AGENT_ECONOMY_RESTRUCTURE.md` plan (gates G1–G3) |
 | `e2e/` | Playwright end-to-end tests |
@@ -33,12 +33,12 @@ cd api-server && npm test      # unit tests
 cd api-server && npm run typecheck
 ```
 
-### sdk/agent-runtime (agent runtime)
+### packages/agent-runtime (agent runtime)
 
 ```sh
-cd sdk/agent-runtime && npm install
-cd sdk/agent-runtime && npm run typecheck
-cd sdk/agent-runtime && npm test
+cd packages/agent-runtime && npm install
+cd packages/agent-runtime && npm run typecheck
+cd packages/agent-runtime && npm test
 ```
 
 ### web (Next.js)
@@ -52,7 +52,7 @@ cd web && npm run build
 ### coral-agents (TypeScript + one Python utility, requires Docker)
 
 ```sh
-# TypeScript agents (built from repo root so they can bundle sdk/):
+# TypeScript agents (built from repo root so they can bundle packages/):
 bash build-agents.sh seller   # seller-agent:0.1.0
 bash build-agents.sh buyer    # buyer-agent:0.1.0
 cd coral-agents/user_proxy && docker build -t user-proxy:0.1.0 .   # Python test puppet
@@ -61,7 +61,7 @@ cd coral-agents/user_proxy && docker build -t user-proxy:0.1.0 .   # Python test
 
 ## Architecture
 
-### sdk/agent-runtime
+### packages/agent-runtime
 
 The central TypeScript library. Key modules:
 
@@ -76,7 +76,7 @@ The central TypeScript library. Key modules:
 
 ### api-server
 
-Express server exposing `sdk/agent-runtime` over HTTP at `/api/v1/`:
+Express server exposing `packages/agent-runtime` over HTTP at `/api/v1/`:
 - `/agents` — CRUD + start/stop/handle
 - `/shared-state` — key-value read/write
 - `/messages` — message bus
@@ -88,10 +88,10 @@ Next.js 14 marketplace. Connects to `api-server` via `NEXT_PUBLIC_CORAL_SERVER` 
 
 ### coral-agents (CoralOS)
 
-`buyer-agent`, `seller-agent`, `echo-agent` — TypeScript agents (built on `sdk/agent-runtime`).  
+`buyer-agent`, `seller-agent`, `echo-agent` — TypeScript agents (built on `packages/agent-runtime`).  
 `user_proxy` — Python puppet agent; lets the Puppet API inject test messages into a CoralOS session.
 
-(On-chain wallet monitoring lives in the TypeScript `HeliusMonitorStrategy` in `sdk/agent-runtime`.)
+(On-chain wallet monitoring lives in the TypeScript `HeliusMonitorStrategy` in `packages/agent-runtime`.)
 
 ## Key Constraints
 

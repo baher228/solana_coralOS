@@ -151,12 +151,12 @@ Every one of these is a real use case. Every one of them works with the same pay
 
 | Directory | What it is |
 |-----------|-----------|
-| `sdk/agent-runtime/` | TypeScript library — agent lifecycle, roles, messaging, workflows, Solana Pay logic |
+| `packages/agent-runtime/` | TypeScript library — agent lifecycle, roles, messaging, workflows, Solana Pay logic |
 | `api-server/` | Express REST API exposing the agent runtime over HTTP (port 8081) |
 | `web/` | Next.js consumer marketplace — Phantom wallet payment flow (port 3000) |
 | `coral-agents/` | Python MCP agents — helius_monitor, user_proxy |
-| `sdk/agent-runtime/src/strategies/helius_monitor.ts` | Helius WebSocket account watcher |
-| `sdk/agent-runtime/src/strategies/payment.ts` | MPP/x402 payment challenge parsing |
+| `packages/agent-runtime/src/strategies/helius_monitor.ts` | Helius WebSocket account watcher |
+| `packages/agent-runtime/src/strategies/payment.ts` | MPP/x402 payment challenge parsing |
 
 ---
 
@@ -170,5 +170,5 @@ All components described in this document are implemented and working:
 - Two-panel Pay Demo tab in the UI showing both agents live with action feeds
 - Payment flow debugger showing the full request → 402 → payment → delivery sequence
 - Web frontend mode via `npm run dev` (api-server) + `npm run dev` (web)
-- TypeScript agent runtime in `sdk/agent-runtime/` (identical concepts to Rust)
-- HTTP SDK in `sdk/coral-client/` for calling the API from any JS/TS project
+- TypeScript agent runtime in `packages/agent-runtime/` (identical concepts to Rust)
+- HTTP SDK in `packages/coral-client/` for calling the API from any JS/TS project

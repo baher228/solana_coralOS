@@ -10,17 +10,17 @@
  *
  * Solana-dependent strategies (transfer, helius-monitor) are commented out because
  * they require `@solana/web3.js` and `@solana/pay` — uncomment after `npm install`
- * in `sdk/agent-runtime/`.
+ * in `packages/agent-runtime/`.
  */
 
-import { AgentManager } from '../../sdk/agent-runtime/src/manager.js'
-import type { Strategy } from '../../sdk/agent-runtime/src/strategy.js'
-import { IdleStrategy } from '../../sdk/agent-runtime/src/strategies/idle.js'
-import { RpcPollStrategy } from '../../sdk/agent-runtime/src/strategies/rpc_poll.js'
-import { WeatherStrategy } from '../../sdk/agent-runtime/src/strategies/weather.js'
+import { AgentManager } from '../../packages/agent-runtime/src/manager.js'
+import type { Strategy } from '../../packages/agent-runtime/src/strategy.js'
+import { IdleStrategy } from '../../packages/agent-runtime/src/strategies/idle.js'
+import { RpcPollStrategy } from '../../packages/agent-runtime/src/strategies/rpc_poll.js'
+import { WeatherStrategy } from '../../packages/agent-runtime/src/strategies/weather.js'
 
-// import { TransferStrategy } from '../../sdk/agent-runtime/src/strategies/transfer.js'
-// import { HeliusMonitorStrategy } from '../../sdk/agent-runtime/src/strategies/helius_monitor.js'
+// import { TransferStrategy } from '../../packages/agent-runtime/src/strategies/transfer.js'
+// import { HeliusMonitorStrategy } from '../../packages/agent-runtime/src/strategies/helius_monitor.js'
 
 /** Factory function type — accepts an optional JSON config object, returns a `Strategy`. */
 type Factory = (config?: unknown) => Strategy

@@ -29,7 +29,7 @@ set the env var hits the wrong port. **Fix:** default → `:8081`.
 
 ### F2 — Stale `:8080` / Rust-backend references across docs (the removed Rust `api/`)
 - `web/README.md` — `cd ../api && cargo run`, `api/ (Rust/Axum :8080)`, `:8080` throughout.
-- `sdk/agent-runtime/README.md`, `sdk/sdk/README.md` — `:8080` in code examples.
+- `packages/agent-runtime/README.md`, `sdk/sdk/README.md` — `:8080` in code examples.
 - `sdk/sdk/README.md` — a `new CoralClient({ baseUrl })` example, but the constructor takes a
   **string**, not an object (doubly wrong: stale port + wrong API shape).
 
@@ -48,7 +48,7 @@ user-facing run docs. **Decision:** leave as historical record (rewriting them w
 snapshot); the *active* docs (READMEs, CLAUDE.md) are what get fixed.
 
 ### F5 — On-disk `dist/` build output (not a problem)
-`sdk/agent-runtime/dist/` exists on disk but is **gitignored and untracked** — verified `git ls-files
+`packages/agent-runtime/dist/` exists on disk but is **gitignored and untracked** — verified `git ls-files
 dist` = 0. No action.
 
 ---
@@ -56,7 +56,7 @@ dist` = 0. No action.
 ## Fix list — DONE
 1. ✅ `web/lib/coral.ts` — default port `8080` → `8081`.
 2. ✅ `web/README.md` — rewritten to api-server/`:8081` (removed all Rust/cargo references).
-3. ✅ `sdk/agent-runtime/README.md` + `sdk/sdk/README.md` — `:8080` → `:8081`; fixed the
+3. ✅ `packages/agent-runtime/README.md` + `sdk/sdk/README.md` — `:8080` → `:8081`; fixed the
    `CoralClient(...)` constructor example (string, not object).
 4. ✅ `api-server/src/registry.ts` — left as-is; the comment already frames the commented Solana
    strategies as opt-in scaffolding (not dead code).

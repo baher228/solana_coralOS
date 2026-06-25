@@ -82,7 +82,7 @@ is the same pay-per-call loop as two bare-metal Node processes over plain HTTP `
 |-----------|---------|
 | `examples/agent-economy/` | **the track** — autonomous starter, human bridge, config, no-Docker quickstart |
 | `coral-agents/` | the agents coral-server launches: `seller-agent` (fork `service.ts`), `buyer-agent`, `user-proxy`, `echo-agent` |
-| `sdk/agent-runtime/` | agent runtime: `AgentManager`, `Strategy`, MessageBus, CoralOS MCP client, strategies |
+| `packages/agent-runtime/` | agent runtime: `AgentManager`, `Strategy`, MessageBus, CoralOS MCP client, strategies |
 | `api-server/` | Express REST API (:8081) wrapping the runtime |
 | `web/` | Next.js marketplace UI |
 | `scripts/` | `setup.js` (wallet generation) + smoke tests |

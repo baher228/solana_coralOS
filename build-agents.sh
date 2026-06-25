@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build all Docker images from repo root (context must include sdk/).
+# Build all Docker images from repo root (context must include packages/).
 # Run this once before docker compose up for any track.
 #
 # Usage: bash build-agents.sh            (build all)

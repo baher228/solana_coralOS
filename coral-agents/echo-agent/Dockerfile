@@ -4,12 +4,12 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
 
-# Mirror repo layout so "file:../../sdk/agent-runtime" resolves correctly
-COPY sdk/agent-runtime/package.json sdk/agent-runtime/package-lock.json* ./sdk/agent-runtime/
-RUN cd sdk/agent-runtime && npm install --ignore-scripts
-COPY sdk/agent-runtime/tsconfig.json ./sdk/agent-runtime/
-COPY sdk/agent-runtime/src/ ./sdk/agent-runtime/src/
-RUN cd sdk/agent-runtime && npx tsc
+# Mirror repo layout so "file:../../packages/agent-runtime" resolves correctly
+COPY packages/agent-runtime/package.json packages/agent-runtime/package-lock.json* ./packages/agent-runtime/
+RUN cd packages/agent-runtime && npm install --ignore-scripts
+COPY packages/agent-runtime/tsconfig.json ./packages/agent-runtime/
+COPY packages/agent-runtime/src/ ./packages/agent-runtime/src/
+RUN cd packages/agent-runtime && npx tsc
 
 # --install-links copies the SDK into node_modules instead of symlinking
 COPY coral-agents/echo-agent/package.json coral-agents/echo-agent/package-lock.json* ./coral-agents/echo-agent/

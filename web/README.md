@@ -25,7 +25,7 @@ npm run dev
 - **Next.js 14** (app router)
 - **Tailwind CSS** — dark theme with Solana brand colours
 - **@solana/wallet-adapter-react** — Phantom wallet connection
-- **sdk/coral-client** — `CoralClient` HTTP wrapper for `api-server`
+- **packages/coral-client** — `CoralClient` HTTP wrapper for `api-server`
 
 ## Pages
 
@@ -46,7 +46,7 @@ Browser (Next.js)
   └─ @solana/web3.js  → Solana devnet RPC
 
 api-server/ (TypeScript Express :8081)
-  └─ sdk/agent-runtime → AgentManager, SharedState, WorkflowEngine, strategies
+  └─ packages/agent-runtime → AgentManager, SharedState, WorkflowEngine, strategies
 ```
 
 ## Demo flow

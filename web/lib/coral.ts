@@ -3,7 +3,7 @@
 // We import the source TypeScript directly so Next.js (Webpack) can bundle it
 // without needing to build the SDK separately. The relative path reaches the
 // monorepo sibling package from web/.
-import { CoralClient } from '../../sdk/coral-client/src/client'
+import { CoralClient } from '../../packages/coral-client/src/client'
 
 let _client: CoralClient | null = null
 
