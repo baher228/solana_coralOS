@@ -1,0 +1,24 @@
+# CoralOS config — Agent Economy track.
+#
+# coral-server runs as a PURE MCP coordinator here: NO [wallet] section.
+# Payments happen agent-side (@solana/web3.js in seller payment.ts / buyer wallet.ts),
+# so coral-server never touches a keypair and stock coral-server:latest works as-is.
+#
+# Mounted at: /config/coral.toml   (see docker-compose.yml)
+# Agent sources mounted at: /agents/*  (the coral-agents/ folder)
+
+[auth]
+keys = ["dev"]
+
+[network]
+allowAnyHost = true
+
+[registry]
+# Discover seller-agent, buyer-agent, user-proxy, echo-agent from the mounted folder.
+localAgents = ["/agents/*"]
+includeCoralHomeAgents = true
+localAgentRescanTimer = "5s"
+
+[docker]
+# From inside a container on Docker Desktop, the host is host.docker.internal.
+address = "host.docker.internal"

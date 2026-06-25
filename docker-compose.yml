@@ -1,26 +1,28 @@
-# Full stack — CoralOS + seller + buyer + api-ts + web
-# Usage: docker compose up
-# Then open: http://localhost:3000
+# Agent Economy on CoralOS — single track, stock coral-server.
 #
-# Navigate between tracks using the nav bar:
-#   /track-1  Pay-Per-Call (seller + buyer loop)
-#   /track-2  Agent Trading (same, longer interval)
-#   /track-3  Consumer Checkout (connect Phantom)
+#   docker compose up                  # start coral-server (+ bridge + web)
+#   cd examples/agent-economy/autonomous && npx tsx start.ts   # kick off the agent↔agent loop
+#   open http://localhost:3000         # human checkout (Phantom) — the other front door
 #
-# Runs Track 1 agents by default.
-# For a different track: SERVICE=coingecko docker compose up
+# coral-server here is a PURE MCP coordinator (wallet-free config). It launches
+# seller-agent / buyer-agent / user-proxy as containers per session, via the Docker socket.
+# Payments are settled agent-side in SOL — coral-server never holds a keypair.
+#
+# Prereq: build the agent images once so coral can launch them:
+#   bash build-agents.sh seller && bash build-agents.sh buyer
+#   docker build -t user-proxy:0.1.0 coral-agents/user_proxy
 
 services:
 
-  # ── CoralOS (launches seller-agent + buyer-agent as Docker containers) ──────
+  # ── CoralOS — MCP bus that launches the agents per session ──────────────────
   coral:
     image: ghcr.io/coral-protocol/coral-server:latest
     container_name: coral
     ports:
       - "5555:5555"
     environment:
-      - CONFIG_FILE_PATH=/config/config.toml
-      # Seller
+      - CONFIG_FILE_PATH=/config/coral.toml
+      # Passed through to the agents coral launches:
       - SELLER_WALLET=${WALLET}
       - PRICE_SOL=${PRICE_SOL:-0.0001}
       - SERVICE=${SERVICE:-jupiter}
@@ -28,41 +30,38 @@ services:
       - HELIUS_API_KEY=${HELIUS_API_KEY}
       - JUPITER_API_KEY=${JUPITER_API_KEY}
       - NEWS_API_KEY=${NEWS_API_KEY}
-      # Buyer
       - BUYER_KEYPAIR_B58=${BUYER_KEYPAIR_B58}
       - BUYER_MAX_SOL=${BUYER_MAX_SOL:-0.001}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      # Helius monitor
-      - WALLET=${WALLET}
-      - AMOUNT_SOL=${PRICE_SOL:-0.0001}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./docs/coral/track-1-config.toml:/config/config.toml:ro
+      - ./examples/agent-economy/config/coral.toml:/config/coral.toml:ro
       - ./coral-agents:/agents:ro
     restart: unless-stopped
 
-  # ── Express API ──────────────────────────────────────────────────────────────
-  api-ts:
-    image: ghcr.io/trilltino/api-ts:latest
-    container_name: api-ts
+  # ── Human front door — puppet bridge that injects orders as user-proxy ──────
+  bridge:
+    build: ./examples/agent-economy/bridge
+    container_name: bridge
     ports:
-      - "8081:8081"
+      - "3010:3010"
     environment:
-      - HELIUS_API_KEY=${HELIUS_API_KEY}
-      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
-      - WALLET=${WALLET}
+      - CORAL_SERVER_URL=http://coral:5555
+      - CORAL_TOKEN=dev
+    depends_on:
+      - coral
+    restart: unless-stopped
 
-  # ── Next.js web (all 3 track pages + marketplace) ───────────────────────────
+  # ── Web — Phantom checkout UI + autonomous viewer ───────────────────────────
   web:
-    image: ghcr.io/trilltino/web:latest
+    build: ./web
     container_name: web
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_CORAL_SERVER=http://coral:5555
-      - NEXT_PUBLIC_API_SERVER=http://api-ts:8081
+      - NEXT_PUBLIC_BRIDGE_URL=http://localhost:3010
+      - NEXT_PUBLIC_CORAL_SERVER=http://localhost:5555
       - NEXT_PUBLIC_SELLER_WALLET=${WALLET}
       - NEXT_PUBLIC_PRICE_SOL=${PRICE_SOL:-0.0001}
     depends_on:
-      - coral
-      - api-ts
+      - bridge
