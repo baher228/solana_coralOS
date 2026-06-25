@@ -49,10 +49,24 @@ export class Agent {
    * - Contains `"devnet"` → `"devnet"`
    * - Contains `"testnet"` → `"testnet"`
    * - Contains `"mainnet"` → `"mainnet-beta"`
+   *
+   * **Mainnet guard:** this kit is devnet-only, so a mainnet RPC is rejected unless you explicitly
+   * opt in with `ALLOW_MAINNET=1`. This prevents an accidental mainnet endpoint from moving real
+   * funds with a key that was only meant for devnet.
    */
   setRpc(url: string): void {
-    this._rpcEndpoint = url
     const url_ = url.toLowerCase()
+    if (
+      url_.includes('mainnet') &&
+      process.env.ALLOW_MAINNET !== '1' &&
+      process.env.ALLOW_MAINNET !== 'true'
+    ) {
+      throw new Error(
+        'Refusing a mainnet RPC — this kit is devnet-only. Set ALLOW_MAINNET=1 to override, ' +
+          'and never point it at a funded mainnet keypair.',
+      )
+    }
+    this._rpcEndpoint = url
     if (url_.includes('devnet')) this._network = 'devnet'
     else if (url_.includes('testnet')) this._network = 'testnet'
     else if (url_.includes('mainnet')) this._network = 'mainnet-beta'
