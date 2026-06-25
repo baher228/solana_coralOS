@@ -7,50 +7,17 @@ on:
     branches: [main]
 
 jobs:
-  typescript-sdk:
-    name: TypeScript SDK
+  runtime:
+    name: Agent runtime (packages/agent-runtime)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-          cache-dependency-path: packages/agent-runtime/package-lock.json
       - run: cd packages/agent-runtime && npm install
       - run: cd packages/agent-runtime && npm run typecheck
       - run: cd packages/agent-runtime && npm test
-
-  typescript-api:
-    name: TypeScript API (api-server)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: api-server/package-lock.json
-      - run: cd api-server && npm install
-      - run: cd api-server && npm run typecheck
-      - run: cd api-server && npm test
-
-  web:
-    name: Web (Next.js)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: cd web && npm install
-      - run: cd web && npm run typecheck
-      - run: cd web && npm run build
-        env:
-          NEXT_PUBLIC_CORAL_SERVER: http://localhost:8081
-          NEXT_PUBLIC_HELIUS_RPC: https://devnet.helius-rpc.com/?api-key=test
 
   agent-economy:
     name: Agent Economy (agents + examples)
@@ -62,8 +29,6 @@ jobs:
           node-version: 20
       - name: Build the runtime (dependents need its dist)
         run: cd packages/agent-runtime && npm install && npm run build
-      - name: coral-client
-        run: cd packages/coral-client && npm install && npm run typecheck
       - name: seller-agent (typecheck + tests)
         run: cd coral-agents/seller-agent && npm install && npm run typecheck && npm test
       - name: buyer-agent
@@ -76,24 +41,3 @@ jobs:
         run: cd examples/agent-economy/autonomous && npm install && npm run typecheck
       - name: quickstart
         run: cd examples/agent-economy/quickstart && npm install && npm run typecheck
-
-  e2e:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: [typescript-api, web]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install e2e deps
-        run: cd e2e && npm install
-      - name: Install Playwright browsers
-        run: cd e2e && npx playwright install --with-deps chromium
-      - name: Build web
-        run: cd web && npm install && npm run build
-        env:
-          NEXT_PUBLIC_CORAL_SERVER: http://localhost:8081
-          NEXT_PUBLIC_HELIUS_RPC: https://devnet.helius-rpc.com/?api-key=test
-      - name: Run E2E tests
-        run: cd e2e && npm test

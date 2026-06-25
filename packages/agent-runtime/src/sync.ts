@@ -1,8 +1,8 @@
 import type { AgentManager } from './manager.js'
 
 /**
- * Optional bridge that makes TypeScript agents visible in a running `api-server` server
- * (or any compatible coral-server) and mirrors inbound messages to the local bus.
+ * Optional adapter that registers the local agents with a compatible HTTP agent server (one that
+ * exposes the `/api/v1/agents` + `/api/v1/messages` routes) and mirrors inbound messages to the bus.
  *
  * Call `attach()` once after the server is up. It registers every local agent via
  * `POST /api/v1/agents`, then polls `GET /api/v1/messages/:id` every 2 seconds and
@@ -18,8 +18,8 @@ export class CoralServerSync {
    * Register all agents in `manager` with the remote server and start the sync poll.
    *
    * @param manager   - The local `AgentManager` whose agents and bus to sync.
-   * @param coralUrl  - Base URL of the coral-server (e.g. `"http://localhost:8081"`).
-   *                    A trailing slash is stripped automatically.
+   * @param coralUrl  - Base URL of a compatible HTTP agent server (one exposing `/api/v1/agents`
+   *                    + `/api/v1/messages`). A trailing slash is stripped automatically.
    */
   async attach(manager: AgentManager, coralUrl: string): Promise<void> {
     this.url = coralUrl.replace(/\/$/, '')

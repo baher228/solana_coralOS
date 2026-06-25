@@ -6,101 +6,174 @@
 <title>Agent Economy — Checkout</title>
 <script src="https://unpkg.com/@solana/web3.js@1.98.0/lib/index.iife.min.js"></script>
 <style>
-  :root { --brand:#9945FF; --green:#14F195; }
-  * { box-sizing: border-box; }
-  body { margin:0; font:15px/1.5 -apple-system,Segoe UI,Roboto,sans-serif; background:#0a0a0f; color:#e6e6f0; }
-  .wrap { max-width:560px; margin:0 auto; padding:48px 20px; }
-  h1 { font-size:22px; margin:0 0 4px; }
-  .sub { color:#8a8aa0; margin:0 0 28px; }
-  .card { background:#13131c; border:1px solid #232334; border-radius:14px; padding:22px; margin-bottom:16px; }
-  label { display:block; font-size:12px; color:#8a8aa0; margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
-  select, button { font:inherit; }
-  select { width:100%; padding:11px; border-radius:9px; background:#0a0a0f; color:#e6e6f0; border:1px solid #2c2c40; }
-  button { width:100%; padding:13px; border:0; border-radius:9px; background:var(--brand); color:#fff; font-weight:600; cursor:pointer; margin-top:14px; }
-  button:disabled { opacity:.5; cursor:default; }
-  .ghost { background:#1c1c28; }
-  .row { display:flex; justify-content:space-between; font-size:13px; color:#a8a8c0; padding:4px 0; }
-  .row b { color:#e6e6f0; font-weight:600; }
-  pre { background:#0a0a0f; border:1px solid #232334; border-radius:9px; padding:14px; overflow:auto; font-size:12.5px; color:var(--green); white-space:pre-wrap; word-break:break-word; }
-  a { color:var(--brand); }
-  .step { font-size:12px; color:#6a6a82; margin:18px 0 8px; text-transform:uppercase; letter-spacing:.05em; }
-  .badge { display:inline-block; background:#1c2b22; color:var(--green); border-radius:6px; padding:2px 8px; font-size:11px; }
+  :root{
+    --brand:#9945FF; --brand-2:#7a2ff0; --green:#14F195; --bg:#08080c; --panel:#111119;
+    --panel-2:#161620; --line:#23232f; --text:#e9e9f2; --muted:#8a8aa3; --muted-2:#6a6a82;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text); background:
+      radial-gradient(900px 500px at 12% -8%, rgba(153,69,255,.18), transparent 60%),
+      radial-gradient(800px 500px at 95% 0%, rgba(20,241,149,.10), transparent 55%),
+      var(--bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:40px 20px 64px}
+
+  header{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .logo{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--brand),var(--green));
+    box-shadow:0 6px 22px rgba(153,69,255,.45);flex:none}
+  h1{font-size:19px;font-weight:680;margin:0;letter-spacing:-.01em}
+  .badge{margin-left:auto;font-size:11px;font-weight:600;color:var(--green);
+    background:rgba(20,241,149,.10);border:1px solid rgba(20,241,149,.25);border-radius:999px;padding:3px 10px}
+  .tag{font-size:11px;color:var(--muted-2);background:#1b1b26;border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .sub{color:var(--muted);margin:8px 0 26px;font-size:13.5px}
+
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+    border-radius:16px;padding:20px;margin-bottom:14px;box-shadow:0 1px 0 rgba(255,255,255,.02) inset}
+  .label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted-2);margin-bottom:11px;font-weight:600}
+
+  button{font:inherit;font-weight:600;cursor:pointer;border:0;border-radius:11px;width:100%;padding:13px;
+    color:#fff;background:linear-gradient(135deg,var(--brand),var(--brand-2));transition:transform .06s ease,opacity .2s,filter .2s}
+  button:hover:not(:disabled){filter:brightness(1.08)}
+  button:active:not(:disabled){transform:translateY(1px)}
+  button:disabled{opacity:.55;cursor:default}
+  button.ghost{background:#1c1c28;border:1px solid var(--line)}
+
+  .who{display:none;align-items:center;gap:9px;margin-top:12px;font-size:13px}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+  .who b{font-variant-numeric:tabular-nums}
+
+  .svc{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+  .opt{display:flex;align-items:center;gap:12px;padding:12px 13px;border:1px solid var(--line);border-radius:12px;
+    background:#0e0e15;cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:hover{border-color:#34344a}
+  .opt.sel{border-color:var(--brand);background:rgba(153,69,255,.08)}
+  .opt .ic{width:30px;height:30px;border-radius:8px;background:#1b1b27;display:grid;place-items:center;font-size:15px;flex:none}
+  .opt .t{font-weight:600;font-size:14px}
+  .opt .d{font-size:12px;color:var(--muted)}
+  .opt input{display:none}
+  .opt .chk{margin-left:auto;width:18px;height:18px;border-radius:50%;border:2px solid #34344a;flex:none}
+  .opt.sel .chk{border-color:var(--brand);background:var(--brand);box-shadow:inset 0 0 0 3px #0e0e15}
+
+  .quote{display:none;margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+  .row{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);padding:5px 0}
+  .row b{color:var(--text);font-weight:600;font-variant-numeric:tabular-nums}
+
+  .timeline .step{display:flex;gap:11px;padding:9px 0;font-size:13px;align-items:flex-start}
+  .timeline .step .bullet{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex:none;margin-top:1px;
+    display:grid;place-items:center;font-size:10px;color:var(--green)}
+  .timeline .step.ok .bullet{border-color:var(--green);color:var(--green)}
+  .timeline .step.err .bullet{border-color:#ff6b6b;color:#ff6b6b}
+  .timeline .step .body{min-width:0}
+  .timeline .step .head{font-weight:600}
+  .timeline .step .meta{color:var(--muted);font-size:12px;word-break:break-all}
+  a{color:var(--brand);text-decoration:none}
+  a:hover{text-decoration:underline}
+  pre{background:#0a0a10;border:1px solid var(--line);border-radius:11px;padding:13px;margin:8px 0 0;
+    overflow:auto;font-size:12.5px;color:var(--green);white-space:pre-wrap;word-break:break-word;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .foot{color:var(--muted-2);font-size:12px;text-align:center;margin-top:22px;line-height:1.7}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>Agent Economy <span class="badge">devnet</span></h1>
-  <p class="sub">Pay a seller agent in SOL with Phantom. Same agent, same on-chain settlement the autonomous buyer uses — you're just the human front door.</p>
+  <header>
+    <div class="logo"></div>
+    <h1>Agent Economy</h1>
+    <span class="badge">● devnet</span>
+  </header>
+  <p class="sub">Pay a seller <b style="color:var(--text)">agent</b> in SOL with Phantom. Same seller, same on-chain
+    settlement the autonomous buyer uses — you're just the human front door.</p>
 
   <div class="card">
-    <label>Connect</label>
+    <div class="label">1 · Wallet</div>
     <button id="connect" class="ghost">Connect Phantom</button>
-    <div id="who" class="row" style="margin-top:10px; display:none"></div>
+    <div id="who" class="who"><span class="dot"></span><span>Connected</span><b id="addr" style="margin-left:auto"></b></div>
   </div>
 
-  <div class="card" id="orderCard" style="opacity:.5; pointer-events:none">
-    <label for="service">Service to buy</label>
-    <select id="service">
-      <option value="jupiter">Jupiter — SOL→USDC swap quote</option>
-      <option value="coingecko">CoinGecko — live price</option>
-      <option value="inference">Claude inference — a completion</option>
-    </select>
-    <button id="buy">Request &amp; Pay</button>
-    <div id="quote" style="display:none; margin-top:14px">
+  <div class="card" id="orderCard" style="opacity:.45;pointer-events:none">
+    <div class="label">2 · Choose a service</div>
+    <div class="svc" id="svc">
+      <label class="opt sel"><span class="ic">📈</span><span><span class="t">Jupiter quote</span><br><span class="d">live SOL→USDC swap price</span></span><input type="radio" name="s" value="jupiter" checked><span class="chk"></span></label>
+      <label class="opt"><span class="ic">🪙</span><span><span class="t">CoinGecko price</span><br><span class="d">live SOL price in USD</span></span><input type="radio" name="s" value="coingecko"><span class="chk"></span></label>
+      <label class="opt"><span class="ic">🧠</span><span><span class="t">Claude inference</span><br><span class="d">an AI completion</span></span><input type="radio" name="s" value="inference"><span class="chk"></span></label>
+    </div>
+    <div class="quote" id="quote">
       <div class="row"><span>Pay to (seller)</span><b id="recipient">—</b></div>
       <div class="row"><span>Amount</span><b id="amount">—</b></div>
     </div>
+    <button id="buy" style="margin-top:14px">Request &amp; Pay</button>
   </div>
 
-  <div id="log"></div>
+  <div class="card timeline" id="logCard" style="display:none">
+    <div class="label">Activity</div>
+    <div id="log"></div>
+  </div>
+
+  <p class="foot">request → <b style="color:var(--muted)">PAYMENT_REQUIRED</b> → you pay on-chain → seller verifies → delivers<br>
+    every payment is a real devnet transaction</p>
 </div>
 
 <script>
-const SERVER = location.origin            // bridge serves this page → same origin
+const SERVER = location.origin            // the bridge serves this page → same origin
 const web3 = solanaWeb3
 const conn = new web3.Connection('https://api.devnet.solana.com', 'confirmed')
 let provider = null
 
 const $ = (id) => document.getElementById(id)
-const log = (html) => { const d = document.createElement('div'); d.className='card'; d.innerHTML = html; $('log').prepend(d) }
+const short = (s) => s.slice(0,4)+'…'+s.slice(-4)
 
-function getPhantom() {
+// ── service selector ──
+document.querySelectorAll('.opt').forEach(opt => opt.addEventListener('click', () => {
+  document.querySelectorAll('.opt').forEach(o => o.classList.remove('sel'))
+  opt.classList.add('sel'); opt.querySelector('input').checked = true
+}))
+const selectedService = () => document.querySelector('input[name=s]:checked').value
+
+// ── activity timeline ──
+function step(head, meta, cls='ok'){
+  $('logCard').style.display = 'block'
+  const d = document.createElement('div'); d.className = `step ${cls}`
+  d.innerHTML = `<span class="bullet">${cls==='err'?'✕':'✓'}</span><div class="body"><div class="head">${head}</div>${meta?`<div class="meta">${meta}</div>`:''}</div>`
+  $('log').appendChild(d)
+}
+
+function getPhantom(){
   const p = window.phantom?.solana
-  if (!p?.isPhantom) { alert('Phantom wallet not found — install it and set the network to Devnet.'); return null }
+  if(!p?.isPhantom){ alert('Phantom not found — install it and switch the network to Devnet.'); return null }
   return p
 }
 
 $('connect').onclick = async () => {
-  provider = getPhantom(); if (!provider) return
-  const resp = await provider.connect()
-  const pk = resp.publicKey.toString()
+  provider = getPhantom(); if(!provider) return
+  const { publicKey } = await provider.connect()
   $('who').style.display = 'flex'
-  $('who').innerHTML = `<span>Wallet</span><b>${pk.slice(0,4)}…${pk.slice(-4)}</b>`
-  $('connect').textContent = 'Connected'
-  $('connect').disabled = true
-  $('orderCard').style.opacity = '1'
-  $('orderCard').style.pointerEvents = 'auto'
+  $('addr').textContent = short(publicKey.toString())
+  $('connect').textContent = 'Connected'; $('connect').disabled = true
+  $('orderCard').style.opacity = '1'; $('orderCard').style.pointerEvents = 'auto'
 }
 
 $('buy').onclick = async () => {
-  if (!provider) return
+  if(!provider) return
   $('buy').disabled = true
-  $('buy').textContent = 'Asking the seller agent…'
-  try {
-    // 1. Ask the seller (via the bridge → CoralOS) for a payment URL.
+  try{
+    $('buy').textContent = 'Asking the seller agent…'
+    // 1. Ask the seller (via the bridge → CoralOS) for a payment request.
     const order = await fetch(`${SERVER}/order`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ service: $('service').value }),
+      body: JSON.stringify({ service: selectedService() }),
     }).then(r => r.json())
-    if (order.error) throw new Error(order.error)
+    if(order.error) throw new Error(order.error)
 
     $('quote').style.display = 'block'
-    $('recipient').textContent = order.recipient.slice(0,4)+'…'+order.recipient.slice(-4)
+    $('recipient').textContent = short(order.recipient)
     $('amount').textContent = `${order.amountSol} SOL`
-    log(`<div class="step">Order opened</div><div class="row"><span>reference</span><b>${order.reference.slice(0,8)}…</b></div>`)
+    step('Order opened', `reference ${short(order.reference)}`)
 
-    // 2. Build + sign the transfer, writing the order's reference key into it (read-only) so the
-    //    seller can verify the payment is bound to THIS order.
+    // 2. Build + sign a transfer that writes the order's reference key in (binds the payment).
     $('buy').textContent = 'Approve in Phantom…'
     const { blockhash } = await conn.getLatestBlockhash()
     const ix = web3.SystemProgram.transfer({
@@ -108,12 +181,10 @@ $('buy').onclick = async () => {
       toPubkey: new web3.PublicKey(order.recipient),
       lamports: Math.round(Number(order.amountSol) * web3.LAMPORTS_PER_SOL),
     })
-    if (order.reference) {
-      ix.keys.push({ pubkey: new web3.PublicKey(order.reference), isSigner: false, isWritable: false })
-    }
+    if(order.reference) ix.keys.push({ pubkey:new web3.PublicKey(order.reference), isSigner:false, isWritable:false })
     const tx = new web3.Transaction({ feePayer: provider.publicKey, recentBlockhash: blockhash }).add(ix)
     const { signature } = await provider.signAndSendTransaction(tx)
-    log(`<div class="step">Paid on-chain</div><div class="row"><span>tx</span><b><a target="_blank" href="https://explorer.solana.com/tx/${signature}?cluster=devnet">${signature.slice(0,8)}…</a></b></div>`)
+    step('Paid on-chain', `<a target="_blank" href="https://explorer.solana.com/tx/${signature}?cluster=devnet">${short(signature)} ↗</a>`)
 
     // 3. Send proof to the seller; wait for delivery.
     $('buy').textContent = 'Seller verifying + delivering…'
@@ -121,18 +192,19 @@ $('buy').onclick = async () => {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ sig: signature }),
     }).then(r => r.json())
-    if (done.error) throw new Error(done.error)
+    if(done.error) throw new Error(done.error)
 
-    log(`<div class="step">Delivered ✅</div><pre>${escapeHtml(done.data)}</pre>`)
+    step('Delivered', `<pre>${prettify(done.data)}</pre>`)
     $('buy').textContent = 'Buy again'
-  } catch (e) {
-    log(`<div class="step">Error</div><div class="row"><span>${escapeHtml(String(e.message||e))}</span></div>`)
+  }catch(e){
+    step('Error', escapeHtml(String(e.message||e)), 'err')
     $('buy').textContent = 'Request & Pay'
-  } finally {
+  }finally{
     $('buy').disabled = false
   }
 }
 
+function prettify(s){ try{ return escapeHtml(JSON.stringify(JSON.parse(s), null, 2)) }catch{ return escapeHtml(String(s)) } }
 function escapeHtml(s){ return String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) }
 </script>
 </body>

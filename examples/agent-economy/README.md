@@ -111,6 +111,6 @@ bridge/server.ts   → a new human/front-door flow
 | `bridge/server.ts` | human → `user-proxy` puppet bridge; reads replies from session state; self-serves the Phantom UI |
 | `bridge/web/index.html` | framework-free Phantom checkout |
 | `quickstart/` | no-Docker bare-metal 402 version |
-| `../../docker-compose.yml` | coral + bridge + web (run from repo root) |
+| `../../docker-compose.yml` | coral-server + bridge (run from repo root) |
 
 Devnet only. Never put a funded mainnet keypair in `.env`.

@@ -88,7 +88,7 @@ knowledge and tooling — SDK usage, Anchor programs, testing, token extensions,
 | Anchor framework | Write a custom escrow program for trustless agent-to-agent payments |
 | `@solana/kit` | Upgrade `packages/agent-runtime` from legacy `@solana/web3.js` to the modern kit |
 | LiteSVM | Unit-test `packages/agent-runtime/src/strategies/` without a live devnet |
-| Commerce Kit | Add a checkout flow to `web/` so humans can pay agents from a browser |
+| Commerce Kit | Polish the bridge's Phantom checkout (`examples/agent-economy/bridge/web`) |
 | Token-2022 | Accept USDC or other SPL tokens as payment instead of native SOL |
 | Codama | Auto-generate TypeScript types from a custom Anchor program IDL |
 

@@ -1,6 +1,6 @@
 # @pay/agent-runtime
 
-The TypeScript agent runtime for this kit. Build and run Solana-aware agents in Node.js: `AgentManager`, pluggable `Strategy`s, a message bus, shared state, a workflow engine, and `CoralMcpAgent` for joining CoralOS (coral-server) MCP sessions. The agents in `coral-agents/` are built on this. It pairs with `@pay/coral-client` (the typed HTTP client for `api-server`).
+The TypeScript agent runtime for this kit. Build and run Solana-aware agents in Node.js: `AgentManager`, pluggable `Strategy`s, a message bus, shared state, a workflow engine, and `CoralMcpAgent` for joining CoralOS (coral-server) MCP sessions. The agents in `coral-agents/` are built on this.
 
 ## Table of Contents
 
@@ -802,7 +802,7 @@ npx ts-node --esm examples/coral_mcp_example.ts
 import { CoralServerSync } from '@pay/agent-runtime'
 ```
 
-Optional bridge that registers the agents with a running `api-server` and relays messages over its HTTP API, so they show up alongside HTTP-driven agents.
+Optional adapter that registers the local agents with a compatible HTTP agent server (one exposing the `/api/v1/agents` + `/api/v1/messages` routes) and relays messages over its HTTP API.
 
 ### Methods
 

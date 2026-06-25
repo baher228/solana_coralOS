@@ -112,13 +112,11 @@ is the same pay-per-call loop as two bare-metal Node processes over plain HTTP `
 
 | Directory | Purpose |
 |-----------|---------|
-| `examples/agent-economy/` | **the track** — autonomous starter, human bridge, config, no-Docker quickstart |
+| `examples/agent-economy/` | **the track** — `autonomous/` (agent→agent), `bridge/` (human checkout + Phantom UI), `config/`, `quickstart/` (no-Docker) |
 | `coral-agents/` | the agents coral-server launches: `seller-agent` (fork `service.ts`), `buyer-agent`, `user-proxy`, `echo-agent` |
 | `packages/agent-runtime/` | agent runtime: `AgentManager`, `Strategy`, MessageBus, CoralOS MCP client, strategies |
-| `api-server/` | Express REST API (:8081) wrapping the runtime |
-| `web/` | Next.js marketplace UI |
 | `scripts/` | `setup.js` (wallet generation) + smoke tests |
-| `docker-compose.yml` | coral + bridge + web |
+| `docker-compose.yml` | coral-server + bridge |
 
 ## How the payment cycle works
 

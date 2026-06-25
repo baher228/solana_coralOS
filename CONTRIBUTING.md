@@ -7,25 +7,23 @@ Contributions are welcome. The `main` branch is the integration branch — targe
 | Directory | Language | Typical changes |
 |-----------|----------|-----------------|
 | `packages/agent-runtime/` | TypeScript | New strategies, Solana Pay logic, messaging, workflows |
-| `api-server/` | TypeScript (Express) | New REST endpoints, handler logic |
-| `packages/coral-client/` | TypeScript | CoralClient HTTP wrapper |
-| `web/` | TypeScript (Next.js) | Consumer marketplace UI |
-| `coral-agents/` | Python | CoralOS MCP agents |
+| `coral-agents/` | TypeScript (+ one Python puppet) | The seller/buyer/echo agents; fork `seller-agent/src/service.ts` |
+| `examples/agent-economy/` | TypeScript | The autonomous starter, the human bridge + checkout UI, the quickstart |
 
 ## Prerequisites
 
 - Node.js 20+
-- Python 3.11+ (for coral-agents)
-- Docker Desktop (for CoralOS)
+- Docker Desktop (coral-server launches the agents)
 
 ## Development Commands
 
-### TypeScript
-
 ```sh
-cd api-server && npm install && npm run dev    # Express API on :8081
-cd web && npm install && npm run dev       # Next.js on :3000
-cd packages/agent-runtime && npm run typecheck
+# build the runtime first — coral-agents/examples depend on its dist via file: deps
+cd packages/agent-runtime && npm install && npm run build && npm run typecheck && npm test
+
+# typecheck + test the economy
+cd coral-agents/seller-agent && npm install && npm run typecheck && npm test
+cd examples/agent-economy/bridge && npm install && npm run typecheck
 ```
 
 ## PR Workflow
@@ -39,7 +37,7 @@ cd packages/agent-runtime && npm run typecheck
 
 ## Code Style
 
-- **TypeScript:** run `npm run typecheck && npm test` in `packages/agent-runtime/` and `api-server/` before committing.
+- **TypeScript:** run `npm run typecheck && npm test` in `packages/agent-runtime/` (and the package you changed) before committing.
 - **Documentation:** READMEs should explain *why* a module exists, not just *what* it does.
 
 ## Security

@@ -1,8 +1,8 @@
 # Agent Economy on CoralOS — single track, stock coral-server.
 #
-#   docker compose up                  # start coral-server (+ bridge + web)
-#   cd examples/agent-economy/autonomous && npx tsx start.ts   # kick off the agent↔agent loop
-#   open http://localhost:3000         # human checkout (Phantom) — the other front door
+#   docker compose up -d coral bridge  # start coral-server + the human-checkout bridge
+#   cd examples/agent-economy/autonomous && npm start   # kick off the agent↔agent loop
+#   open http://localhost:3010         # human checkout (Phantom) — served by the bridge
 #
 # coral-server here is a PURE MCP coordinator (wallet-free config). It launches
 # seller-agent / buyer-agent / user-proxy as containers per session, via the Docker socket.
@@ -56,17 +56,4 @@ services:
     depends_on:
       - coral
     restart: unless-stopped
-
-  # ── Web — Phantom checkout UI + autonomous viewer ───────────────────────────
-  web:
-    build: ./web
-    container_name: web
-    ports:
-      - "3000:3000"
-    environment:
-      - NEXT_PUBLIC_BRIDGE_URL=http://localhost:3010
-      - NEXT_PUBLIC_CORAL_SERVER=http://localhost:5555
-      - NEXT_PUBLIC_SELLER_WALLET=${WALLET}
-      - NEXT_PUBLIC_PRICE_SOL=${PRICE_SOL:-0.0001}
-    depends_on:
-      - bridge
+    # The bridge self-serves the Phantom checkout UI at http://localhost:3010.

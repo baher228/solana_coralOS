@@ -175,9 +175,9 @@ with rate limits, priority fees / compute budget, and a security review of every
 
 ### 4.1 CI — **✅ coverage gap closed**
 
-`.github/workflows/ci.yml` now has an **`agent-economy`** job that typechecks `coral-client`, all
-three `coral-agents`, and the three `examples/agent-economy/*` packages, and runs the seller-agent
-tests. (Every package also gained a uniform `npm run typecheck`.) **Still future:** running the smoke
+`.github/workflows/ci.yml` now has an **`agent-economy`** job that typechecks all three
+`coral-agents` and the three `examples/agent-economy/*` packages, and runs the seller-agent tests.
+(Every package also gained a uniform `npm run typecheck`.) **Still future:** running the smoke
 gates (`scripts/smoke/*`, `bridge/smoke.ts`) against an ephemeral coral-server in CI, and `npm audit`.
 
 ### 4.2 Test coverage — **✅ payment path tested**
