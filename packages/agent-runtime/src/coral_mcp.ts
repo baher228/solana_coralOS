@@ -244,7 +244,7 @@ export class CoralMcpAgent {
  * Parse the JSON blob returned by coral_wait_for_mention.
  * Extracts threadId, sender, and the actual message text (not the JSON wrapper).
  */
-function parseMention(raw: string): CoralMention {
+export function parseMention(raw: string): CoralMention {
   let threadId: string | undefined
   let sender: string | undefined
   let messageText = raw // fallback to raw if not JSON

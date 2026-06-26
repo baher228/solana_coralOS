@@ -1,12 +1,12 @@
 import {
   Keypair,
-  Connection,
   Transaction,
   SystemProgram,
   PublicKey,
   LAMPORTS_PER_SOL,
   sendAndConfirmTransaction,
 } from '@solana/web3.js'
+import { solanaConnection } from '@pay/agent-runtime'
 
 /**
  * Load the buyer keypair from the `BUYER_KEYPAIR_B58` environment variable.
@@ -65,7 +65,7 @@ export async function payFromUrl(solanaPayUrl: string, maxSol: number): Promise<
   if (amountSol > maxSol) throw new Error(`Amount ${amountSol} SOL exceeds budget ${maxSol} SOL`)
 
   const keypair = loadKeypair()
-  const conn = new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com')
+  const conn = solanaConnection()
 
   const ix = SystemProgram.transfer({
     fromPubkey: keypair.publicKey,
@@ -97,7 +97,7 @@ export async function payFromUrl(solanaPayUrl: string, maxSol: number): Promise<
  */
 export async function signTransfer(recipient: string, amountSol: number, reference?: string): Promise<string> {
   const keypair = loadKeypair()
-  const conn = new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com')
+  const conn = solanaConnection()
 
   const ix = SystemProgram.transfer({
     fromPubkey: keypair.publicKey,

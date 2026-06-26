@@ -1,29 +1,25 @@
 # coral-agents
 
-Agents launched by CoralOS as Docker containers. They connect to a CoralOS
-session over MCP (via `startCoralAgent` in `packages/agent-runtime`) and exchange
-messages in the session thread.
+Agents CoralOS launches as Docker containers. Each connects to a session over MCP (via
+`startCoralAgent` in `packages/agent-runtime`) and competes/transacts in a shared market thread.
 
-| Agent | Language | Role |
-|-------|----------|------|
-| `seller-agent` | TypeScript | Sells data/services for SOL. Fork point: `src/service.ts` (`deliverService`). |
-| `buyer-agent`  | TypeScript | LLM-driven buyer. Requests data, pays in SOL, analyses the result. |
-| `echo-agent`   | TypeScript | Minimal smoke-test agent — echoes any `@mention`. Proves MCP connectivity. |
-| `user_proxy`   | Python     | Inert puppet. Lets the Puppet API inject test messages into a session. |
+| Agent | Role |
+|-------|------|
+| `buyer-agent` | Market buyer — broadcasts a `WANT`, collects LLM bids, awards best value, settles via escrow (deposit → release/refund). |
+| `seller-agent` | LLM seller — decides whether/how to bid (`bidder.ts`, code-enforced floor/budget/inventory), then delivers (`service.ts` `deliverService` — **the fork point**) against a funded escrow. |
+| `seller-cheap` / `seller-premium` / `seller-lazy` | Config-only **personas** — the same `seller-agent:0.1.0` image with different `PERSONA`/`FLOOR_SOL`/`SERVICES` (no code, no extra build). |
 
-The TypeScript agents build on `packages/agent-runtime` (the `Strategy` / `AgentManager`
-runtime). On-chain wallet monitoring lives there too, as `HeliusMonitorStrategy`.
+All build on the three-pillar runtime in `packages/agent-runtime` (CoralOS client, Solana Pay, the LLM
+shim, the market protocol). Settlement is the Anchor escrow contract in
+`examples/agent-economy/escrow/`.
 
 ## Build the images
 
 ```sh
 # from the repo root (context must include packages/)
-bash build-agents.sh seller     # seller-agent:0.1.0
-bash build-agents.sh buyer      # buyer-agent:0.1.0
-docker build -f coral-agents/echo-agent/Dockerfile -t echo-agent:0.1.0 .
-cd coral-agents/user_proxy && docker build -t user-proxy:0.1.0 .
+bash build-agents.sh           # seller-agent:0.1.0 + buyer-agent:0.1.0 (personas reuse the seller image)
 ```
 
-CoralOS discovers each agent from its `coral-agent.toml`. Start a session that
-references them (see `docs/coral/session.json` for a minimal example), and CoralOS
-launches the containers and injects each one's `CORAL_CONNECTION_URL`.
+CoralOS discovers each agent from its `coral-agent.toml`. The marketplace example
+(`examples/marketplace/start.ts`) creates a session naming the buyer + the three personas, and
+CoralOS launches the containers and injects each one's `CORAL_CONNECTION_URL`.

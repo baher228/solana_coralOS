@@ -15,9 +15,13 @@
  *   3. The model can only pay values from a REAL challenge — no hallucinated recipients/amounts.
  */
 import Anthropic from '@anthropic-ai/sdk'
-import { BaseStrategy, type MutableAgentState, untilAborted } from '@pay/agent-runtime'
-import { LAMPORTS_PER_SOL } from '@solana/web3.js'
 import { signTransfer } from './wallet.js'
+import { guardPayment, type PurchaseGuard } from './guard.js'
+
+/** Sink for purchase-loop events. Defaults to console; pass your own to capture them. */
+export type ActionLog = (type: string, details: string, txSignature?: string) => void
+const logToConsole: ActionLog = (t, d, sig) =>
+  console.error(`[llm-buyer] ${t}: ${d}${sig ? ` sig=${sig}` : ''}`)
 
 /** A parsed HTTP 402 payment challenge. */
 export interface PaymentChallenge {
@@ -64,22 +68,16 @@ export function parse402(headers: Headers, body?: string): PaymentChallenge | nu
   }
 }
 
-export class LLMBuyerStrategy extends BaseStrategy {
+export class LLMBuyerStrategy {
   readonly name = 'llm-buyer'
-  constructor(private config: LLMBuyerConfig) { super() }
-
-  async run(state: MutableAgentState, signal: AbortSignal): Promise<void> {
-    const result = await this.purchase(state)
-    state.recordAction('purchase-complete', result.slice(0, 200))
-    await untilAborted(signal)
-  }
+  constructor(private config: LLMBuyerConfig) {}
 
   /**
-   * Run one autonomous purchase: the Claude tool-use loop. Callable from `run()` or from a
-   * CoralOS mention handler. Returns the model's final text answer.
+   * Run one autonomous purchase: the Claude tool-use loop. Returns the model's final text answer.
+   * Pass an `ActionLog` to capture loop events; defaults to console.
    * @throws if the loop exhausts `maxTurns` without a final answer.
    */
-  async purchase(state: MutableAgentState): Promise<string> {
+  async purchase(log: ActionLog = logToConsole): Promise<string> {
     const llm = new Anthropic()
     const maxTurns = this.config.maxTurns ?? 8
 
@@ -136,7 +134,7 @@ export class LLMBuyerStrategy extends BaseStrategy {
 
       const results: Anthropic.ToolResultBlockParam[] = []
       for (const tu of toolUses) {
-        results.push(await this.runTool(tu, state, purchase))
+        results.push(await this.runTool(tu, log, purchase))
       }
       messages.push({ role: 'user', content: results })
     }
@@ -146,7 +144,7 @@ export class LLMBuyerStrategy extends BaseStrategy {
   /** Execute one tool call and return its result block. */
   private async runTool(
     tu: Anthropic.ToolUseBlock,
-    state: MutableAgentState,
+    log: ActionLog,
     guard: PurchaseGuard,
   ): Promise<Anthropic.ToolResultBlockParam> {
     if (tu.name === 'fetch_data') {
@@ -159,7 +157,7 @@ export class LLMBuyerStrategy extends BaseStrategy {
           guard.allowedRecipients.add(challenge.recipient)
           if (challenge.reference) guard.allowedReferences.add(challenge.reference)
         }
-        state.recordAction('payment-challenge', JSON.stringify(challenge))
+        log('payment-challenge', JSON.stringify(challenge))
         return { type: 'tool_result', tool_use_id: tu.id, content: JSON.stringify({ status: 402, challenge }) }
       }
       const body = await r.text()
@@ -168,34 +166,17 @@ export class LLMBuyerStrategy extends BaseStrategy {
 
     if (tu.name === 'pay_and_retry') {
       const input = tu.input as { recipient: string; amountSol: number; reference?: string }
-      const lamports = Math.round(input.amountSol * LAMPORTS_PER_SOL)
 
-      // H2: the recipient MUST come from a challenge we actually received. The "only pay real
-      // challenges" rule is enforced here in code — a prompt injection in fetched data cannot
-      // make the buyer pay an attacker's address.
-      if (!guard.allowedRecipients.has(input.recipient)) {
-        return {
-          type: 'tool_result', tool_use_id: tu.id, is_error: true,
-          content: `refused: recipient ${input.recipient} did not appear in any payment challenge`,
-        }
-      }
-      if (input.reference && !guard.allowedReferences.has(input.reference)) {
-        return {
-          type: 'tool_result', tool_use_id: tu.id, is_error: true,
-          content: `refused: reference ${input.reference} did not appear in any payment challenge`,
-        }
-      }
-      // M3: budget is cumulative across the loop, not per-payment.
-      if (guard.spentLamports + lamports > this.config.budgetLamports) {
-        return {
-          type: 'tool_result', tool_use_id: tu.id, is_error: true,
-          content: `budget exceeded: cumulative ${(guard.spentLamports + lamports) / LAMPORTS_PER_SOL} SOL > ${this.config.budgetLamports / LAMPORTS_PER_SOL} SOL`,
-        }
+      // Payment rules enforced in CODE (see guard.ts), not the prompt: a prompt injection in fetched
+      // data cannot make the buyer pay an unseen recipient/reference (H2) or exceed the budget (M3).
+      const decision = guardPayment(guard, input, this.config.budgetLamports)
+      if (!decision.allowed) {
+        return { type: 'tool_result', tool_use_id: tu.id, is_error: true, content: `refused: ${decision.reason}` }
       }
 
       const sig = await signTransfer(input.recipient, input.amountSol, input.reference)
-      guard.spentLamports += lamports
-      state.recordAction('payment-sent', `${input.amountSol} SOL`, sig)
+      guard.spentLamports += decision.lamports
+      log('payment-sent', `${input.amountSol} SOL`, sig)
       const retry = await fetch(this.config.endpoint, { headers: { 'x-payment-proof': sig } })
       const body = await retry.text()
       return { type: 'tool_result', tool_use_id: tu.id, content: body.slice(0, 2000) }
@@ -203,11 +184,4 @@ export class LLMBuyerStrategy extends BaseStrategy {
 
     return { type: 'tool_result', tool_use_id: tu.id, is_error: true, content: `unknown tool: ${tu.name}` }
   }
-}
-
-/** Per-purchase, code-enforced trust state: which recipients/references are payable, and total spent. */
-interface PurchaseGuard {
-  allowedRecipients: Set<string>
-  allowedReferences: Set<string>
-  spentLamports: number
 }

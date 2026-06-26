@@ -1,0 +1,275 @@
+{
+    "base": {
+        "id": "d117f432-63a8-4265-9c91-69fcd0fa55ca",
+        "timestamp": "2026-06-26T18:00:19.683328392Z",
+        "namespace": "default",
+        "status": {
+            "type": "executed",
+            "executionTime": "2026-06-26T18:00:19.704272069Z"
+        },
+        "annotations": {}
+    },
+    "agents": [
+        {
+            "name": "buyer-agent",
+            "registryAgentIdentifier": {
+                "name": "buyer-agent",
+                "version": "0.1.0",
+                "registrySourceId": {
+                    "type": "local"
+                }
+            },
+            "status": {
+                "type": "running",
+                "connectionStatus": {
+                    "type": "connected",
+                    "communicationStatus": {
+                        "type": "thinking"
+                    }
+                },
+                "startTime": "2026-06-26T18:00:19.704449927Z"
+            },
+            "description": "LLM-driven marketplace buyer. Broadcasts a WANT into a shared CoralOS thread, collects competing bids, picks best value (LLM), and settles via the escrow contract.",
+            "links": [],
+            "runningBudget": {
+                "startBudget": 0,
+                "clamp": true,
+                "remaining": 0,
+                "overclaim": 0
+            },
+            "budgetSettings": {
+                "budget": 0,
+                "claimTypeCosts": {},
+                "exhaustionBehavior": {
+                    "type": "consume_session"
+                }
+            },
+            "annotations": {}
+        },
+        {
+            "name": "seller-cheap",
+            "registryAgentIdentifier": {
+                "name": "seller-cheap",
+                "version": "0.1.0",
+                "registrySourceId": {
+                    "type": "local"
+                }
+            },
+            "status": {
+                "type": "running",
+                "connectionStatus": {
+                    "type": "connected",
+                    "communicationStatus": {
+                        "type": "waiting_message"
+                    }
+                },
+                "startTime": "2026-06-26T18:00:19.704449909Z"
+            },
+            "description": "Marketplace seller persona — aggressive discounter. Reuses the seller-agent image; an LLM decides its bids, never below its floor.",
+            "links": [],
+            "runningBudget": {
+                "startBudget": 0,
+                "clamp": true,
+                "remaining": 0,
+                "overclaim": 0
+            },
+            "budgetSettings": {
+                "budget": 0,
+                "claimTypeCosts": {},
+                "exhaustionBehavior": {
+                    "type": "consume_session"
+                }
+            },
+            "annotations": {}
+        },
+        {
+            "name": "seller-premium",
+            "registryAgentIdentifier": {
+                "name": "seller-premium",
+                "version": "0.1.0",
+                "registrySourceId": {
+                    "type": "local"
+                }
+            },
+            "status": {
+                "type": "running",
+                "connectionStatus": {
+                    "type": "connected",
+                    "communicationStatus": {
+                        "type": "waiting_message"
+                    }
+                },
+                "startTime": "2026-06-26T18:00:19.704524055Z"
+            },
+            "description": "Marketplace seller persona — premium, verified data. Reuses the seller-agent image; an LLM bids higher and justifies on quality.",
+            "links": [],
+            "runningBudget": {
+                "startBudget": 0,
+                "clamp": true,
+                "remaining": 0,
+                "overclaim": 0
+            },
+            "budgetSettings": {
+                "budget": 0,
+                "claimTypeCosts": {},
+                "exhaustionBehavior": {
+                    "type": "consume_session"
+                }
+            },
+            "annotations": {}
+        },
+        {
+            "name": "seller-lazy",
+            "registryAgentIdentifier": {
+                "name": "seller-lazy",
+                "version": "0.1.0",
+                "registrySourceId": {
+                    "type": "local"
+                }
+            },
+            "status": {
+                "type": "running",
+                "connectionStatus": {
+                    "type": "connected",
+                    "communicationStatus": {
+                        "type": "waiting_message"
+                    }
+                },
+                "startTime": "2026-06-26T18:00:19.704567515Z"
+            },
+            "description": "Marketplace seller persona — only bids on high-value jobs it carries. Reuses the seller-agent image; demonstrates self-selection (it stays silent on services it doesn't sell).",
+            "links": [],
+            "runningBudget": {
+                "startBudget": 0,
+                "clamp": true,
+                "remaining": 0,
+                "overclaim": 0
+            },
+            "budgetSettings": {
+                "budget": 0,
+                "claimTypeCosts": {},
+                "exhaustionBehavior": {
+                    "type": "consume_session"
+                }
+            },
+            "annotations": {}
+        }
+    ],
+    "threads": [
+        {
+            "id": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+            "name": "market",
+            "creatorName": "buyer-agent",
+            "participants": [
+                "seller-cheap",
+                "seller-premium",
+                "seller-lazy",
+                "buyer-agent"
+            ],
+            "messages": [
+                {
+                    "id": "ac6f31a5-4676-4b17-a83a-97e2729c31f2",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "WANT round=1 service=coingecko arg=SOL-USDC budget=0.001",
+                    "senderName": "buyer-agent",
+                    "mentionNames": [
+                        "seller-cheap",
+                        "seller-premium",
+                        "seller-lazy"
+                    ],
+                    "timestamp": "2026-06-26T18:00:52.452931099Z"
+                },
+                {
+                    "id": "53e55891-f595-4d7c-a46c-bfded0719675",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "BID round=1 price=0.0005 by=seller-premium note=available",
+                    "senderName": "seller-premium",
+                    "mentionNames": [
+                        "buyer-agent"
+                    ],
+                    "timestamp": "2026-06-26T18:00:52.865315862Z"
+                },
+                {
+                    "id": "9ec82d20-48c0-4a35-af92-bd7f18c6fda7",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "BID round=1 price=0.0002 by=seller-cheap note=available",
+                    "senderName": "seller-cheap",
+                    "mentionNames": [
+                        "buyer-agent"
+                    ],
+                    "timestamp": "2026-06-26T18:00:52.904350651Z"
+                },
+                {
+                    "id": "5778e8ff-7278-469c-b165-8e5f99489591",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "AWARD round=1 to=seller-cheap reason=\"cheapest available\"",
+                    "senderName": "buyer-agent",
+                    "mentionNames": [
+                        "seller-cheap"
+                    ],
+                    "timestamp": "2026-06-26T18:00:57.761227924Z"
+                },
+                {
+                    "id": "ab5aa64d-dc80-4629-9c80-6d39bf788cd8",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "ESCROW_REQUIRED round=1 reference=43QLzy1aa6A7sxjFACmV6n3TvbfK9Ra8zDym8yPkYFsC seller=7jwB6M2DtuDuXJvFT9RiEwDQUX6Q3DhwtDwg3v8DpjZw amount=0.0002 deadline=600",
+                    "senderName": "seller-cheap",
+                    "mentionNames": [
+                        "buyer-agent"
+                    ],
+                    "timestamp": "2026-06-26T18:00:58.032647251Z"
+                },
+                {
+                    "id": "d7222e26-2510-4c67-b06a-832b40b7904f",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "DEPOSITED round=1 reference=43QLzy1aa6A7sxjFACmV6n3TvbfK9Ra8zDym8yPkYFsC buyer=47DpazckSKKXtyU4hnoJizJjMXmfodgm9pNBXTBN4L4Y sig=3RbEEMJ6DG9WUicwrTM96W7K97w4yj4SiTs4FM76TBGjWHSisY23Gqdmcbgoh3vjt46nUrbptT2QxBg5u8kRSEKM",
+                    "senderName": "buyer-agent",
+                    "mentionNames": [
+                        "seller-cheap"
+                    ],
+                    "timestamp": "2026-06-26T18:00:59.013552638Z"
+                },
+                {
+                    "id": "e843b83d-9a10-4377-ae36-613a45807d35",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "DELIVERED round=1 {\"coin\":\"solana\",\"usd\":72.49,\"timestamp\":\"2026-06-26T18:00:59.347Z\"}",
+                    "senderName": "seller-cheap",
+                    "mentionNames": [
+                        "buyer-agent"
+                    ],
+                    "timestamp": "2026-06-26T18:00:59.354980293Z"
+                },
+                {
+                    "id": "7dd16187-42a8-4284-aeb0-eaca11f9f5e8",
+                    "threadId": "ec664328-8b62-4fd9-aab4-a125efda13d8",
+                    "text": "RELEASED round=1 sig=nzDKEzM6ynBxjzf98DRpdzYVP6aZ7R9KdbLSiGEb1V7JAF433doduhCRWtAxaDEwwZz4osa6Hx6saqU37xEHcJS",
+                    "senderName": "buyer-agent",
+                    "mentionNames": [
+                        "seller-cheap"
+                    ],
+                    "timestamp": "2026-06-26T18:01:00.116354025Z"
+                }
+            ],
+            "state": {
+                "state": "open"
+            },
+            "timestamp": "2026-06-26T18:00:52.132129106Z"
+        }
+    ],
+    "runningBudget": {
+        "startBudget": 0,
+        "clamp": false,
+        "remaining": 0,
+        "overclaim": 0
+    },
+    "budgetSettings": {
+        "budget": 0,
+        "exhaustionBehavior": {
+            "type": "kill_agent",
+            "minimum": 0,
+            "force": false,
+            "forceDelay": "PT0.100S"
+        }
+    },
+    "agentClaimReceipts": []
+}

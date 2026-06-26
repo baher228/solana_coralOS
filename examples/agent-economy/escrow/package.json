@@ -8,7 +8,7 @@
     "deploy": "anchor deploy --provider.cluster devnet"
   },
   "dependencies": {
-    "@coral-xyz/anchor": "^0.30.1"
+    "@coral-xyz/anchor": "^0.32.1"
   },
   "devDependencies": {
     "@types/chai": "^4.3.0",

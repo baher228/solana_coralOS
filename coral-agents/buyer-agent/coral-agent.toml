@@ -3,24 +3,29 @@ edition = 4
 [agent]
 name = "buyer-agent"
 version = "0.1.0"
-description = "LLM-driven autonomous buyer agent. Requests data from seller-agent, pays in SOL via Solana Pay, receives and summarises results using Claude."
-summary = "Autonomous TypeScript agent that buys data with SOL and analyses it with Claude."
-readme = "Autonomous loop: sends 'request <goal>' to seller-agent, parses the Solana Pay URL, pays from its devnet wallet, sends payment proof, waits for delivery, and optionally summarises the result with Claude Haiku."
+description = "LLM-driven marketplace buyer. Broadcasts a WANT into a shared CoralOS thread, collects competing bids, picks best value (LLM), and settles via the escrow contract."
+summary = "Autonomous TypeScript buyer that runs an open agent marketplace and settles trustlessly."
+readme = "Market loop: WANT -> collect BIDs over a window -> AWARD best value -> deposit into escrow -> release on delivery (or refund after the deadline)."
 
 [agent.license]
 type = "spdx"
 expression = "MIT"
 
 [options]
-ANTHROPIC_API_KEY = { type = "string", default = "", description = "Anthropic API key for Claude analysis (optional — skips LLM if unset)" }
-BUYER_KEYPAIR_B58 = { type = "string", description = "Base58-encoded devnet keypair — generate: solana-keygen new --no-bip39-passphrase" }
-BUYER_MAX_SOL = { type = "f64", default = 0.001, description = "Max SOL to spend per request" }
-SOLANA_RPC_URL = { type = "string", default = "", description = "Solana RPC URL" }
-TARGET_AGENT = { type = "string", default = "seller-agent", description = "Agent to buy from — a seller directly, or 'broker' in a swarm" }
-BUYER_REQUEST = { type = "string", default = "", description = "What to request (e.g. 'jupiter'); empty uses the goal.ts default" }
-QUOTE_WAIT_MS = { type = "f64", default = 15000, description = "How long to wait for a payment quote (broker swarms need longer)" }
-DELIVERY_WAIT_MS = { type = "f64", default = 30000, description = "How long to wait for delivery after paying" }
-CYCLE_INTERVAL_MS = { type = "f64", default = 30000, description = "Delay between purchase cycles" }
+BUYER_KEYPAIR_B58 = { type = "string", description = "Base58-encoded devnet keypair — signs deposit/release" }
+AGENT_NAME = { type = "string", default = "buyer-agent", description = "Market identity (matches the registry name)" }
+BUYER_MAX_SOL = { type = "f64", default = 0.001, description = "Budget cap per round (the WANT budget)" }
+BUYER_SERVICE = { type = "string", default = "coingecko", description = "Service to shop for (sellers self-select on it)" }
+BUYER_ARG = { type = "string", default = "SOL-USDC", description = "Argument passed to the winning seller's deliverService" }
+MARKET_SELLERS = { type = "string", default = "seller-cheap,seller-premium,seller-lazy", description = "Comma-separated seller names in the market thread" }
+BID_WINDOW_MS = { type = "f64", default = 5000, description = "How long to collect competing bids each round" }
+CYCLE_INTERVAL_MS = { type = "f64", default = 30000, description = "Delay between market rounds" }
+SOLANA_RPC_URL = { type = "string", default = "", description = "Solana RPC URL (devnet)" }
+ANTHROPIC_API_KEY = { type = "string", default = "", description = "Anthropic key (default brain for best-value selection)" }
+OPENAI_API_KEY = { type = "string", default = "", description = "OpenAI key — set with LLM_PROVIDER=openai to flip the brain" }
+LLM_PROVIDER = { type = "string", default = "", description = "anthropic (default) | openai" }
+LLM_MODEL = { type = "string", default = "", description = "Override the LLM model id" }
+TRACE = { type = "string", default = "", description = "Set to 1 to log CoralOS calls + on-chain steps (Explorer links)" }
 
 [runtimes.docker]
 image = "buyer-agent:0.1.0"

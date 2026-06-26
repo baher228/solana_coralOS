@@ -1,196 +1,93 @@
-# solana_coralOS — Agent Economy Starter
+# solana_coralOS — the Agent Marketplace
 
-> A seller **agent** lists a service; buyers — **agent or human** — request it over **CoralOS**, pay
-> in **SOL** on-chain, and the seller verifies the payment and delivers. One protocol, one seller,
-> **two front doors.**
+> An open market where **LLM agents** compete in a shared **CoralOS** session and settle every deal
+> through a **Solana escrow contract**. Reason · coordinate · settle trustlessly.
 
-Every payment is a real on-chain **devnet** transaction. CoralOS (coral-server) coordinates the
-agents as a pure MCP message bus — it runs **stock and wallet-free**, because payments settle
-agent-side in SOL.
+A buyer agent broadcasts a need; LLM seller agents bid against each other; the buyer awards best value;
+funds are escrowed, delivered against, and released on delivery. Everything runs on **devnet** — free
+play money, real on-chain settlement.
 
-- **Autonomous** front door — an LLM buyer agent requests, decides, and pays another agent.
-- **Checkout** front door — a human connects Phantom and pays the same seller, one click.
+## The three pillars
 
-Both run through the same seller agent over CoralOS. Proven live on devnet (gates G1–G3, see
-[`.claude/AGENT_ECONOMY_RESTRUCTURE.md`](.claude/AGENT_ECONOMY_RESTRUCTURE.md)).
+Each one is load-bearing — pull it and the demo collapses into something lesser:
 
----
+| Pillar | Its job | Remove it → |
+|--------|---------|-------------|
+| **LLM** | sellers decide whether/how much to bid; buyer judges best value | a static vending bank |
+| **CoralOS** | the shared market thread; dynamic discovery; multi-party | point-to-point pipes |
+| **Solana (Pay + escrow)** | a `reference` binds the deal; the escrow contract releases funds only on delivery, refunds after a deadline | trust-me play money |
 
-## How it works (in plain terms)
+The goods traded are **Solana data services** (Jupiter, CoinGecko, Helius, on-chain reads, LLM
+analysis) — the seller's `deliverService()` is the one fork point.
 
-New to this? A few building blocks, defined:
+## What you need
 
-- **Agent economy** — software agents (and humans) that buy and sell services from each other and
-  **settle payment automatically** — no invoices, no manual approval. Here a *seller* agent offers a
-  service (a price quote, an AI completion…); a *buyer* pays per request.
+Everything is devnet and free. Keys live in a local `.env` (none in the repo).
 
-- **CoralOS (`coral-server`)** — the **coordination layer**. Agents join a *session*, open *threads*,
-  and talk over **MCP** (Model Context Protocol). Think "switchboard + chat room" for agents. It does
-  **not** move money — it only carries the conversation. (We run it stock and wallet-free.)
-
-- **Solana Pay + HTTP 402** — the **payment protocol**. When a buyer asks for a service, the seller
-  replies `402 Payment Required` with a `solana:` URL (the Solana Pay format) — who to pay, how much.
-  The buyer pays that on-chain and sends the transaction signature back as proof.
-
-- **On-chain settlement, on devnet** — every payment is a **real Solana transaction** you can open in
-  a block explorer. It runs on **devnet**, a free test network: play money, identical mechanics to
-  mainnet.
-
-- **The two front doors** — the *buyer* can be an **agent** (the autonomous loop — an LLM decides to
-  pay) or a **human** (checkout — you click Pay in Phantom). Same seller, same protocol, two ways in.
-
-- **`user-proxy` + the Puppet API** — a human isn't an MCP agent, so to bring them into a coral
-  session the kit uses a stand-in agent (`user-proxy`) that the **bridge** drives via coral's Puppet
-  API. That's how "human → agent" works under the hood.
-
-The [payment cycle diagram](#how-the-payment-cycle-works) below traces one full request → pay →
-deliver in concrete terms.
-
----
-
-## 🔑 Keys & accounts you need
-
-Everything is **devnet** and **free**. You bring your own keys in a local `.env` — none are in the
-repo. `scripts/setup.js` generates the Solana wallets for you, so you mostly just fund them.
-
-### Required
-
-| What | For | How to get it |
-|------|-----|---------------|
-| **Devnet SOL** (2 wallets) | paying + receiving | `node scripts/setup.js` generates a buyer + seller keypair into `.env` and prints two addresses. **Fund both** at [faucet.solana.com](https://faucet.solana.com) — sign in with GitHub (the web faucet is the only way; CLI/RPC airdrops are gated). |
-| **Anthropic API key** | the LLM buyer *decides* to pay (+ the seller's optional `inference` service) | Free-tier key at [console.anthropic.com](https://console.anthropic.com) → `ANTHROPIC_API_KEY`. *(The on-chain payment works without it — this is only the agent's reasoning step.)* |
-| **Phantom wallet** | the human Checkout door | [phantom.com](https://phantom.com) extension, set to **Devnet**. |
-| **Docker Desktop** | coral-server launches the agents | [docker.com](https://www.docker.com/products/docker-desktop/). *(Skip it with the no-Docker quickstart below.)* |
-
-### Optional (free fallbacks)
-
-| Key | For | Get it |
-|-----|-----|--------|
-| `HELIUS_API_KEY` | faster devnet RPC | [helius.dev](https://helius.dev) — falls back to public devnet |
-| `JUPITER_API_KEY` | higher rate limits | [jup.ag/developers](https://jup.ag/developers) |
-| `NEWS_API_KEY` | only `SERVICE=news` | [newsapi.org](https://newsapi.org) |
-
-> Have an OpenAI/Codex key but not Anthropic? The LLM step is Anthropic-only today — swap the call
-> in `coral-agents/buyer-agent/src/llm_buyer.ts` or open an issue.
-
----
+| What | For | How |
+|------|-----|-----|
+| **Devnet SOL** (2 wallets) | escrow deposits + receiving | `node scripts/setup.js` generates them → `.env`; **fund both** at [faucet.solana.com](https://faucet.solana.com) (GitHub sign-in — the only way) |
+| **An LLM key** | the agents' bidding + selection | `ANTHROPIC_API_KEY` (default), **or** `LLM_PROVIDER=openai` + `OPENAI_API_KEY` to run the whole market on OpenAI |
+| **Docker Desktop** | coral-server launches the agents | [docker.com](https://www.docker.com/products/docker-desktop/) |
 
 ## Quick start
 
-**One shot** (needs [`just`](https://github.com/casey/just) + Docker):
-
 ```sh
-just dev          # wallets + build images + start coral & bridge
-# then fund the 2 printed wallets (see below), open http://localhost:3010, click "Run"
+node scripts/setup.js                                  # generate wallets → .env (then fund both)
+bash build-agents.sh                                   # build seller + buyer images
+docker compose up -d coral                             # CoralOS (MCP coordinator)
+cd examples/marketplace && npm install && npm start    # launch the market session
+docker logs -f buyer-agent                             # watch it run
 ```
 
-`just dev` chains the steps below; `just --list` shows all recipes (`auto`, `logs`, `down`). If a
-recipe errors or you don't have `just`, run the steps manually:
+With [`just`](https://github.com/casey/just): `just dev` (wallets + build + coral) then `just market`.
 
-```sh
-git clone https://github.com/trilltino/solana_coralOS
-cd solana_coralOS
+## What you'll see
 
-cd scripts && npm install && cd ..
-node scripts/setup.js                  # generates wallets → .env, prints 2 addresses
-
-# FUND both printed addresses — the only way is the web faucet (sign in with GitHub):
-#   https://faucet.solana.com
-# (then add ANTHROPIC_API_KEY=sk-ant-… to .env — optional)
-
-bash build-agents.sh                   # build the agent images coral-server launches
-docker compose up -d coral bridge      # stock coral-server + the checkout bridge (:3010)
+```
+[buyer]  round 1: WANT coingecko SOL-USDC budget=0.001
+seller-cheap   BID  round=1 price=0.0002 by=seller-cheap note=undercut
+seller-premium BID  round=1 price=0.0005 by=seller-premium note=verified
+seller-lazy    …silent — coingecko isn't in its inventory (self-selection)
+[buyer]  picked seller-cheap (0.0002 SOL): cheapest for a simple price lookup
+[buyer]  round 1: DEPOSITED 0.0002 SOL → seller-cheap        # escrow PDA, on-chain
+seller-cheap   DELIVERED round=1 {"coin":"solana","usd":…}
+[buyer]  round 1: RELEASED to seller-cheap — explorer.solana.com/tx/…?cluster=devnet
 ```
 
-Then pick a front door — full guide in [`examples/agent-economy/`](examples/agent-economy/README.md):
-
-```sh
-# Autonomous (agent → agent)
-cd examples/agent-economy/autonomous && npm install && npm start
-docker logs -f buyer-agent             # watch it pay + receive
-
-# Checkout (human → agent)
-docker compose up -d bridge            # then open http://localhost:3010 with Phantom (Devnet)
-```
-
-**Verify your setup** — one command checks Docker, Node, funded wallets, the stack, and runs a live
-payment end-to-end:
-
-```sh
-just doctor          # or: node scripts/doctor.js  — green = ready to build
-```
-
-Hit a snag? [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) covers the common ones (Docker, faucet
-rate-limits, Windows `just`, ports).
-
-**No Docker?** [`examples/agent-economy/quickstart/`](examples/agent-economy/quickstart/README.md)
-is the same pay-per-call loop as two bare-metal Node processes over plain HTTP `402`.
-
----
+Set `TRACE=1` in `.env` to see every `coral_*` call and on-chain Explorer link (deposit, release, the
+escrow PDA). Flip `LLM_PROVIDER=openai` to run the same market on the sponsor's stack — no code change.
 
 ## Repo layout
 
 | Directory | Purpose |
 |-----------|---------|
-| `examples/agent-economy/` | **the track** — `autonomous/` (agent→agent), `bridge/` (order API + serves the UI), `web/` (the React demo UI), `config/`, `quickstart/` (no-Docker) |
-| `coral-agents/` | the agents coral-server launches: `seller-agent` (fork `service.ts`), `buyer-agent`, `user-proxy`, `echo-agent` |
-| `packages/agent-runtime/` | agent runtime: `AgentManager`, `Strategy`, MessageBus, CoralOS MCP client, strategies |
-| `scripts/` | `setup.js` (wallet generation) + smoke tests |
-| `docker-compose.yml` | coral-server + bridge |
+| `examples/marketplace/` | **the example** — `start.ts` launches the market session |
+| `coral-agents/` | `buyer-agent`, `seller-agent` (+ config-only personas `seller-cheap`/`-premium`/`-lazy`) |
+| `packages/agent-runtime/` | the three pillars: CoralOS client, Solana Pay, the LLM shim, the market protocol |
+| `examples/agent-economy/escrow/` | the Anchor escrow contract — the settlement spine |
+| `scripts/` | `setup.js` (wallets), `doctor.js` (health check) |
 
-## How the payment cycle works
+## Build on it
 
-One request, start to finish. Every line is a real message over a CoralOS thread (or HTTP, in the
-no-Docker quickstart); the payment in the middle is a real devnet transaction:
+- **A new seller** — its inventory (`deliverService`) + how it bids (`PERSONA`/`FLOOR_SOL` in its `coral-agent.toml`).
+- **A new buyer** — what it wants + how it judges value (the selection prompt).
+- **A new role / mechanism** — a reseller, an escrow **arbiter** agent, open-cry bidding, on-chain reputation.
 
-```
-buyer (agent or human) → "request <query>"           → seller
-seller → "PAYMENT_REQUIRED memo=… amount=… url=solana:…"
-buyer  → pays the URL on devnet (keypair, or Phantom) → sig
-buyer  → "paid <sig> memo=…"                          → seller
-seller → getTransaction(sig): verifies recipient + amount on-chain
-seller → "DELIVERED <data>"
-```
-
-All verification is on-chain. No off-chain trust.
-
-> **CoralOS note:** coral-server is used here purely as the MCP coordination layer. Its *native*
-> payment rail (x402/CORAL token) is **not** used — it's half-built upstream — so the kit settles in
-> plain SOL, which works end-to-end. Details in `.claude/AGENT_ECONOMY_RESTRUCTURE.md`.
+Deep dives: **[docs/MARKETPLACE.md](docs/MARKETPLACE.md)** (protocol, escrow flow, under-the-hood) ·
+**[docs/APIS.md](docs/APIS.md)** (the goods you can sell) ·
+**[escrow/README.md](examples/agent-economy/escrow/README.md)** (the contract) ·
+**[docs/PRODUCTION_HARDENING.md](docs/PRODUCTION_HARDENING.md)** (past a devnet demo).
 
 ## Optional: Claude Code skills
 
-Two skill sets make building on this kit easier — see [SKILLS.md](SKILLS.md) for the full guide.
-
-**Solana dev skill** (Solana SDK, Anchor, testing, payments) — install via the `skills` CLI:
+**Solana dev skill** (Anchor, testing, payments):
 
 ```sh
 npx skills add https://github.com/solana-foundation/solana-dev-skill --global --yes
 ```
 
-**Coral Protocol skills** (drive coral-server sessions from Claude Code) — run these *inside Claude
-Code* as slash commands:
-
-```
-/plugin marketplace add https://github.com/Coral-Protocol/coral-skill-set
-/plugin install coral-skills@coral-skill-set
-/reload-plugins
-```
-
-Use the full **HTTPS URL** (the `owner/repo` shorthand clones via SSH and fails without GitHub SSH
-keys). Then `/coral-setup`, `/coral-session-control`, etc. Reload Claude Code after installing.
-
-## Building on it
-
-The fork points: `coral-agents/seller-agent/src/service.ts → deliverService()` (what's sold),
-`coral-agents/buyer-agent/` (what the buyer wants), a new agent in `config/coral.toml`, or
-`examples/agent-economy/escrow/` (trustless settlement). Deep guides:
-
-- **[docs/HACKATHON.md](docs/HACKATHON.md)** — composing a hackathon: where to build + what types of apps
-- **[docs/APIS.md](docs/APIS.md)** — APIs you can sell (free?/key?/devnet?), incl. the Codex/OpenAI option
-- **[docs/REACT_FRONTEND.md](docs/REACT_FRONTEND.md)** — build a full Vite + React + wallet-adapter UI e2e (every file)
-- **[docs/SWARM.md](docs/SWARM.md)** — build a multi-agent swarm (broker pattern) — money flowing through a graph
-- **[docs/PRODUCTION_HARDENING.md](docs/PRODUCTION_HARDENING.md)** — taking it past a devnet demo
+**Coral Protocol skills** (drive coral-server from Claude Code) — see [SKILLS.md](SKILLS.md).
 
 ## License
 

@@ -1,0 +1,21 @@
+{
+  "name": "marketplace-feed",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pay/agent-runtime": "file:../../../packages/agent-runtime",
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^1.6.0",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0"
+  }
+}

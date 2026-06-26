@@ -1,10 +1,10 @@
-import { Connection, PublicKey, Keypair } from '@solana/web3.js'
+import { PublicKey, Keypair } from '@solana/web3.js'
 import { encodeURL, validateTransfer } from '@solana/pay'
 import BigNumber from 'bignumber.js'
+import { solanaConnection } from '@pay/agent-runtime'
 
-/** Lazy connection factory so each call gets a fresh `Connection` (safe across async boundaries). */
-const connection = () =>
-  new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com')
+/** Lazy connection factory — fresh `Connection` per call, guarded against a mainnet RPC. */
+const connection = () => solanaConnection()
 
 /** Return value from `generatePaymentUrl`. */
 export interface PaymentUrl {

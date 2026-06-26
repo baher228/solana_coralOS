@@ -31,8 +31,10 @@ jobs:
         run: cd packages/agent-runtime && npm install && npm run build
       - name: seller-agent (typecheck + tests)
         run: cd coral-agents/seller-agent && npm install && npm run typecheck && npm test
-      - name: buyer-agent
-        run: cd coral-agents/buyer-agent && npm install && npm run typecheck
+      - name: buyer-agent (typecheck + tests)
+        run: cd coral-agents/buyer-agent && npm install && npm run typecheck && npm test
+      - name: broker (typecheck + tests)
+        run: cd coral-agents/broker && npm install && npm run typecheck && npm test
       - name: echo-agent
         run: cd coral-agents/echo-agent && npm install && npm run typecheck
       - name: bridge

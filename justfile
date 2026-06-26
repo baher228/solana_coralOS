@@ -1,55 +1,52 @@
-# Agent Economy — dev tasks.  Run `just dev` for one-shot setup → build → run.
+# Agent marketplace — dev tasks.  `just dev` = wallets + build + coral up, then `just market`.
 #
 # Needs: Docker Desktop running, Node 20+, and `just` (https://github.com/casey/just):
 #   cargo install just  |  brew install just  |  winget install Casey.Just
-# Runs from any shell. No `just`? Every recipe below is plain node/npm/docker commands.
+# No `just`? Every recipe below is a plain node/npm/docker one-liner.
 
-# On Windows, use cmd (full system PATH; npm.cmd/node/docker resolve; supports && and cd like sh).
+# On Windows, use cmd (full system PATH; supports && and cd like sh).
 set windows-shell := ["cmd.exe", "/c"]
 
 # default: list the recipes
 default:
     @just --list
 
-# ── one-shot: wallets + build images + start coral & bridge ──────────────────
+# ── one-shot: wallets + build images + coral + open the dashboard ───────────
 dev: setup build clean up
-    @echo Agent economy is up: coral + bridge.
-    @echo FUND the 2 printed wallets at https://faucet.solana.com - sign in with GitHub - before the agents can pay.
-    @echo Opening http://localhost:3010 - click Run in the Autonomous tab. Give the agents ~20s on first run.
-    @echo Logs: just logs -- Stop: just down
-    @just open
+    @echo Coral is up. FUND the 2 printed wallets at https://faucet.solana.com (GitHub sign-in).
+    @echo Opening the dashboard - click "Start a market" once the wallets are funded.
+    node scripts/dashboard.js
 
 # generate the devnet wallets (fund them manually at the faucet)
 setup:
     cd scripts && npm install --no-audit --no-fund
     node scripts/setup.js
 
-# build the agent images coral-server launches (no bash needed)
+# build the agent images (personas reuse the seller image)
 build:
     docker build -f coral-agents/seller-agent/Dockerfile -t seller-agent:0.1.0 .
     docker build -f coral-agents/buyer-agent/Dockerfile -t buyer-agent:0.1.0 .
-    docker build -f coral-agents/user_proxy/Dockerfile -t user-proxy:0.1.0 coral-agents/user_proxy
 
-# start coral-server + the bridge (serves the demo UI on :3010)
+# start coral-server (MCP coordinator)
 up:
-    docker compose up -d coral bridge
+    docker compose up -d coral
 
-# open the demo UI in your default browser (cross-platform)
-open:
-    -{{ if os() == "windows" { "start" } else if os() == "macos" { "open" } else { "xdg-open" } }} http://localhost:3010
+# launch the marketplace session (buyer + 3 persona sellers)
+market:
+    cd examples/marketplace && npm install --no-audit --no-fund && npm start
 
-# readiness check: Docker, Node, wallets funded, coral/bridge up, one live payment
+# the visualizer: feed server + UI on :5173, opens the browser (click "Start a market" after funding)
+dashboard:
+    node scripts/dashboard.js
+
+# just the feed server (logs-flow alternative; reads coral's transcript)
+feed:
+    cd examples/marketplace/feed && npm install --no-audit --no-fund && npm start
+
+# readiness check: Docker, Node, wallets funded, coral up
 doctor:
     cd scripts && npm install --no-audit --no-fund
     node scripts/doctor.js
-
-# run the React UI with hot reload (Vite dev on :5173, proxied to the bridge on :3010)
-ui:
-    cd examples/agent-economy/web && npm install --no-audit --no-fund && npm run dev
-
-# run the autonomous loop from the CLI (alternative to the UI button)
-auto:
-    cd examples/agent-economy/autonomous && npm install --no-audit --no-fund && npm start
 
 # remove orphaned coral-spawned agent containers (also runs at the start of `just dev`)
 clean:

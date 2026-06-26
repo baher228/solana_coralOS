@@ -3,9 +3,9 @@ edition = 4
 [agent]
 name = "seller-cheap"
 version = "0.1.0"
-description = "Budget seller — same service as seller-agent, lowest price. Reuses the seller-agent image (set PRICE_SOL via options)."
-summary = "A low-priced seller instance for the broker swarm."
-readme = "Same protocol as seller-agent (request -> PAYMENT_REQUIRED -> paid -> DELIVERED), reusing its image at a low PRICE_SOL. Used by the broker swarm as the cheap quote."
+description = "Marketplace seller persona — aggressive discounter. Reuses the seller-agent image; an LLM decides its bids, never below its floor."
+summary = "A low-floor, high-aggression bidder for the agent marketplace."
+readme = "Bids in the shared market thread (WANT -> BID), wins on price, settles via escrow. Same image as seller-agent; the PERSONA/FLOOR_SOL/SERVICES options shape how it competes."
 
 [agent.license]
 type = "spdx"
@@ -13,12 +13,19 @@ expression = "MIT"
 
 [options]
 SELLER_WALLET = { type = "string", description = "Devnet wallet pubkey that receives payments" }
-PRICE_SOL = { type = "f64", default = 0.0001, description = "Price per request in SOL" }
-SERVICE = { type = "string", default = "jupiter", description = "Service to sell: jupiter | coingecko | news | inference" }
-SOLANA_RPC_URL = { type = "string", default = "", description = "Solana RPC URL" }
+AGENT_NAME = { type = "string", default = "seller-cheap", description = "Market identity (matches the registry name)" }
+SERVICES = { type = "string", default = "jupiter,coingecko", description = "Inventory — comma-separated services this seller bids on" }
+FLOOR_SOL = { type = "f64", default = 0.0002, description = "Cost floor — the LLM may never bid below this" }
+PERSONA = { type = "string", default = "an aggressive discounter who bids low to win volume, but never below the floor", description = "Bidding persona (LLM system prompt)" }
+SERVICE = { type = "string", default = "coingecko", description = "What deliverService returns: jupiter | coingecko | news | inference" }
+SOLANA_RPC_URL = { type = "string", default = "", description = "Solana RPC URL (devnet)" }
+ESCROW_DEADLINE_SECS = { type = "f64", default = 600, description = "Refund deadline for escrow deposits (seconds)" }
+ANTHROPIC_API_KEY = { type = "string", default = "", description = "Anthropic key (default brain)" }
+OPENAI_API_KEY = { type = "string", default = "", description = "OpenAI key — set with LLM_PROVIDER=openai to flip the brain" }
+LLM_PROVIDER = { type = "string", default = "", description = "anthropic (default) | openai" }
+LLM_MODEL = { type = "string", default = "", description = "Override the LLM model id" }
 JUPITER_API_KEY = { type = "string", default = "", description = "Jupiter API key" }
-NEWS_API_KEY = { type = "string", default = "", description = "NewsAPI key" }
-ANTHROPIC_API_KEY = { type = "string", default = "", description = "Anthropic API key" }
+TRACE = { type = "string", default = "", description = "Set to 1 to log CoralOS calls + on-chain steps" }
 
 # Reuses the already-built seller-agent image — no separate build needed.
 [runtimes.docker]

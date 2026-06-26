@@ -1,0 +1,32 @@
+edition = 4
+
+[agent]
+name = "seller-lazy"
+version = "0.1.0"
+description = "Marketplace seller persona — only bids on high-value jobs it carries. Reuses the seller-agent image; demonstrates self-selection (it stays silent on services it doesn't sell)."
+summary = "A picky, inference-only bidder for the agent marketplace."
+readme = "Carries only 'inference' in its inventory, so it sits out any WANT for other services — a visible demonstration that sellers self-select. Reuses the seller-agent image."
+
+[agent.license]
+type = "spdx"
+expression = "MIT"
+
+[options]
+SELLER_WALLET = { type = "string", description = "Devnet wallet pubkey that receives payments" }
+AGENT_NAME = { type = "string", default = "seller-lazy", description = "Market identity (matches the registry name)" }
+SERVICES = { type = "string", default = "inference", description = "Inventory — only bids on these (sits out everything else)" }
+FLOOR_SOL = { type = "f64", default = 0.0004, description = "Cost floor — the LLM may never bid below this" }
+PERSONA = { type = "string", default = "a picky specialist who only bids on high-value inference jobs and ignores the rest", description = "Bidding persona (LLM system prompt)" }
+SERVICE = { type = "string", default = "inference", description = "What deliverService returns: jupiter | coingecko | news | inference" }
+SOLANA_RPC_URL = { type = "string", default = "", description = "Solana RPC URL (devnet)" }
+ESCROW_DEADLINE_SECS = { type = "f64", default = 600, description = "Refund deadline for escrow deposits (seconds)" }
+ANTHROPIC_API_KEY = { type = "string", default = "", description = "Anthropic key (default brain)" }
+OPENAI_API_KEY = { type = "string", default = "", description = "OpenAI key — set with LLM_PROVIDER=openai to flip the brain" }
+LLM_PROVIDER = { type = "string", default = "", description = "anthropic (default) | openai" }
+LLM_MODEL = { type = "string", default = "", description = "Override the LLM model id" }
+INFERENCE_MODEL = { type = "string", default = "claude-opus-4-8", description = "Model for SERVICE=inference deliveries" }
+TRACE = { type = "string", default = "", description = "Set to 1 to log CoralOS calls + on-chain steps" }
+
+# Reuses the already-built seller-agent image — no separate build needed.
+[runtimes.docker]
+image = "seller-agent:0.1.0"

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@pay/agent-runtime": "file:../../packages/agent-runtime",
+    "@coral-xyz/anchor": "^0.32.1",
     "@solana/web3.js": "^1.98.0",
     "@solana/pay": "^0.2.5",
     "bignumber.js": "^9.1.2"

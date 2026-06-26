@@ -5,10 +5,12 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@pay/agent-runtime": "file:../../packages/agent-runtime",
+    "@coral-xyz/anchor": "^0.32.1",
     "@anthropic-ai/sdk": "^0.100.0",
     "@solana/web3.js": "^1.98.0",
     "@solana/pay": "^0.2.5",
@@ -16,6 +18,7 @@
   },
   "devDependencies": {
     "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "vitest": "^1.6.0"
   }
 }

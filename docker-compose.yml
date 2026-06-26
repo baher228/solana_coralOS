@@ -1,16 +1,15 @@
-# Agent Economy on CoralOS — single track, stock coral-server.
+# Agent marketplace on CoralOS — single track, stock coral-server.
 #
-#   docker compose up -d coral bridge  # start coral-server + the human-checkout bridge
-#   cd examples/agent-economy/autonomous && npm start   # kick off the agent↔agent loop
-#   open http://localhost:3010         # human checkout (Phantom) — served by the bridge
+#   bash build-agents.sh                                 # build seller + buyer images
+#   docker compose up -d coral                           # start coral-server (MCP coordinator)
+#   cd examples/marketplace && npm install && npm start  # launch the market session
 #
-# coral-server here is a PURE MCP coordinator (wallet-free config). It launches
-# seller-agent / buyer-agent / user-proxy as containers per session, via the Docker socket.
-# Payments are settled agent-side in SOL — coral-server never holds a keypair.
+# coral-server is a PURE MCP coordinator (wallet-free config). It launches the buyer + the seller
+# personas as containers per session, via the Docker socket. Settlement is the Solana escrow contract
+# (agent-side) — coral-server never holds a keypair.
 #
-# Prereq: build the agent images once so coral can launch them:
-#   bash build-agents.sh seller && bash build-agents.sh buyer
-#   docker build -t user-proxy:0.1.0 coral-agents/user_proxy
+# Per-agent options (wallets, persona, LLM keys) are sent by examples/marketplace/start.ts in the
+# session request. The env below is forwarded to the agents coral launches.
 
 services:
 
@@ -22,51 +21,24 @@ services:
       - "5555:5555"
     environment:
       - CONFIG_FILE_PATH=/config/coral.toml
-      # Passed through to the agents coral launches:
+      # Forwarded to the agents coral launches:
       - SELLER_WALLET=${WALLET}
-      - PRICE_SOL=${PRICE_SOL:-0.0001}
-      - SERVICE=${SERVICE:-jupiter}
       - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
+      - BUYER_KEYPAIR_B58=${BUYER_KEYPAIR_B58}
+      - BUYER_MAX_SOL=${BUYER_MAX_SOL:-0.001}
+      # LLM brain — Anthropic by default; set LLM_PROVIDER=openai + OPENAI_API_KEY to flip the market.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-}
+      - LLM_MODEL=${LLM_MODEL:-}
+      # Service API keys (the goods sold by deliverService):
       - HELIUS_API_KEY=${HELIUS_API_KEY}
       - JUPITER_API_KEY=${JUPITER_API_KEY}
       - NEWS_API_KEY=${NEWS_API_KEY}
-      - BUYER_KEYPAIR_B58=${BUYER_KEYPAIR_B58}
-      - BUYER_MAX_SOL=${BUYER_MAX_SOL:-0.001}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # Set TRACE=1 to log coral_* calls + on-chain Explorer links in the agents.
+      - TRACE=${TRACE:-}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./examples/agent-economy/config/coral.toml:/config/coral.toml:ro
       - ./coral-agents:/agents:ro
     restart: unless-stopped
-
-  # ── Human front door — bridge that builds + serves the React UI and the order API ──
-  bridge:
-    build:
-      context: ./examples/agent-economy        # so the image can build ./web (the React UI)
-      dockerfile: bridge/Dockerfile
-    container_name: bridge
-    ports:
-      - "3010:3010"
-    environment:
-      - CORAL_SERVER_URL=http://coral:5555
-      - CORAL_TOKEN=dev
-      - SELLER_WALLET=${WALLET}
-      - PRICE_SOL=${PRICE_SOL:-0.0001}
-      - SERVICE=${SERVICE:-jupiter}
-      - SOLANA_RPC_URL=${SOLANA_RPC_URL:-https://api.devnet.solana.com}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - NEWS_API_KEY=${NEWS_API_KEY}             # forwarded to the seller for SERVICE=news
-      - JUPITER_API_KEY=${JUPITER_API_KEY}       # forwarded to the seller (higher Jupiter limits)
-      - HELIUS_API_KEY=${HELIUS_API_KEY}
-      - BUYER_KEYPAIR_B58=${BUYER_KEYPAIR_B58}   # for the autonomous demo viewer
-      - BUYER_MAX_SOL=${BUYER_MAX_SOL:-0.001}
-      - BROKER_KEYPAIR_B58=${BROKER_KEYPAIR_B58} # swarm demo (node scripts/provision-swarm.js)
-      - BROKER_WALLET=${BROKER_WALLET}
-      - SELLER_CHEAP_WALLET=${SELLER_CHEAP_WALLET}
-      - SELLER_PREMIUM_WALLET=${SELLER_PREMIUM_WALLET}
-      - SWARM_MARKUP=${SWARM_MARKUP:-1.2}
-    depends_on:
-      - coral
-    restart: unless-stopped
-    # The React UI is built into the image (see bridge/Dockerfile) and served at :3010.
-    # For live UI edits, run `npm run dev` in examples/agent-economy/web (Vite proxies to :3010).

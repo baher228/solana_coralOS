@@ -3,9 +3,9 @@ edition = 4
 [agent]
 name = "seller-premium"
 version = "0.1.0"
-description = "Premium seller — same service as seller-agent, higher price. Reuses the seller-agent image (set PRICE_SOL via options)."
-summary = "A higher-priced seller instance for the broker swarm."
-readme = "Same protocol as seller-agent (request -> PAYMENT_REQUIRED -> paid -> DELIVERED), reusing its image at a higher PRICE_SOL. Used by the broker swarm as the premium quote."
+description = "Marketplace seller persona — premium, verified data. Reuses the seller-agent image; an LLM bids higher and justifies on quality."
+summary = "A higher-floor, quality-first bidder for the agent marketplace."
+readme = "Bids in the shared market thread (WANT -> BID), competes on quality not price, settles via escrow. Same image as seller-agent; PERSONA/FLOOR_SOL/SERVICES shape how it competes."
 
 [agent.license]
 type = "spdx"
@@ -13,12 +13,19 @@ expression = "MIT"
 
 [options]
 SELLER_WALLET = { type = "string", description = "Devnet wallet pubkey that receives payments" }
-PRICE_SOL = { type = "f64", default = 0.0003, description = "Price per request in SOL" }
-SERVICE = { type = "string", default = "jupiter", description = "Service to sell: jupiter | coingecko | news | inference" }
-SOLANA_RPC_URL = { type = "string", default = "", description = "Solana RPC URL" }
-JUPITER_API_KEY = { type = "string", default = "", description = "Jupiter API key" }
-NEWS_API_KEY = { type = "string", default = "", description = "NewsAPI key" }
-ANTHROPIC_API_KEY = { type = "string", default = "", description = "Anthropic API key" }
+AGENT_NAME = { type = "string", default = "seller-premium", description = "Market identity (matches the registry name)" }
+SERVICES = { type = "string", default = "coingecko,inference", description = "Inventory — comma-separated services this seller bids on" }
+FLOOR_SOL = { type = "f64", default = 0.0005, description = "Cost floor — the LLM may never bid below this" }
+PERSONA = { type = "string", default = "a premium seller of verified data who bids higher and justifies it with quality", description = "Bidding persona (LLM system prompt)" }
+SERVICE = { type = "string", default = "coingecko", description = "What deliverService returns: jupiter | coingecko | news | inference" }
+SOLANA_RPC_URL = { type = "string", default = "", description = "Solana RPC URL (devnet)" }
+ESCROW_DEADLINE_SECS = { type = "f64", default = 600, description = "Refund deadline for escrow deposits (seconds)" }
+ANTHROPIC_API_KEY = { type = "string", default = "", description = "Anthropic key (default brain)" }
+OPENAI_API_KEY = { type = "string", default = "", description = "OpenAI key — set with LLM_PROVIDER=openai to flip the brain" }
+LLM_PROVIDER = { type = "string", default = "", description = "anthropic (default) | openai" }
+LLM_MODEL = { type = "string", default = "", description = "Override the LLM model id" }
+INFERENCE_MODEL = { type = "string", default = "claude-opus-4-8", description = "Model for SERVICE=inference deliveries" }
+TRACE = { type = "string", default = "", description = "Set to 1 to log CoralOS calls + on-chain steps" }
 
 # Reuses the already-built seller-agent image — no separate build needed.
 [runtimes.docker]

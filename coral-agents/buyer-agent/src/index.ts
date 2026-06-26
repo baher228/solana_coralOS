@@ -1,117 +1,146 @@
 /**
- * Buyer agent — autonomous CoralOS participant that purchases data from the seller agent.
+ * Buyer agent — the marketplace buyer. Broadcasts a WANT into a shared CoralOS thread, collects
+ * competing LLM bids, picks the best value, and settles through the escrow contract:
  *
- * Purchase loop (one cycle):
- * 1. Send `request <query>` to seller via CoralOS thread.
- * 2. Wait for `PAYMENT_REQUIRED reference=<r> amount=<sol> url=<solana:...>` response.
- * 3. Pay the Solana Pay URL from the buyer wallet.
- * 4. Send `paid <sig> reference=<r>` to seller as proof.
- * 5. Wait for `DELIVERED <data>` response.
- * 6. Summarise the data with Claude Haiku and broadcast the analysis.
+ *   WANT → (collect BIDs for a window) → AWARD winner → wait ESCROW_REQUIRED →
+ *   deposit() into escrow → DEPOSITED → wait DELIVERED → release() to the seller
  *
- * Environment variables required:
- * - `BUYER_KEYPAIR_B58` — base58-encoded 64-byte Solana keypair (devnet funded)
- * - `CORAL_CONNECTION_URL` — CoralOS MCP server URL
- * - `ANTHROPIC_API_KEY` — optional; analysis step is skipped if absent
+ * Selection uses the LLM (best value), with a deterministic cheapest fallback so a slow/missing model
+ * never hangs the round. Settlement is escrow-only — funds are conditional on delivery.
+ *
+ * Env: BUYER_KEYPAIR_B58 (signs), BUYER_MAX_SOL (budget), BUYER_SERVICE/BUYER_ARG (the WANT),
+ *      MARKET_SELLERS (csv of seller names), BID_WINDOW_MS, SOLANA_RPC_URL,
+ *      ANTHROPIC_API_KEY|OPENAI_API_KEY (+ LLM_PROVIDER), TRACE=1.
+ *
+ * TYPECHECK-ONLY: the deposit/release calls require a deployed escrow program + a funded devnet
+ * wallet to actually run.
  */
-import Anthropic from '@anthropic-ai/sdk'
-import { startCoralAgent } from '@pay/agent-runtime'
-import { payFromUrl, getBuyerPublicKey } from './wallet.js'
-import { BUYER_GOAL, BUYER_REQUEST, BUYER_MAX_SOL, CYCLE_INTERVAL_MS, TARGET_AGENT, QUOTE_WAIT_MS, DELIVERY_WAIT_MS } from './goal.js'
+import {
+  startCoralAgent, complete, parseJsonReply, loadKeypairB58,
+  formatWant, parseBid, parseEscrowRequired, formatAward, formatDeposited,
+  selectBids, pickCheapest, verb, messageRound,
+  type Bid, type EscrowTerms, type CoralAgentContext,
+} from '@pay/agent-runtime'
+import { PublicKey } from '@solana/web3.js'
+import { makeProgram, deposit, release, escrowPda } from './escrow.js'
 
-const llm = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null
+const RPC = process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com'
+const BUDGET = Number(process.env.BUYER_MAX_SOL ?? '0.001')
+const SERVICE = process.env.BUYER_SERVICE ?? 'jupiter'
+const ARG = process.env.BUYER_ARG ?? 'SOL-USDC'
+const BID_WINDOW_MS = Number(process.env.BID_WINDOW_MS ?? '5000')
+const CYCLE_MS = Number(process.env.CYCLE_INTERVAL_MS ?? '30000')
+const SELLERS = (process.env.MARKET_SELLERS ?? 'seller-cheap,seller-premium')
+  .split(',').map((s) => s.trim()).filter(Boolean)
+const trace = process.env.TRACE === '1'
 
-async function summarise(data: string): Promise<string> {
-  if (!llm) return `received: ${data.slice(0, 100)}`
-  const msg = await llm.messages.create({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 128,
-    system: BUYER_GOAL,
-    messages: [{ role: 'user', content: `Summarise this data in one sentence: ${data}` }],
-  })
-  return (msg.content[0] as { text: string }).text
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+const expl = (kind: 'tx' | 'address', id: string) => `https://explorer.solana.com/${kind}/${id}?cluster=devnet`
+
+/** Best-value selection via LLM; deterministic cheapest fallback. Returns the winner + its reasoning. */
+async function pickWinner(pool: Bid[]): Promise<{ winner: Bid; reason?: string }> {
+  if (pool.length === 1) return { winner: pool[0] }
+  try {
+    const system =
+      'You are a buyer choosing the best-value bid for a Solana data service. ' +
+      'Reply ONLY with JSON {"by": "<seller name>", "reason": "<short>"}.'
+    const user =
+      `service=${SERVICE} arg=${ARG} budget=${BUDGET}\nbids:\n` +
+      pool.map((b) => `- ${b.by}: ${b.priceSol} SOL${b.note ? ` (${b.note})` : ''}`).join('\n')
+    const parsed = parseJsonReply<{ by?: string; reason?: string }>(await complete({ system, user, maxTokens: 100 }))
+    const chosen = pool.find((b) => b.by === parsed?.by)
+    if (chosen) {
+      console.error(`[buyer] picked ${chosen.by} (${chosen.priceSol} SOL): ${parsed?.reason ?? ''}`)
+      return { winner: chosen, reason: parsed?.reason }
+    }
+  } catch {
+    /* fall through to deterministic choice */
+  }
+  return { winner: pickCheapest(pool)!, reason: 'cheapest available' }
 }
 
-await startCoralAgent({ agentName: 'buyer-agent' }, async (ctx) => {
-  console.error(`[buyer-agent] wallet: ${getBuyerPublicKey()}`)
-  console.error(`[buyer-agent] budget: ${BUYER_MAX_SOL} SOL per request`)
-  console.error('[buyer-agent] starting purchase loop')
+/** Wait (bounded) for a message matching `round` that `parse` accepts. */
+async function waitFor<T>(
+  ctx: CoralAgentContext,
+  round: number,
+  parse: (text: string) => (T & { round: number }) | null,
+  maxMs: number,
+): Promise<T | null> {
+  const deadline = Date.now() + maxMs
+  while (Date.now() < deadline) {
+    const m = await ctx.waitForMention(Math.max(500, deadline - Date.now()))
+    if (!m) continue
+    const parsed = parse(m.text)
+    if (parsed && parsed.round === round) return parsed
+  }
+  return null
+}
 
-  // Give the counterparty a moment to start up, then create a shared thread
-  console.error(`[buyer-agent] target: ${TARGET_AGENT}`)
-  await new Promise(r => setTimeout(r, 4_000))
-  const threadId = await ctx.createThread('buyer-session', [TARGET_AGENT])
-  console.error(`[buyer-agent] thread created: ${threadId}`)
+await startCoralAgent({ agentName: process.env.AGENT_NAME ?? 'buyer-agent' }, async (ctx) => {
+  const buyer = loadKeypairB58('BUYER_KEYPAIR_B58')
+  console.error(`[buyer] market buyer — wallet=${buyer.publicKey.toBase58()} budget=${BUDGET} sellers=[${SELLERS.join(',')}]`)
+
+  for (const s of SELLERS) {
+    try { await ctx.waitForAgent(s, 8000) } catch { /* seller may already be present */ }
+  }
+  const thread = await ctx.createThread('market', SELLERS)
+  const program = await makeProgram(buyer, RPC)
+  let round = 0
 
   while (true) {
     try {
-      // ── 1. Request service from seller ──────────────────────────────────
-      console.error(`[buyer-agent] requesting: ${BUYER_REQUEST}`)
-      await ctx.send(`request ${BUYER_REQUEST}`, threadId, [TARGET_AGENT])
+      round++
+      if (trace) console.error(`[buyer] round ${round}: WANT ${SERVICE} ${ARG} budget=${BUDGET}`)
+      await ctx.send(formatWant({ round, service: SERVICE, arg: ARG, budgetSol: BUDGET }), thread, SELLERS)
 
-      // ── 2. Wait for payment URL ─────────────────────────────────────────
-      const payMention = await ctx.waitForMention(QUOTE_WAIT_MS)
-      if (!payMention) {
-        console.error('[buyer-agent] no response from seller, retrying next cycle')
-        await new Promise(r => setTimeout(r, CYCLE_INTERVAL_MS))
-        continue
+      // ── collect competing bids during the window ──────────────────────────
+      const bids: Bid[] = []
+      const deadline = Date.now() + BID_WINDOW_MS
+      while (Date.now() < deadline) {
+        const m = await ctx.waitForMention(Math.max(500, deadline - Date.now()))
+        if (!m) continue
+        const b = parseBid(m.text)
+        if (b && b.round === round) bids.push(b)
       }
+      const pool = selectBids(bids, round)
+      if (pool.length === 0) { console.error(`[buyer] round ${round}: NO_SELLERS`); await sleep(CYCLE_MS); continue }
 
-      const payText = payMention.text
-      if (!payText.includes('PAYMENT_REQUIRED')) {
-        console.error(`[buyer-agent] unexpected response: ${payText.slice(0, 120)}`)
-        await new Promise(r => setTimeout(r, CYCLE_INTERVAL_MS))
-        continue
+      // ── award the best value ──────────────────────────────────────────────
+      const { winner, reason } = await pickWinner(pool)
+      await ctx.send(formatAward(round, winner.by, reason), thread, [winner.by])
+
+      // ── settle through escrow: deposit → DEPOSITED → wait DELIVERED → release
+      const terms = await waitFor<EscrowTerms>(ctx, round, parseEscrowRequired, 15_000)
+      if (!terms) { console.error(`[buyer] round ${round}: no escrow terms from ${winner.by}`); await sleep(CYCLE_MS); continue }
+
+      const reference = new PublicKey(terms.reference)
+      const seller = new PublicKey(terms.seller)
+      const depositSig = await deposit(program, buyer, seller, reference, terms.amountSol, terms.deadlineSecs)
+      console.error(`[buyer] round ${round}: DEPOSITED ${terms.amountSol} SOL → ${winner.by}`)
+      if (trace) {
+        console.error(`[buyer]   escrow PDA: ${expl('address', escrowPda(buyer.publicKey, reference).toBase58())}`)
+        console.error(`[buyer]   deposit tx: ${expl('tx', depositSig)}`)
       }
+      await ctx.send(
+        formatDeposited({ round, reference: terms.reference, buyer: buyer.publicKey.toBase58(), sig: depositSig }),
+        thread, [winner.by],
+      )
 
-      // Parse: PAYMENT_REQUIRED reference=<ref> amount=<sol> url=<solana:...>
-      const refMatch = payText.match(/reference=(\S+)/)
-      const urlMatch = payText.match(/url=(solana:\S+)/)
-      const reference = refMatch?.[1]
-      const solanaUrl = urlMatch?.[1]
+      const delivered = await waitFor(ctx, round, (t) => {
+        const r = messageRound(t)
+        return verb(t) === 'DELIVERED' && r != null ? { round: r } : null
+      }, 30_000)
 
-      if (!reference || !solanaUrl) {
-        console.error('[buyer-agent] could not parse payment details')
-        await new Promise(r => setTimeout(r, CYCLE_INTERVAL_MS))
-        continue
+      if (delivered) {
+        const releaseSig = await release(program, buyer, seller, reference)
+        console.error(`[buyer] round ${round}: RELEASED to ${winner.by} — ${expl('tx', releaseSig)}`)
+        await ctx.send(`RELEASED round=${round} sig=${releaseSig}`, thread, [winner.by])
+      } else {
+        console.error(`[buyer] round ${round}: no delivery — funds stay in escrow, refundable after the deadline`)
       }
-
-      // ── 3. Pay (payFromUrl writes the reference into the transfer) ───────
-      console.error(`[buyer-agent] paying reference=${reference}`)
-      let sig: string
-      try {
-        sig = await payFromUrl(solanaUrl, BUYER_MAX_SOL)
-      } catch (e) {
-        console.error(`[buyer-agent] payment failed: ${e}`)
-        await new Promise(r => setTimeout(r, CYCLE_INTERVAL_MS))
-        continue
-      }
-
-      // ── 4. Send payment proof to seller ─────────────────────────────────
-      await ctx.send(`paid ${sig} reference=${reference}`, threadId, [TARGET_AGENT])
-
-      // ── 5. Wait for data delivery ────────────────────────────────────────
-      const deliveryMention = await ctx.waitForMention(DELIVERY_WAIT_MS)
-      if (!deliveryMention?.text.includes('DELIVERED')) {
-        console.error('[buyer-agent] no delivery received')
-        await new Promise(r => setTimeout(r, CYCLE_INTERVAL_MS))
-        continue
-      }
-
-      const raw = deliveryMention.text.replace(/^DELIVERED\s*/i, '').trim()
-      console.error(`[buyer-agent] received data (${raw.length} chars)`)
-
-      // ── 6. Analyse with Claude ───────────────────────────────────────────
-      const summary = await summarise(raw)
-      console.error(`[buyer-agent] analysis: ${summary}`)
-
-      // Broadcast summary to thread
-      await ctx.send(`ANALYSIS ${summary}`, threadId)
-
     } catch (e) {
-      console.error(`[buyer-agent] cycle error: ${e}`)
+      console.error(`[buyer] round error: ${e}`)
     }
-
-    await new Promise(r => setTimeout(r, CYCLE_INTERVAL_MS))
+    await sleep(CYCLE_MS)
   }
 })

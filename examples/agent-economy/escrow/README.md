@@ -5,9 +5,10 @@
 > directory is the **smart-contract** version for people who want **trustless settlement**, and it
 > introduces Rust (Anchor). Use it only if you need what it buys.
 >
-> **Status:** scaffold. The program, client, and tests are written and security-reviewed, but they
-> have **not** been built/deployed here (no Anchor toolchain in this environment). Follow the build
-> steps below to compile and deploy to devnet.
+> **Status:** ✅ built, **deployed to devnet**, and tested. Program ID
+> [`R5NWNg9eRLWWQU81Xbzz5Du1k7jTDeeT92Ty6qCeXet`](https://explorer.solana.com/address/R5NWNg9eRLWWQU81Xbzz5Du1k7jTDeeT92Ty6qCeXet?cluster=devnet).
+> The 3 integration tests below pass against the live program (lifecycle + the two security
+> constraints). Re-deploy your own with the steps below.
 
 ---
 
@@ -41,7 +42,7 @@ escrow/
   programs/escrow/Cargo.toml
   Anchor.toml
   client/escrow.ts             TypeScript client — deposit / release / refund
-  tests/escrow.ts              happy-path + refund tests (sketch)
+  tests/escrow.ts              integration tests (lifecycle + security) — run against devnet
   package.json
 ```
 
@@ -69,19 +70,26 @@ identifier.
 
 ## Build, test, deploy
 
-Prereqs: Rust, the Solana CLI, and Anchor (`avm install 0.30.1 && avm use 0.30.1`). The
+Prereqs: Rust, the Solana CLI, and Anchor 0.32.x (`avm install 0.32.1 && avm use 0.32.1`). The
 [`solana-dev`](../../../SKILLS.md) skill can set this up and help debug.
 
 ```sh
 cd examples/agent-economy/escrow
-anchor build                 # compiles the program + generates the IDL & TS types
-anchor keys sync             # replace the placeholder program id with your keypair's
-anchor test                  # runs tests/escrow.ts against a local validator
-anchor deploy --provider.cluster devnet
+anchor build                              # compiles the program + generates the IDL & TS types
+anchor keys sync                          # set the program id to your keypair's
+anchor deploy --provider.cluster devnet   # deploy (needs a funded devnet wallet)
+
+# integration tests against the DEPLOYED program (no local validator needed):
+npm install
+ANCHOR_PROVIDER_URL=https://api.devnet.solana.com \
+ANCHOR_WALLET=$HOME/.config/solana/id.json \
+npx ts-mocha -p ./tsconfig.json -t 1000000 tests/escrow.ts
 ```
 
-> Faster unit tests: port `tests/escrow.ts` to **LiteSVM** or **Mollusk** (in-process, no validator) —
-> see the skill's testing reference.
+> **Windows note:** `anchor build` may emit the IDL but skip the `.so`. If `target/deploy/escrow.so`
+> is missing, run `cd programs/escrow && cargo build-sbf` then
+> `cp programs/escrow/target/deploy/escrow.so ../../target/deploy/` before `anchor deploy`.
+> (Also in `TROUBLESHOOTING.md`.) For fast in-process unit tests, port `tests/escrow.ts` to **LiteSVM**.
 
 ---
 

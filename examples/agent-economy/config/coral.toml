@@ -14,7 +14,7 @@ keys = ["dev"]
 allowAnyHost = true
 
 [registry]
-# Discover seller-agent, buyer-agent, user-proxy, echo-agent from the mounted folder.
+# Discover buyer-agent, seller-agent, and the seller personas (cheap/premium/lazy) from /agents.
 localAgents = ["/agents/*"]
 includeCoralHomeAgents = true
 localAgentRescanTimer = "5s"
