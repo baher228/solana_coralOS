@@ -8,14 +8,16 @@ Two tabs, both talking only to the bridge (never directly to CoralOS or Solana):
 - **Autonomous** — click Run; watch an LLM buyer agent pay the seller on-chain, live.
 - **Checkout** — connect Phantom (Devnet), pick a service, pay with one click, get the result.
 
-## Develop (live reload)
-The served build is static, so for live edits run the Vite dev server with the bridge up:
+## Develop (hot reload)
+The served build is static, so for live edits run the Vite dev server (React Fast Refresh — edits to
+any `.tsx`/`.css` update instantly) with the bridge up:
 ```sh
 docker compose up -d coral bridge        # backend on :3010
-cd examples/agent-economy/web
-npm install
-npm run dev                              # http://localhost:5173 (proxied to the bridge)
+just ui                                  # → http://localhost:5173, hot-reloading, proxied to the bridge
 ```
+`just ui` is shorthand for `cd examples/agent-economy/web && npm install && npm run dev`. The dev
+server proxies `/order`, `/autonomous`, and `/health` to the bridge on :3010, so the UI is live while
+the agents/payments run against the real backend.
 
 ## Build
 ```sh

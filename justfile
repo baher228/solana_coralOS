@@ -43,6 +43,10 @@ doctor:
     cd scripts && npm install --no-audit --no-fund
     node scripts/doctor.js
 
+# run the React UI with hot reload (Vite dev on :5173, proxied to the bridge on :3010)
+ui:
+    cd examples/agent-economy/web && npm install --no-audit --no-fund && npm run dev
+
 # run the autonomous loop from the CLI (alternative to the UI button)
 auto:
     cd examples/agent-economy/autonomous && npm install --no-audit --no-fund && npm start
