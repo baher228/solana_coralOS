@@ -42,3 +42,6 @@ ref/
 
 # Generated wallet addresses (user-specific)
 WALLETS.txt
+
+# Local demo state
+examples/txodds/.data/

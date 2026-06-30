@@ -18,7 +18,7 @@
 //! - Checked math on every lamport move.
 //!
 //! You don't fork this — you **call** it. The fork point is the service being sold
-//! (`examples/txodds/agent/service.ts`); the agent deposits / releases / refunds through this
+//! (`examples/txodds/server/proxy.ts`); the agent deposits / releases / refunds through this
 //! program via its TS client. See ../README.md.
 
 use anchor_lang::prelude::*;

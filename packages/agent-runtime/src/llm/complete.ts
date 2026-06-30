@@ -2,16 +2,17 @@
  * LLM pillar — one provider-agnostic `complete()` call.
  *
  * SDK-free (`fetch`-based) so the runtime stays dependency-light. Provider is chosen by env, so the
- * whole market flips from Anthropic (dev default) to the sponsored OpenAI key with `LLM_PROVIDER=openai`
+ * whole market flips from Anthropic (dev default) to OpenAI or Venice with `LLM_PROVIDER`
  * and no code change. Callers ask for a single JSON-shaped answer and enforce their own guards on it —
  * the model proposes, code disposes.
  */
-export type LlmProvider = 'anthropic' | 'openai'
+export type LlmProvider = 'anthropic' | 'openai' | 'venice'
 
 /** Explicit `LLM_PROVIDER` wins; else auto-detect by which key is present; else Anthropic. */
 export function pickProvider(): LlmProvider {
   const p = process.env.LLM_PROVIDER?.toLowerCase()
-  if (p === 'openai' || p === 'anthropic') return p
+  if (p === 'openai' || p === 'anthropic' || p === 'venice') return p
+  if (process.env.VENICE_API_KEY) return 'venice'
   if (process.env.OPENAI_API_KEY) return 'openai'
   return 'anthropic'
 }
@@ -19,6 +20,7 @@ export function pickProvider(): LlmProvider {
 const DEFAULT_MODEL: Record<LlmProvider, string> = {
   anthropic: 'claude-haiku-4-5-20251001',
   openai: 'gpt-4o-mini',
+  venice: 'zai-org-glm-5-2',
 }
 
 export interface CompleteOpts {
@@ -35,14 +37,14 @@ export interface CompleteOpts {
  */
 export async function complete(opts: CompleteOpts): Promise<string> {
   const provider = pickProvider()
-  const model = opts.model ?? process.env.LLM_MODEL ?? DEFAULT_MODEL[provider]
+  const model = opts.model || process.env.LLM_MODEL || DEFAULT_MODEL[provider]
   const maxTokens = opts.maxTokens ?? 512
   const trace = process.env.TRACE === '1'
   if (trace) console.error(`[llm] provider=${provider} model=${model}`)
 
-  const text = provider === 'openai'
-    ? await completeOpenAI(opts, model, maxTokens)
-    : await completeAnthropic(opts, model, maxTokens)
+  const text = provider === 'anthropic'
+    ? await completeAnthropic(opts, model, maxTokens)
+    : await completeOpenAICompatible(provider, opts, model, maxTokens)
 
   if (trace) console.error(`[llm] ← ${text.slice(0, 300)}`)
   return text
@@ -50,7 +52,7 @@ export async function complete(opts: CompleteOpts): Promise<string> {
 
 async function completeAnthropic(opts: CompleteOpts, model: string, maxTokens: number): Promise<string> {
   const key = process.env.ANTHROPIC_API_KEY
-  if (!key) throw new Error('ANTHROPIC_API_KEY not set (or set LLM_PROVIDER=openai + OPENAI_API_KEY)')
+  if (!key) throw new Error('ANTHROPIC_API_KEY not set (or set LLM_PROVIDER=openai + OPENAI_API_KEY, or LLM_PROVIDER=venice + VENICE_API_KEY)')
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
@@ -66,10 +68,18 @@ async function completeAnthropic(opts: CompleteOpts, model: string, maxTokens: n
   return (data.content ?? []).filter((c) => c.type === 'text').map((c) => c.text ?? '').join('').trim()
 }
 
-async function completeOpenAI(opts: CompleteOpts, model: string, maxTokens: number): Promise<string> {
-  const key = process.env.OPENAI_API_KEY
-  if (!key) throw new Error('OPENAI_API_KEY not set')
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+async function completeOpenAICompatible(
+  provider: Exclude<LlmProvider, 'anthropic'>,
+  opts: CompleteOpts,
+  model: string,
+  maxTokens: number,
+): Promise<string> {
+  const key = provider === 'venice' ? process.env.VENICE_API_KEY : process.env.OPENAI_API_KEY
+  if (!key) throw new Error(`${provider === 'venice' ? 'VENICE_API_KEY' : 'OPENAI_API_KEY'} not set`)
+  const baseUrl = provider === 'venice'
+    ? (process.env.VENICE_BASE_URL || 'https://api.venice.ai/api/v1')
+    : 'https://api.openai.com/v1'
+  const res = await fetch(`${baseUrl.replace(/\/+$/, '')}/chat/completions`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${key}`, 'content-type': 'application/json' },
     body: JSON.stringify({
@@ -81,7 +91,7 @@ async function completeOpenAI(opts: CompleteOpts, model: string, maxTokens: numb
       ],
     }),
   })
-  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${(await res.text()).slice(0, 200)}`)
+  if (!res.ok) throw new Error(`${provider === 'venice' ? 'Venice' : 'OpenAI'} ${res.status}: ${(await res.text()).slice(0, 200)}`)
   const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }
   return (data.choices?.[0]?.message?.content ?? '').trim()
 }

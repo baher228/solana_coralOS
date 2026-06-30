@@ -13,14 +13,29 @@ describe('pickProvider', () => {
     expect(pickProvider()).toBe('openai')
   })
 
+  it('explicitly supports Venice', () => {
+    process.env.LLM_PROVIDER = 'venice'
+    process.env.OPENAI_API_KEY = 'x'
+    expect(pickProvider()).toBe('venice')
+  })
+
+  it('auto-detects Venice when its key is present and no explicit provider', () => {
+    delete process.env.LLM_PROVIDER
+    process.env.VENICE_API_KEY = 'x'
+    process.env.OPENAI_API_KEY = 'x'
+    expect(pickProvider()).toBe('venice')
+  })
+
   it('auto-detects OpenAI when its key is present and no explicit provider', () => {
     delete process.env.LLM_PROVIDER
+    delete process.env.VENICE_API_KEY
     process.env.OPENAI_API_KEY = 'x'
     expect(pickProvider()).toBe('openai')
   })
 
   it('defaults to anthropic', () => {
     delete process.env.LLM_PROVIDER
+    delete process.env.VENICE_API_KEY
     delete process.env.OPENAI_API_KEY
     expect(pickProvider()).toBe('anthropic')
   })

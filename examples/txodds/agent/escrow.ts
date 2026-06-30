@@ -1,7 +1,6 @@
 /**
- * Minimal buyer-side escrow client for the World Cup oracle's auto-settle on delivery — a real
- * deposit→release so the demo proves a genuine devnet settlement from the proxy. The contract source
- * lives in ../escrow; this client fetches its IDL on-chain. Connections go through the devnet guard.
+ * Minimal buyer-side escrow client. The freelance demo settles through the arbiter wrapper, but this
+ * direct client remains useful for contract-level experiments. Connections go through the devnet guard.
  *
  * Live RPC + a funded wallet required, so this is exercised in the running demo, not in `npm test`.
  */

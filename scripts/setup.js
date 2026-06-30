@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Generates the devnet wallets the World Cup Oracle needs, writes .env, and saves the addresses to
+// Generates the devnet wallets the Freelance Escrow Agent needs, writes .env, and saves the addresses to
 // WALLETS.txt. Safe to re-run: existing wallets/keys are preserved; only what's missing is generated.
 //
-// Usage: node scripts/setup.js            # buyer (signs the escrow) + seller (paid) wallets
+// Usage: node scripts/setup.js            # employer (funds escrow) + worker (paid) wallets
 
 import { Keypair } from '@solana/web3.js'
 import { readFileSync, writeFileSync, existsSync } from 'fs'
@@ -28,9 +28,8 @@ const getKv = (text, key) => text.match(new RegExp(`^${key}=(\\S+)`, 'm'))?.[1]
 let env = existsSync(envPath) ? readFileSync(envPath, 'utf8') : readFileSync(examplePath, 'utf8')
 
 // Generate only what's missing — re-running never rotates a key you've already funded.
-// The BUYER signs the escrow (deposit/release/refund) and must be funded. The SELLER is a real, distinct
-// keypair too (not just a receive address) so the settlement is a genuine two-party transfer the seller
-// could later spend or prove — it only RECEIVES on release, so it needs no funding.
+// The BUYER key is the employer wallet that opens/funds escrow and must be funded. The SELLER key is a
+// real, distinct worker wallet, not just a receive address; it only receives on release, so it needs no funding.
 let buyerB58 = getKv(env, 'BUYER_KEYPAIR_B58') || bs58.encode(Keypair.generate().secretKey)
 let sellerB58 = getKv(env, 'SELLER_KEYPAIR_B58') || bs58.encode(Keypair.generate().secretKey)
 // the neutral arbiter that gates release/refund (the trustless wrapper). Needs only tx-fee funds —
@@ -50,14 +49,14 @@ writeFileSync(envPath, env)
 
 // ── report ──
 const block = [
-  'World Cup Oracle — devnet wallets',
+  'Freelance Escrow Agent - devnet wallets',
   `Generated: ${new Date().toISOString()}`,
   '',
-  `  Buyer   wallet  ${buyerPubkey}   ← signs + funds the escrow (FUND THIS)`,
-  `  Seller  wallet  ${sellerPubkey}   ← receives on release (no funding needed)`,
-  `  Arbiter wallet  ${arbiterPubkey}   ← gates release/refund; the proxy tops up its fees (no funding needed)`,
+  `  Employer wallet  ${buyerPubkey}   <- opens + funds escrow (FUND THIS)`,
+  `  Worker   wallet  ${sellerPubkey}   <- receives on release (no funding needed)`,
+  `  Arbiter  wallet  ${arbiterPubkey}   <- gates release/refund; the API tops up its fees (no funding needed)`,
   '',
-  'FUND THE BUYER with devnet SOL — the only way is the web faucet',
+  'FUND THE EMPLOYER with devnet SOL — the only way is the web faucet',
   '(sign in with GitHub; CLI/RPC airdrops are gated):',
   '',
   '  https://faucet.solana.com',
@@ -67,11 +66,12 @@ writeFileSync(walletsPath, block)
 console.log('\n' + block)
 console.log('(saved to WALLETS.txt · keys written to .env)')
 console.log(`
-Next: add your LLM key to .env (ANTHROPIC_API_KEY=…, or LLM_PROVIDER=openai + OPENAI_API_KEY),
-fund the BUYER wallet above, then run the demo:
+Next: add your LLM key to .env (ANTHROPIC_API_KEY=..., LLM_PROVIDER=openai + OPENAI_API_KEY,
+or LLM_PROVIDER=venice + VENICE_API_KEY),
+fund the EMPLOYER wallet above, then run the demo:
 
-  npm run dev          # starts the proxy (live data + escrow) + the Oracle UI, opens the browser
+  npm run dev          # starts the escrow API + dashboard, opens the browser
 
-The board fills from live TxODDS data; selecting a fixture delivers the agent's read and the buyer
-escrow settles it to the distinct seller on devnet automatically.
+Create a task, chat as employer/worker, submit delivery evidence, then let the escrow agent review and
+settle it to the worker on devnet.
 `)

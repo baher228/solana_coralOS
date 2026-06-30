@@ -4,13 +4,12 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
-  "description": "TxODDS World Cup oracle — an agent that sells verified sports data for devnet SOL",
+  "description": "Freelance escrow agent demo for devnet SOL",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "mint": "tsx server/mint.ts",
     "proxy": "tsx server/proxy.ts",
-    "web": "npx --yes serve web -l 3020"
+    "web": "tsx server/web.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

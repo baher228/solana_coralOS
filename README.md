@@ -1,157 +1,139 @@
-# World Cup Oracle — verified sports data, settled on Solana
+# Freelance Escrow Agent
 
-> An **LLM agent** that sells a **verified TxODDS World Cup fair line** — live, de-margined odds turned
-> into fair (break-even) prices + a one-line read — and settles every delivery through a **Solana escrow
-> contract** on devnet. Reason · deliver · settle on-chain.
+> A devnet Solana demo where an employer funds a freelance task, a worker submits delivery evidence,
+> and a neutral escrow agent reviews the task, chat, and submission before releasing or disputing funds.
 
-The agent fetches verified de-margined World Cup odds on **devnet**, turns each probability into its
-fair (break-even) decimal odds plus a one-line read, and on delivery the buyer escrow **settles
-automatically** — a real deposit→release you can open on the Solana Explorer. Everything runs on devnet:
-free play money, real on-chain settlement. A forkable React dashboard renders the live board.
+The demo keeps the deployed escrow and arbiter programs, but the product surface is now freelance work
+instead of sports data. `npm run dev` starts one local API process plus one static web UI.
 
-> **Two settlement modes.** The base escrow is **buyer-released** — the buyer deposits, releases on
-> delivery, refunds after a deadline. That protects the *buyer*, but not the seller (a buyer could take
-> delivery and refund). So the demo settles through the **arbiter** instead: a deployed wrapper program
-> (`FJtuVXsy…ktXd`) where the buyer funds a vault it can't claw back, and a **neutral arbiter** releases
-> to the seller on verified delivery — so neither side can cheat. The escrow `reference` is **bound to
-> the read** (`sha256(fixtureId·favourite·fairOdds·nonce)`), so the on-chain order provably *is* the data
-> bought. It's still a trusted-third-party arbiter (a production system would stake/decentralise it).
+## What It Shows
 
-## The three pillars
+| Part | Role |
+|------|------|
+| Employer | Writes a task, requirements, acceptance criteria, budget, and deadline |
+| Worker | Chats with the employer and submits a URL, repo, and build notes |
+| Escrow agent | Reviews the original task, acceptance criteria, chat transcript, and submission |
+| Solana escrow | Employer funds an arbiter-controlled vault; the arbiter releases or refunds on devnet |
 
-Each one is load-bearing — pull it and the demo collapses into something lesser:
+The review agent uses `complete()` from `packages/agent-runtime` when an LLM key is configured. Without
+one, it falls back to a deterministic demo review that is explicitly labelled as manual/demo review.
 
-| Pillar | Its job | Remove it → |
-|--------|---------|-------------|
-| **Verified data (TxODDS)** | the proxy subscribes a devnet wallet to the free World Cup tier and fetches live, de-margined 1X2 odds | unverifiable numbers |
-| **LLM** | turns the verified fair line into fair (break-even) odds + a one-line read — the sellable product | a static odds board |
-| **Solana escrow** | a `reference` binds the deal; on delivery the buyer deposits and releases SOL to the seller (refundable after a deadline) | trust-me play money |
-
-The product is the [`analyzeEdge()`](examples/txodds/agent/edge.ts) transform — verified odds → the fair
-line + a read — shared between the proxy and the agent. That, and [`deliverService()`](examples/txodds/agent/service.ts),
-are where you'd add your own.
-
-## Prerequisites
-
-Everything runs on **devnet** — free play money, real on-chain settlement. Keys live in a local `.env` (none in the repo). **No Docker required.**
-
-| Need | Why | Get it |
-|------|-----|--------|
-| **Node 20+** | the proxy + web UI + runtime | [nodejs.org](https://nodejs.org) |
-| **An LLM key** | the agent's one-line read | `ANTHROPIC_API_KEY` (default) — or `LLM_PROVIDER=openai` + `OPENAI_API_KEY` |
-| **A funded devnet wallet** | the buyer signs the escrow deposit→release | generated in step 1; fund at [faucet.solana.com](https://faucet.solana.com) |
-
-> The demo still renders without a key or funding — it shows clearly-labelled sample data and skips the
-> on-chain settle. A funded wallet + LLM key turn on **live odds** and **real settlement**.
-
-> **Do I need Docker?** No. The demo is two Node processes (a data/escrow proxy + a static web server),
-> and the escrow contract is already deployed to devnet (its client fetches the IDL on-chain). Docker
-> and the Anchor toolchain are only needed if you want to *rebuild/redeploy the escrow contract itself*.
-
-## Quick start
-
-### 1. Set up (once)
+## Quick Start
 
 ```sh
-git clone https://github.com/trilltino/solana_coralOS.git && cd solana_coralOS
-npm install --prefix scripts   # script deps (web3.js, bs58)
-node scripts/setup.js          # creates .env + two devnet wallets (also saved to WALLETS.txt)
+npm install --prefix scripts
+node scripts/setup.js
+npm run dev
 ```
 
-Open the generated `.env`, add your LLM key, then **fund the buyer wallet** at
-[faucet.solana.com](https://faucet.solana.com) (GitHub sign-in — the only devnet faucet that works):
+Fund the generated employer wallet with devnet SOL:
+
+```text
+https://faucet.solana.com
+```
+
+Optional LLM keys in `.env`:
 
 ```ini
-ANTHROPIC_API_KEY=sk-ant-…     # the agent's brain
-# …or flip to OpenAI (no code change):
-# LLM_PROVIDER=openai
-# OPENAI_API_KEY=…
+ANTHROPIC_API_KEY=...
+# or
+LLM_PROVIDER=openai
+OPENAI_API_KEY=...
+# or
+LLM_PROVIDER=venice
+VENICE_API_KEY=...
 ```
 
-Re-running `setup.js` re-reads your `.env`, so it never clobbers the key you just added.
+## Local Processes
 
-### 2. Run it
+`npm run dev` runs [`scripts/txodds.js`](scripts/txodds.js), which starts:
 
-```sh
-npm run dev        # = node scripts/txodds.js
-```
+| Process | URL | Purpose |
+|---------|-----|---------|
+| API | `http://localhost:8801` | Jobs, chat, submissions, review, local JSON persistence, arbiter escrow settlement |
+| Web | `http://localhost:3020` | No-build React dashboard for employer, worker, and escrow agent views |
 
-This starts the **proxy** (live TxODDS data + escrow settlement, port 8801) and the **Oracle UI**
-(port 3020), and opens the browser. Select a fixture and you'll see:
+The runner checks ports `8801` and `3020`, waits for `/api/health` and the web root, then opens the
+browser. If a process exits or a port is occupied, it fails with the command that needs attention.
 
-1. the **verified de-margined 1X2 board** with **fair (break-even) odds** per outcome,
-2. the **agent's read** — the LLM's one-line read of the fair line + confidence,
-3. the **arbiter settling automatically** on delivery — buyer funds → arbiter releases to the seller —
-   open ↗ · release ↗ · escrow PDA ↗, linked on the Solana Explorer.
+## API
 
-The board only ever shows fixtures with **verified live odds** (`/api/board`); it never invents
-numbers. Without live data it falls back to a clearly-labelled demo board.
+| Route | Purpose |
+|-------|---------|
+| `GET /api/health` | Readiness, devnet RPC, and wallet configuration without balance reads |
+| `GET /api/state` | Jobs, selected job, wallets, balances, network, settlement links |
+| `POST /api/quote` | Estimate budget, escrow rent, arbiter top-up, and total employer debit |
+| `POST /api/jobs` | Create a job and open arbiter escrow |
+| `POST /api/jobs/:id/fund` | Retry funding a job after adding devnet SOL |
+| `POST /api/jobs/:id/messages` | Append employer/worker chat |
+| `POST /api/jobs/:id/submission` | Record worker evidence |
+| `POST /api/jobs/:id/review` | Run the escrow agent review and release if approved |
+| `POST /api/jobs/:id/release` | Retry only the on-chain release after an approved review |
+| `POST /api/jobs/:id/dispute` | Record a dispute note and rerun review |
+| `POST /api/jobs/:id/refund` | Refund through the arbiter after the deadline on rejected/disputed work |
 
-## How it works
+## Demo Checklist
 
-`npm run dev` runs two processes (both under [`scripts/txodds.js`](scripts/txodds.js)):
+1. Run `node scripts/setup.js`.
+2. Fund the employer wallet shown in `WALLETS.txt`.
+3. Start `npm run dev` and confirm the dashboard opens.
+4. If funding fails, use the faucet link in the UI, then click `Retry funding`.
+5. Submit delivery evidence, review, and confirm the release Explorer link appears.
 
-- **[`server/proxy.ts`](examples/txodds/server/proxy.ts)** (:8801) — the browser can't hold the TxLINE
-  token or sign Solana transactions, so this Node server does both: it subscribes the buyer wallet to
-  the free World Cup tier on devnet, then serves live fixtures/odds and, on delivery, runs a real
-  escrow `deposit → release`. Endpoints: `/api/board` (fixtures with verified 1X2 odds, inlined),
-  `/api/edge` (the agent's call), `/api/settle` (the escrow round).
-- **[`web/`](examples/txodds/web)** (:3020) — a no-build React app rendering the board, the agent's
-  call, and the settlement links.
+## Cost Quote
 
-## Under the hood — the runtime
+The budget is not the only debit from the employer wallet. `POST /api/quote` and the dashboard show:
 
-> **Single agent, by the way.** `npm run dev` runs **one** agent (the oracle): proxy + web. The
-> bidding/competing/AWARD "agent market" lives in the `coral/` + `market/` modules below and is
-> **unit-tested but not launched** by the demo — it's scaffolding to grow into a multi-agent market,
-> not something running at runtime. The repo name (`solana_coralOS`) hints at more than the demo ships.
+- job budget
+- escrow account rent
+- arbiter fee-wallet top-up when the arbiter is below `0.01 SOL`
+- total estimated debit, excluding small variable network fees
 
-The agent imports [`packages/agent-runtime`](packages/agent-runtime) and writes only behaviour. Four
-modules, one per concern:
+For example, a tiny `0.001 SOL` job can still debit roughly `0.02 SOL` above the budget when the
+arbiter needs the automatic top-up, plus the current escrow rent and network fees.
+On approved release, the deployed arbiter wrapper returns escrow rent to its vault PDA; the dashboard
+shows that vault balance explicitly.
 
-- **`llm/`** — [`complete()`](packages/agent-runtime/src/llm/complete.ts), one provider-agnostic call
-  over `fetch` (no SDK). Anthropic by default; `LLM_PROVIDER=openai` flips it with no code change. The
-  model **proposes**, code **disposes** — callers guard every number.
-- **`solana/`** — Solana Pay helpers + [`solanaConnection()`](packages/agent-runtime/src/solana/connection.ts),
-  the **devnet guard** that throws on a mainnet RPC unless `ALLOW_MAINNET=1`, so it applies everywhere
-  value moves.
-- **`coral/`** + **`market/`** — a CoralOS (MCP) client and the WANT/BID/AWARD market protocol. Not
-  used by this single-agent oracle, but the rails are there if you grow it into a multi-agent market.
+## Local State
 
-### The escrow contract — the settlement spine
+Jobs are restored from `examples/txodds/.data/jobs.json` on API startup and saved after each mutation.
+That file is gitignored and is still demo storage, not a production database.
 
-The only Rust in the kit: **two** deployed devnet programs, **called** (not forked) by the agent's TS
-client. The base escrow ([`escrow/lib.rs`](examples/txodds/escrow/programs/escrow/src/lib.rs)) is the
-settlement spine; the arbiter ([`arbiter/lib.rs`](examples/txodds/escrow/programs/arbiter/src/lib.rs))
-is the trustless wrapper the demo settles through.
+## Arbiter Config
 
-| Program | Instruction | Does |
+The deployed devnet arbiter program has a one-time on-chain config that names the arbiter public key.
+If `ARBITER_KEYPAIR_B58` does not match that configured public key, the API reports a setup warning and
+refuses to fund new jobs, because the current signer would not be able to release or refund them.
+
+## Settlement Programs
+
+The deployed devnet programs live under [`examples/txodds/escrow`](examples/txodds/escrow):
+
+| Program | Instruction | Role |
 |---------|-------------|------|
-| **escrow** `R5NWNg9…CeXet` | `initialize(amount, reference, deadline)` | buyer deposits SOL into a PDA seeded by `(buyer, reference)` |
-| | `release()` / `refund()` | buyer pays the seller on delivery / reclaims after the deadline |
-| **arbiter** `FJtuVXsy…ktXd` | `open(amount, reference, deadline)` | payer funds a **vault PDA** that becomes the escrow's buyer (payer can't claw back) |
-| | `arbitrate_release` / `arbitrate_refund` | only the **neutral arbiter** releases to the seller / refunds the payer |
+| Escrow `R5NWNg9...CeXet` | `initialize`, `release`, `refund` | Base SOL escrow |
+| Arbiter `FJtuVXsy...ktXd` | `open`, `arbitrate_release`, `arbitrate_refund` | Neutral releaser/refunder |
 
-The escrow is written to the Solana security checklist: `init` (never `init_if_needed`), `has_one` on
-**both** buyer and seller, `close = buyer`, checked math; the arbiter signs for the vault PDA via CPI,
-so no human key gates settlement after funding. **Devnet only** — never put a funded mainnet key in
-`.env`. See [`examples/txodds/escrow/README.md`](examples/txodds/escrow/README.md) and
-[`contract_extension.md`](examples/txodds/escrow/contract_extension.md).
+The demo is devnet-only. The runtime's Solana connection guard rejects mainnet RPCs unless explicitly
+overridden with `ALLOW_MAINNET=1`.
 
-## Repo layout
+## Repo Layout
 
 | Directory | Purpose |
 |-----------|---------|
-| `examples/txodds/` | the World Cup Oracle — `agent/` (the edge transform + escrow client), `server/` (proxy + mint), `web/` (React app), `escrow/` (the Anchor contract) |
-| `packages/agent-runtime/` | the runtime — `llm/`, `solana/`, `coral/`, `market/` |
-| `scripts/` | `txodds.js` (`npm run dev`), `setup.js` (devnet wallets) |
+| `examples/txodds/agent/review.ts` | Freelance delivery review agent |
+| `examples/txodds/server/` | API, local JSON persistence, and pure job state helpers |
+| `examples/txodds/web/` | Static React dashboard |
+| `examples/txodds/escrow/` | Anchor escrow and arbiter programs |
+| `packages/agent-runtime/` | LLM, Solana, Coral, and market runtime helpers |
+| `scripts/` | Wallet setup and one-command demo runner |
 
-## Optional: Claude Code skills
-
-**Solana dev skill** (Anchor, testing, payments):
+## Verify
 
 ```sh
-npx skills add https://github.com/solana-foundation/solana-dev-skill --global --yes
+cd examples/txodds
+npm run typecheck
+npm test
 ```
 
 ## License

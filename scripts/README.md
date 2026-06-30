@@ -1,23 +1,26 @@
 # scripts
 
-Helper scripts for the kit.
+Helper scripts for the freelance escrow demo.
 
-## `setup.js` — one-time wallet setup
+## `setup.js`
 
 ```sh
 npm install --prefix scripts
 node scripts/setup.js
 ```
 
-Generates a buyer + seller devnet keypair, writes them into the repo-root `.env` (filling
-`WALLET` and `BUYER_KEYPAIR_B58` from `.env.example`), and prints both addresses to **fund** at
-[faucet.solana.com](https://faucet.solana.com). Re-running re-reads your `.env`, so it preserves a key
-(e.g. `ANTHROPIC_API_KEY`) you've already added.
+Generates employer, worker, and arbiter devnet keys, writes them into the repo-root `.env`, and saves
+their public addresses to `WALLETS.txt`. Re-running preserves existing keys and any LLM keys you added.
 
-## `txodds.js` — run the demo
+Fund the employer wallet at `https://faucet.solana.com`.
+
+## `txodds.js`
 
 ```sh
-npm run dev        # = node scripts/txodds.js
+npm run dev
 ```
 
-Starts the data/escrow proxy (:8801) + the Oracle UI (:3020) and opens the browser. Devnet only.
+Starts the escrow API on `http://localhost:8801`, the dashboard on `http://localhost:3020`, and opens
+the browser after both are ready. It fails fast if either port is occupied or a child process exits.
+Jobs are saved under `examples/txodds/.data/`. The filename is kept for compatibility with the existing
+`npm run dev` entry point.
