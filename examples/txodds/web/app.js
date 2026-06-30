@@ -197,9 +197,9 @@ function Pipeline({ edge, source, settleRes }) {
     { n: 2, title: 'Fair line + price to beat',
       desc: 'The agent turns each probability into its fair (break-even) decimal odds = 100 ÷ probability — the price a sportsbook must beat for a bet to have value — plus a one-line LLM read.',
       live: fav ? `fair odds ${fav.fairOdds.toFixed(2)}` : '—' },
-    { n: 3, title: 'Settled on-chain',
-      desc: 'The buyer deposits SOL into a per-order escrow and releases it to the seller on delivery (refundable by the buyer after a deadline). Real devnet transactions, linked on Explorer.',
-      live: settleRes?.ok ? `${settleRes.amountSol} SOL settled` : `${SETTLE_SOL} SOL` },
+    { n: 3, title: 'Settled by a neutral arbiter',
+      desc: 'The buyer funds a per-order escrow but can’t unilaterally refund — a neutral arbiter program releases to the seller on verified delivery (so neither side can cheat). The escrow reference is bound to the read (sha256), so the on-chain order IS the data bought. Real devnet txs, linked on Explorer.',
+      live: settleRes?.ok ? `${settleRes.amountSol} SOL${settleRes.mode === 'arbiter' ? ' · arbiter' : ''}` : `${SETTLE_SOL} SOL` },
   ]
   return html`
     <section class="pipeline">
@@ -216,8 +216,37 @@ function Pipeline({ edge, source, settleRes }) {
     </section>`
 }
 
-// the settlement: a real devnet escrow deposit→release between two distinct parties, linked on Explorer
+// the settlement — a real devnet escrow round, linked on Explorer. Two modes: the trustless arbiter
+// wrapper (3 parties; the buyer can't unilaterally refund) or the direct buyer-released escrow.
+function BindLine({ r }) {
+  if (!r.order?.favourite) return null
+  return html`
+    <div class="settled-line bind">
+      <span class="bind-tag">bound</span> this payment references
+      <b>${r.order.favourite} @ ${r.order.fairOdds}</b>${r.order.matchup ? ` · ${r.order.matchup}` : ''}
+      <span class="bind-ref">ref ${shortAddr(r.reference)} = sha256(${r.order.preimage})</span>
+    </div>`
+}
 function SettleResult({ r }) {
+  if (r.ok && r.mode === 'arbiter') return html`
+    <div class="settled ok">
+      <div class="settled-line">settled <b>${r.amountSol} SOL</b> via the arbiter — buyer
+        <a href=${addrLink(r.buyer)} target="_blank" rel="noreferrer">${shortAddr(r.buyer)}</a> funds escrow ·
+        arbiter <a href=${addrLink(r.arbiter)} target="_blank" rel="noreferrer">${shortAddr(r.arbiter)}</a> releases
+        <span class="settled-arrow">→</span> seller <a href=${addrLink(r.seller)} target="_blank" rel="noreferrer">${shortAddr(r.seller)}</a>
+        ${r.selfPay && html`<span class="settled-note">self-pay seller — set a distinct SELLER_WALLET</span>`}
+      </div>
+      <div class="settled-line trustless">
+        <span class="bind-tag arb">trustless</span> the buyer can't take delivery and refund — only the neutral
+        arbiter can release, gated on verified delivery, so the seller is protected
+      </div>
+      <${BindLine} r=${r} />
+      <div class="settled-line links">
+        <a href=${r.open.explorer} target="_blank" rel="noreferrer">open ↗</a> ·
+        <a href=${r.release.explorer} target="_blank" rel="noreferrer">arbiter release ↗</a> ·
+        <a href=${r.escrow.explorer} target="_blank" rel="noreferrer">escrow PDA ↗</a>
+      </div>
+    </div>`
   if (r.ok) return html`
     <div class="settled ok">
       <div class="settled-line">settled <b>${r.amountSol} SOL</b> on devnet — buyer
@@ -226,12 +255,7 @@ function SettleResult({ r }) {
         <a href=${addrLink(r.seller)} target="_blank" rel="noreferrer">${shortAddr(r.seller)}</a>
         ${r.selfPay && html`<span class="settled-note">self-pay — set a distinct SELLER_WALLET to split the parties</span>`}
       </div>
-      ${r.order?.favourite && html`
-        <div class="settled-line bind">
-          <span class="bind-tag">bound</span> this payment references
-          <b>${r.order.favourite} @ ${r.order.fairOdds}</b>${r.order.matchup ? ` · ${r.order.matchup}` : ''}
-          <span class="bind-ref">ref ${shortAddr(r.reference)} = sha256(${r.order.preimage})</span>
-        </div>`}
+      <${BindLine} r=${r} />
       <div class="settled-line links">
         <a href=${r.deposit.explorer} target="_blank" rel="noreferrer">deposit ↗</a> ·
         <a href=${r.release.explorer} target="_blank" rel="noreferrer">release ↗</a> ·
@@ -349,7 +373,7 @@ function App() {
             <${EdgeCard} edge=${edge} />
             <div class="settle-row">
               ${settling && html`<div class="settling-auto">
-                <span class="spin"></span> agent delivered — buyer escrow settling ${SETTLE_SOL} SOL on devnet…
+                <span class="spin"></span> agent delivered — arbiter settling ${SETTLE_SOL} SOL in escrow on devnet…
               </div>`}
               ${settleRes && html`<${SettleResult} r=${settleRes} />`}
             </div>

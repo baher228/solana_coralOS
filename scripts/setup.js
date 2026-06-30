@@ -33,11 +33,16 @@ let env = existsSync(envPath) ? readFileSync(envPath, 'utf8') : readFileSync(exa
 // could later spend or prove — it only RECEIVES on release, so it needs no funding.
 let buyerB58 = getKv(env, 'BUYER_KEYPAIR_B58') || bs58.encode(Keypair.generate().secretKey)
 let sellerB58 = getKv(env, 'SELLER_KEYPAIR_B58') || bs58.encode(Keypair.generate().secretKey)
+// the neutral arbiter that gates release/refund (the trustless wrapper). Needs only tx-fee funds —
+// the proxy tops it up from the buyer automatically, so it's generated here but never needs the faucet.
+let arbiterB58 = getKv(env, 'ARBITER_KEYPAIR_B58') || bs58.encode(Keypair.generate().secretKey)
 const buyerPubkey = Keypair.fromSecretKey(bs58.decode(buyerB58)).publicKey.toBase58()
 const sellerPubkey = Keypair.fromSecretKey(bs58.decode(sellerB58)).publicKey.toBase58()
+const arbiterPubkey = Keypair.fromSecretKey(bs58.decode(arbiterB58)).publicKey.toBase58()
 
 env = setKv(env, 'BUYER_KEYPAIR_B58', buyerB58)
 env = setKv(env, 'SELLER_KEYPAIR_B58', sellerB58)
+env = setKv(env, 'ARBITER_KEYPAIR_B58', arbiterB58)
 env = setKv(env, 'WALLET', sellerPubkey) // the seller's public key — the escrow payout destination
 env = setKv(env, 'SOLANA_RPC_URL', getKv(env, 'SOLANA_RPC_URL') || 'https://api.devnet.solana.com')
 
@@ -48,8 +53,9 @@ const block = [
   'World Cup Oracle — devnet wallets',
   `Generated: ${new Date().toISOString()}`,
   '',
-  `  Buyer  wallet  ${buyerPubkey}   ← signs + funds the escrow (FUND THIS)`,
-  `  Seller wallet  ${sellerPubkey}   ← receives on release (no funding needed)`,
+  `  Buyer   wallet  ${buyerPubkey}   ← signs + funds the escrow (FUND THIS)`,
+  `  Seller  wallet  ${sellerPubkey}   ← receives on release (no funding needed)`,
+  `  Arbiter wallet  ${arbiterPubkey}   ← gates release/refund; the proxy tops up its fees (no funding needed)`,
   '',
   'FUND THE BUYER with devnet SOL — the only way is the web faucet',
   '(sign in with GitHub; CLI/RPC airdrops are gated):',

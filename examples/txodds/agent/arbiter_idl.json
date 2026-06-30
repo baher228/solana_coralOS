@@ -1,0 +1,429 @@
+{
+  "address": "FJtuVXsyXuRKqgJBEPAXmktkd13CqStapgevzGwYktXd",
+  "metadata": {
+    "name": "arbiter",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Arbiter — a trustless wrapper over the escrow: a neutral 3rd signer gates release/refund"
+  },
+  "instructions": [
+    {
+      "name": "arbitrate_refund",
+      "docs": [
+        "The arbiter refunds a failed delivery (after the escrow deadline): escrow returns the funds to",
+        "the vault, then we sweep the vault back to the original payer."
+      ],
+      "discriminator": [
+        4,
+        224,
+        236,
+        160,
+        245,
+        77,
+        252,
+        172
+      ],
+      "accounts": [
+        {
+          "name": "arbiter",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "reference"
+              }
+            ]
+          }
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "arg",
+                "path": "reference"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "escrow_program"
+            }
+          }
+        },
+        {
+          "name": "escrow_program",
+          "address": "R5NWNg9eRLWWQU81Xbzz5Du1k7jTDeeT92Ty6qCeXet"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "reference",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "arbitrate_release",
+      "docs": [
+        "The arbiter attests delivery → release to the seller. Only the configured arbiter may call."
+      ],
+      "discriminator": [
+        194,
+        41,
+        251,
+        189,
+        16,
+        195,
+        150,
+        11
+      ],
+      "accounts": [
+        {
+          "name": "arbiter",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "reference"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seller",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "arg",
+                "path": "reference"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "escrow_program"
+            }
+          }
+        },
+        {
+          "name": "escrow_program",
+          "address": "R5NWNg9eRLWWQU81Xbzz5Du1k7jTDeeT92Ty6qCeXet"
+        }
+      ],
+      "args": [
+        {
+          "name": "reference",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "init_config",
+      "docs": [
+        "One-time: record who the neutral arbiter is."
+      ],
+      "discriminator": [
+        23,
+        235,
+        115,
+        232,
+        168,
+        96,
+        1,
+        231
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "arbiter",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "open",
+      "docs": [
+        "Open an arbitrated order: fund the vault PDA, then deposit into escrow with the vault as the",
+        "escrow's `buyer`. The payer cannot later release or refund — only the arbiter can."
+      ],
+      "discriminator": [
+        228,
+        220,
+        155,
+        71,
+        199,
+        189,
+        60,
+        45
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "reference"
+              }
+            ]
+          }
+        },
+        {
+          "name": "seller"
+        },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "vault"
+              },
+              {
+                "kind": "arg",
+                "path": "reference"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "escrow_program"
+            }
+          }
+        },
+        {
+          "name": "escrow_program",
+          "address": "R5NWNg9eRLWWQU81Xbzz5Du1k7jTDeeT92Ty6qCeXet"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        },
+        {
+          "name": "reference",
+          "type": "pubkey"
+        },
+        {
+          "name": "deadline",
+          "type": "i64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotArbiter",
+      "msg": "Caller is not the configured arbiter"
+    },
+    {
+      "code": 6001,
+      "name": "Overflow",
+      "msg": "Arithmetic overflow"
+    }
+  ],
+  "types": [
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "arbiter",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+# Cargo workspace — the escrow (settlement spine) + the arbiter (its trustless wrapper).
+# `anchor build` builds both programs under programs/*.
+[workspace]
+members = ["programs/*"]
+resolver = "2"
+
+# Anchor requires overflow checks on release builds (the security checklist) — set at the workspace root.
+[profile.release]
+overflow-checks = true

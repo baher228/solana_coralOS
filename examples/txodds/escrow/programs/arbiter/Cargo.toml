@@ -1,0 +1,22 @@
+[package]
+name = "arbiter"
+version = "0.1.0"
+description = "Arbiter — a trustless wrapper over the escrow: a neutral 3rd signer gates release/refund"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "arbiter"
+
+[features]
+default = []
+cpi = ["no-entrypoint"]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+idl-build = ["anchor-lang/idl-build", "escrow/idl-build"]
+
+[dependencies]
+anchor-lang = "0.32.1"
+# the escrow crate, with its `cpi` feature so we can call escrow::cpi::{initialize,release,refund}
+escrow = { path = "../escrow", features = ["cpi"] }

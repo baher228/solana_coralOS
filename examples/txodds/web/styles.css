@@ -209,5 +209,7 @@ main { max-width: 1120px; margin: 0 auto; padding: 22px 24px 64px; }
 .settled-line.bind b { color: var(--text); }
 .bind-tag { font-size: 9px; text-transform: uppercase; letter-spacing: .07em; color: #06210f;
   background: var(--sol); border-radius: 999px; padding: 1px 7px; font-weight: 700; }
+.bind-tag.arb { background: var(--gold); }
+.settled-line.trustless { margin-top: 6px; font-size: 12px; color: var(--muted); }
 .bind-ref { flex-basis: 100%; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; color: var(--card-line); word-break: break-all; }
 .bind-ref { color: #6b7a72; }

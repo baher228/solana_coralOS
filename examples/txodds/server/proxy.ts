@@ -16,7 +16,9 @@ import fs from 'node:fs'
 import { createHash } from 'node:crypto'
 import axios from 'axios'
 import * as anchor from '@coral-xyz/anchor'
-import { PublicKey, SystemProgram, Keypair, Connection } from '@solana/web3.js'
+import {
+  PublicKey, SystemProgram, Keypair, Connection, Transaction, sendAndConfirmTransaction, LAMPORTS_PER_SOL,
+} from '@solana/web3.js'
 import {
   TOKEN_2022_PROGRAM_ID, ASSOCIATED_TOKEN_PROGRAM_ID,
   getOrCreateAssociatedTokenAccount, getAssociatedTokenAddressSync,
@@ -26,6 +28,10 @@ import bs58 from 'bs58'
 import { fileURLToPath } from 'node:url'
 import { assertDevnet } from '@pay/agent-runtime'
 import { analyzeEdge, fairLine } from '../agent/edge.js'
+import {
+  makeArbiter, initConfig, open as arbiterOpen, arbitrateRelease,
+  configPda, vaultPda, arbitratedEscrowPda, ARBITER_PROGRAM_ID,
+} from '../agent/arbiter.js'
 import { makeProgram, deposit, release, escrowPda } from '../agent/escrow.js'
 
 // fileURLToPath (not .pathname) so the repo-root .env resolves on macOS/Linux too, not just Windows.
@@ -57,6 +63,12 @@ function buyerKeypair(): Keypair {
   const b58 = process.env.BUYER_KEYPAIR_B58 // loaded from .env above (or the shell)
   if (!b58) throw new Error(`BUYER_KEYPAIR_B58 not set (looked in ${ENV_PATH})`)
   return Keypair.fromSecretKey(bs58.decode(b58.trim()))
+}
+
+/** The neutral arbiter signer (set by setup.js). Present → the demo settles through the arbiter wrapper. */
+function arbiterKeypair(): Keypair | null {
+  const b58 = process.env.ARBITER_KEYPAIR_B58
+  return b58 ? Keypair.fromSecretKey(bs58.decode(b58.trim())) : null
 }
 
 let jwt = ''
@@ -162,6 +174,26 @@ function favouriteOf(fx: any): { label: string; pct: number; fairOdds: number } 
 }
 
 /**
+ * The escrow `reference` BOUND to the order: `sha256("txodds:<fixtureId>:<favourite>@<fairOdds>:<nonce>")`.
+ * A reference is just a 32-byte PDA seed (need not be on-curve), so the digest is the PublicKey directly.
+ * The on-chain PDA then provably corresponds to exactly the read bought — anyone with `order.preimage`
+ * can recompute it. The nonce keeps each settle's PDA unique. Shared by the direct + arbiter flows.
+ */
+async function boundReference(fixtureId: string): Promise<{ reference: PublicKey; order: any }> {
+  const fx = (await board()).find((f) => String(f.FixtureId) === fixtureId)
+  const fav = fx ? favouriteOf(fx) : undefined
+  const nonce = Date.now()
+  const preimage = fav
+    ? `txodds:${fixtureId}:${fav.label}@${fav.fairOdds}:${nonce}`
+    : `txodds:${fixtureId || 'unknown'}:${nonce}`
+  const reference = new PublicKey(createHash('sha256').update(preimage).digest())
+  return {
+    reference,
+    order: { fixtureId, matchup: fx ? `${fx.Participant1} v ${fx.Participant2}` : undefined, favourite: fav?.label, fairOdds: fav?.fairOdds, nonce, preimage },
+  }
+}
+
+/**
  * Run a real devnet escrow deposit→release so the demo can link the settlement on-chain. The escrow
  * `reference` is BOUND to the order: it's `sha256("txodds:<fixtureId>:<favourite>@<fairOdds>:<nonce>")`,
  * so the on-chain PDA provably corresponds to exactly the read that was bought (anyone with the returned
@@ -178,34 +210,77 @@ async function settle(amountSol: number, fixtureId: string): Promise<unknown> {
     // floor at the rent-exempt minimum (~0.00089 SOL) so paying a brand-new seller in one release
     // leaves it rent-exempt; below that the release is rejected ("insufficient funds for rent").
     const amount = Math.max(0.001, Number.isFinite(amountSol) ? amountSol : 0.001)
-
-    // bind the reference to the order: fixture + its verified fair favourite + a nonce. A reference is
-    // just a 32-byte PDA seed (need not be on-curve), so a sha256 digest works directly as the PublicKey.
-    const fx = (await board()).find((f) => String(f.FixtureId) === fixtureId)
-    const fav = fx ? favouriteOf(fx) : undefined
-    const nonce = Date.now()
-    const preimage = fav
-      ? `txodds:${fixtureId}:${fav.label}@${fav.fairOdds}:${nonce}`
-      : `txodds:${fixtureId || 'unknown'}:${nonce}`
-    const reference = new PublicKey(createHash('sha256').update(preimage).digest())
+    const { reference, order } = await boundReference(fixtureId)
 
     const program = await makeProgram(buyer, RPC)
     const depositSig = await deposit(program, buyer, seller, reference, amount, 600)
     const releaseSig = await release(program, buyer, seller, reference)
     const pda = escrowPda(buyer.publicKey, reference).toBase58()
     return {
-      ok: true, amountSol: amount, reference: reference.toBase58(),
-      buyer: buyer.publicKey.toBase58(), seller: seller.toBase58(), selfPay,
-      order: {
-        fixtureId, matchup: fx ? `${fx.Participant1} v ${fx.Participant2}` : undefined,
-        favourite: fav?.label, fairOdds: fav?.fairOdds, nonce, preimage,
-      },
+      ok: true, mode: 'direct', amountSol: amount, reference: reference.toBase58(),
+      buyer: buyer.publicKey.toBase58(), seller: seller.toBase58(), selfPay, order,
       deposit: { sig: depositSig, explorer: expl('tx', depositSig) },
       release: { sig: releaseSig, explorer: expl('tx', releaseSig) },
       escrow: { pda, explorer: expl('address', pda) },
     }
   } catch (e) {
     return { ok: false, error: (e as Error).message }
+  }
+}
+
+/** Configure the arbiter program once (idempotent): set who the neutral arbiter is. Admin = the payer. */
+async function ensureArbiterConfig(admin: Keypair, arbiter: PublicKey): Promise<void> {
+  const program = makeArbiter(admin, RPC)
+  try {
+    await (program.account as any).config.fetch(configPda())
+    return // already configured
+  } catch { /* not yet — set it below */ }
+  await initConfig(program, admin, arbiter)
+}
+
+/** Keep the arbiter funded for tx fees by topping up from the payer when low — so a fresh checkout
+ * (setup.js generates an unfunded arbiter keypair) settles out of the box. */
+async function ensureArbiterFunded(payer: Keypair, arbiter: PublicKey): Promise<void> {
+  const connection = new Connection(RPC, 'confirmed')
+  if ((await connection.getBalance(arbiter)) >= 0.01 * LAMPORTS_PER_SOL) return
+  const tx = new Transaction().add(SystemProgram.transfer({
+    fromPubkey: payer.publicKey, toPubkey: arbiter, lamports: Math.round(0.02 * LAMPORTS_PER_SOL),
+  }))
+  await sendAndConfirmTransaction(connection, tx, [payer])
+}
+
+/**
+ * The trustless 3-party settlement (the arbiter wrapper). The buyer (payer) `open`s an order — funds a
+ * vault PDA that becomes the escrow's buyer, so the buyer can NO LONGER unilaterally release/refund.
+ * Then the neutral **arbiter** attests delivery and releases to the seller. The seller is protected.
+ * Same order-bound `reference` as the direct path. Throws on failure so the route can fall back.
+ */
+async function settleViaArbiter(amountSol: number, fixtureId: string): Promise<unknown> {
+  const buyer = buyerKeypair()
+  const arbiter = arbiterKeypair()
+  if (!arbiter) throw new Error('no ARBITER_KEYPAIR_B58 configured')
+  const sellerEnv = process.env.SELLER_WALLET || process.env.WALLET
+  const seller = new PublicKey(sellerEnv || buyer.publicKey.toBase58())
+  const selfPay = seller.equals(buyer.publicKey)
+  const amount = Math.max(0.001, Number.isFinite(amountSol) ? amountSol : 0.001)
+  const { reference, order } = await boundReference(fixtureId)
+
+  await ensureArbiterConfig(buyer, arbiter.publicKey)
+  await ensureArbiterFunded(buyer, arbiter.publicKey)
+  // 1) buyer opens the arbitrated order (funds the vault → escrow, vault = buyer)
+  const openSig = await arbiterOpen(makeArbiter(buyer, RPC), buyer, seller, reference, amount, 600)
+  // 2) the neutral arbiter attests delivery → releases to the seller
+  const releaseSig = await arbitrateRelease(makeArbiter(arbiter, RPC), arbiter, seller, reference)
+
+  const vault = vaultPda(reference)
+  const escrow = arbitratedEscrowPda(vault, reference).toBase58()
+  return {
+    ok: true, mode: 'arbiter', amountSol: amount, reference: reference.toBase58(),
+    buyer: buyer.publicKey.toBase58(), seller: seller.toBase58(),
+    arbiter: arbiter.publicKey.toBase58(), vault: vault.toBase58(), selfPay, order,
+    open: { sig: openSig, explorer: expl('tx', openSig) },
+    release: { sig: releaseSig, explorer: expl('tx', releaseSig) },
+    escrow: { pda: escrow, explorer: expl('address', escrow) },
   }
 }
 
@@ -238,9 +313,18 @@ http
         }
         res.end(JSON.stringify(await analyzeEdge({ fixtureId, odds, fixtures })))
       } else if (url.pathname === '/api/settle') {
-        // real devnet escrow deposit→release, with the reference bound to the order (fixture + read).
+        // settle on devnet with the reference bound to the order. Prefer the trustless arbiter wrapper
+        // (3 parties, seller-protected); fall back to the direct buyer-released escrow if it errors.
         const amount = Number(url.searchParams.get('amount') ?? '0.001')
-        res.end(JSON.stringify(await settle(amount, url.searchParams.get('fixtureId') ?? '')))
+        const fixtureId = url.searchParams.get('fixtureId') ?? ''
+        let result: any
+        if (arbiterKeypair()) {
+          try { result = await settleViaArbiter(amount, fixtureId) }
+          catch (e) { result = await settle(amount, fixtureId); result.arbiterError = (e as Error).message }
+        } else {
+          result = await settle(amount, fixtureId)
+        }
+        res.end(JSON.stringify(result))
       } else {
         res.statusCode = 404
         res.end(JSON.stringify({ error: 'not found' }))
