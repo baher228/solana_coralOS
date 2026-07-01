@@ -1,13 +1,10 @@
 /**
- * Minimal buyer-side escrow client. The freelance demo settles through the arbiter wrapper, but this
- * direct client remains useful for contract-level experiments. Connections go through the devnet guard.
- *
- * Live RPC + a funded wallet required, so this is exercised in the running demo, not in `npm test`.
+ * Minimal buyer-side direct escrow client kept from the imported backbone for future live devnet
+ * settlement wiring. The current UI uses local demo escrow state.
  */
 import anchor from '@coral-xyz/anchor'
 import type { Program } from '@coral-xyz/anchor'
-import { Keypair, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
-import { solanaConnection } from '@pay/agent-runtime'
+import { Connection, Keypair, PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js'
 const { AnchorProvider, BN } = anchor
 
 export const PROGRAM_ID = new PublicKey('R5NWNg9eRLWWQU81Xbzz5Du1k7jTDeeT92Ty6qCeXet')
@@ -19,11 +16,10 @@ export function escrowPda(buyer: PublicKey, reference: PublicKey): PublicKey {
   )[0]
 }
 
-/** Program handle signed by the buyer; solanaConnection applies the devnet guard. */
 export async function makeProgram(buyer: Keypair, rpcUrl: string): Promise<Program> {
-  const provider = new AnchorProvider(solanaConnection(rpcUrl), new anchor.Wallet(buyer), { commitment: 'confirmed' })
+  const provider = new AnchorProvider(new Connection(rpcUrl, 'confirmed'), new anchor.Wallet(buyer), { commitment: 'confirmed' })
   const idl = await anchor.Program.fetchIdl(PROGRAM_ID, provider)
-  if (!idl) throw new Error('escrow IDL not found on-chain — is the program deployed to this cluster?')
+  if (!idl) throw new Error('escrow IDL not found on-chain')
   return new anchor.Program(idl, provider)
 }
 

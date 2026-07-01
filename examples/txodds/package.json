@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
-  "description": "Freelance escrow agent demo for devnet SOL",
+  "description": "Freelance escrow agent demo on the Solana CoralOS backbone",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "proxy": "tsx server/proxy.ts",
-    "web": "tsx server/web.ts"
+    "web": "npx --yes serve web -l 3020"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",

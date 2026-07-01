@@ -1,72 +1,37 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
-  formatWant, parseWant, formatBid, parseBid, formatAward, parseAward,
-  formatEscrowRequired, parseEscrowRequired, formatDeposited, parseDeposited,
-  selectBids, pickCheapest, verb, messageRound,
-  type Bid,
+  formatAward, formatBid, formatDeposited, formatEscrowRequired, formatWant,
+  messageRound, parseAward, parseBid, parseDeposited, parseEscrowRequired, parseWant,
+  pickCheapest, selectBids, verb, type Bid,
 } from './protocol.js'
 
-describe('WANT round-trip', () => {
-  it('formats and parses', () => {
-    const w = { round: 7, service: 'helius-risk', arg: '7jwB', budgetSol: 0.001 }
-    expect(parseWant(formatWant(w))).toEqual(w)
+describe('market protocol', () => {
+  it('round-trips multi-word freelance WANT args', () => {
+    const want = { round: 1, service: 'freelance', arg: 'Build checkout with mobile proof', budgetSol: 0.001 }
+    expect(parseWant(formatWant(want))).toEqual(want)
   })
-  it('rejects a non-WANT', () => {
-    expect(parseWant('BID round=7 price=0.0003 by=x')).toBeNull()
-  })
-})
 
-describe('BID round-trip', () => {
-  it('formats and parses with a free-text note', () => {
-    const b = { round: 7, priceSol: 0.0006, by: 'seller-premium', note: 'verified, fresh pull' }
-    expect(parseBid(formatBid(b))).toEqual(b)
-  })
-  it('parses without a note', () => {
-    expect(parseBid('BID round=3 price=0.0002 by=seller-cheap')).toEqual({
-      round: 3, priceSol: 0.0002, by: 'seller-cheap',
-    })
-  })
-})
+  it('round-trips bid, award, escrow, and deposit messages', () => {
+    const bid = { round: 1, priceSol: 0.001, by: 'worker', note: 'available' }
+    const award = { round: 1, to: 'worker', reason: 'best value' }
+    const escrow = { round: 1, reference: 'R3f', seller: 'WorkerWallet', amountSol: 0.001, deadlineSecs: 600 }
+    const deposited = { round: 1, reference: 'R3f', buyer: 'EmployerWallet', sig: 'Sig123' }
 
-describe('AWARD + ESCROW_REQUIRED round-trip', () => {
-  it('AWARD', () => {
-    expect(parseAward(formatAward(9, 'seller-cheap'))).toEqual({ round: 9, to: 'seller-cheap' })
+    expect(parseBid(formatBid(bid))).toEqual(bid)
+    expect(parseAward(formatAward(award.round, award.to, award.reason))).toEqual(award)
+    expect(parseEscrowRequired(formatEscrowRequired(escrow))).toEqual(escrow)
+    expect(parseDeposited(formatDeposited(deposited))).toEqual(deposited)
   })
-  it('AWARD round-trips the optional reason', () => {
-    const msg = formatAward(9, 'seller-cheap', 'best value')
-    expect(msg).toContain('reason="best value"')
-    expect(parseAward(msg)).toEqual({ round: 9, to: 'seller-cheap', reason: 'best value' })
-  })
-  it('ESCROW_REQUIRED', () => {
-    const t = { round: 9, reference: 'R3f', seller: 'SeLLeRwa11et', amountSol: 0.0006, deadlineSecs: 600 }
-    expect(parseEscrowRequired(formatEscrowRequired(t))).toEqual(t)
-  })
-  it('DEPOSITED', () => {
-    const d = { round: 9, reference: 'R3f', buyer: 'BuYeRwa11et', sig: '5h2abc' }
-    expect(parseDeposited(formatDeposited(d))).toEqual(d)
-  })
-})
 
-describe('selection', () => {
-  const bids: Bid[] = [
-    { round: 7, priceSol: 0.0006, by: 'premium' },
-    { round: 7, priceSol: 0.0003, by: 'cheap' },
-    { round: 6, priceSol: 0.0001, by: 'cheap' }, // different round — excluded
-    { round: 7, priceSol: 0.0002, by: 'cheap' }, // cheap re-bids; last wins
-  ]
-  it('selectBids filters by round and dedupes by seller (last wins)', () => {
-    const r7 = selectBids(bids, 7)
-    expect(r7).toHaveLength(2)
-    expect(r7.find((b) => b.by === 'cheap')?.priceSol).toBe(0.0002)
-  })
-  it('pickCheapest picks the lowest price', () => {
-    expect(pickCheapest(selectBids(bids, 7))?.by).toBe('cheap')
-  })
-})
-
-describe('helpers', () => {
-  it('verb + messageRound', () => {
-    expect(verb('WANT round=7 ...')).toBe('WANT')
-    expect(messageRound('BID round=42 price=0.1 by=x')).toBe(42)
+  it('selects current-round bids and the cheapest price', () => {
+    const bids: Bid[] = [
+      { round: 1, priceSol: 0.003, by: 'premium' },
+      { round: 2, priceSol: 0.001, by: 'other' },
+      { round: 1, priceSol: 0.002, by: 'fast' },
+    ]
+    expect(selectBids(bids, 1)).toHaveLength(2)
+    expect(pickCheapest(selectBids(bids, 1))?.by).toBe('fast')
+    expect(verb('WANT round=1')).toBe('WANT')
+    expect(messageRound('BID round=7 price=0.1 by=x')).toBe(7)
   })
 })

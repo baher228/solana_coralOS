@@ -1,4 +1,4 @@
-// Market protocol — the marketplace wire format (pure, network-free).
+// Market protocol - the marketplace wire format (pure, network-free).
 
 export {
   formatWant, parseWant, formatBid, parseBid, formatAward, parseAward,

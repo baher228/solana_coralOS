@@ -1,10 +1,10 @@
 /**
- * Protocol round e2e — drives a full WANT → BID → AWARD → ESCROW_REQUIRED → DEPOSITED → DELIVERED →
+ * Protocol round e2e - drives a full WANT -> BID -> AWARD -> ESCROW_REQUIRED -> DEPOSITED -> DELIVERED ->
  * RELEASED conversation through the REAL wire format + selection, against an in-memory thread and a
- * fake escrow ledger. No devnet, no network — so CI covers the settlement *sequence* the agents speak
+ * fake escrow ledger. No devnet, no network - so CI covers the settlement *sequence* the agents speak
  * (and the `reference` threading + escrow lifecycle), not just the individual parsers in isolation.
  *
- * Here the sellers bid from a fixture so the focus is the end-to-end protocol composition (the wire
+ * Here the sellers bid from sample data so the focus is the end-to-end protocol composition (the wire
  * format + selection + the `reference` threading), not the bidding economics.
  */
 import { describe, it, expect } from 'vitest'
@@ -43,8 +43,8 @@ const SELLERS = {
   'seller-premium': { wallet: 'PREMxWa11et', bid: 0.0005 },
 }
 
-describe('market round e2e — the full settlement sequence over the real protocol', () => {
-  it('runs WANT → BID×2 → AWARD → ESCROW_REQUIRED → DEPOSITED → DELIVERED → RELEASED', () => {
+describe('market round e2e - the full settlement sequence over the real protocol', () => {
+  it('runs WANT -> BIDx2 -> AWARD -> ESCROW_REQUIRED -> DEPOSITED -> DELIVERED -> RELEASED', () => {
     const thread: string[] = []
     const escrow = new FakeEscrow()
     const round = 1
@@ -55,7 +55,7 @@ describe('market round e2e — the full settlement sequence over the real protoc
     const want = parseWant(thread.at(-1)!)!
     expect(want.service).toBe('coingecko')
 
-    // each seller parses the WANT and bids (from the fixture, clamped to budget)
+    // each seller parses the WANT and bids (from the sample data, clamped to budget)
     for (const [name, s] of Object.entries(SELLERS)) {
       thread.push(formatBid({ round, priceSol: Math.min(s.bid, want.budgetSol), by: name, note: 'available' }))
     }
@@ -92,7 +92,7 @@ describe('market round e2e — the full settlement sequence over the real protoc
     escrow.release(BUYER, sellerWallet, reference)
     thread.push(`RELEASED round=${round} sig=SIGrelease`)
 
-    // ── invariants over the whole round ──
+    // -- invariants over the whole round --
     expect(thread.map((t) => verb(t))).toEqual([
       'WANT', 'BID', 'BID', 'AWARD', 'ESCROW_REQUIRED', 'DEPOSITED', 'DELIVERED', 'RELEASED',
     ])
@@ -107,7 +107,7 @@ describe('market round e2e — the full settlement sequence over the real protoc
     expect(escrow.isFunded(BUYER, 'CHEAPxWa11et', 'REF2', 0.0002)).toBe(true)
   })
 
-  it('a deposit cannot be re-used for the same (buyer, reference) — init, not init_if_needed', () => {
+  it('a deposit cannot be re-used for the same (buyer, reference) - init, not init_if_needed', () => {
     const escrow = new FakeEscrow()
     escrow.deposit(BUYER, 'CHEAPxWa11et', 'REF3', 0.0002)
     expect(() => escrow.deposit(BUYER, 'CHEAPxWa11et', 'REF3', 0.0002)).toThrow(/reuse/)

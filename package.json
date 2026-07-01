@@ -2,7 +2,7 @@
   "name": "solana-coralos",
   "version": "0.1.0",
   "private": true,
-  "description": "Freelance escrow agent demo on Solana devnet. Run it with `npm run dev`.",
+  "description": "Freelance escrow agent demo on the Solana CoralOS backbone. Run it with `npm run dev`.",
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
