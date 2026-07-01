@@ -61,6 +61,7 @@ const canRefund = (job) => job && !job.settlement?.release && !job.settlement?.r
 
 const shortAddr = (value) => value ? `${String(value).slice(0, 4)}...${String(value).slice(-4)}` : '--'
 const fmtSol = (value) => `${Number(value || 0).toFixed(Number(value || 0) < 0.01 ? 6 : 4)} SOL`
+const fmtBalance = (value) => value == null ? '--' : fmtSol(value)
 const fmtTime = (value) => value ? new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--'
 
 async function api(path, body) {
@@ -110,10 +111,10 @@ function Composer({ onCreate, busy }) {
       <div class="preset-row">
         ${JOB_PRESETS.map((preset) => html`<button type="button" key=${preset.label} onClick=${() => setDraft({ ...preset.draft })}>${preset.label}</button>`)}
       </div>
-      <${Field} label="Task title"><input value=${draft.title} onInput=${set('title')} required /><//>
-      <${Field} label="Requirements"><textarea rows="5" value=${draft.requirements} onInput=${set('requirements')} required /><//>
-      <${Field} label="Acceptance criteria"><textarea rows="4" value=${draft.acceptanceCriteria} onInput=${set('acceptanceCriteria')} required /><//>
-      <${Field} label="Budget"><input type="number" min="0.001" step="0.001" value=${draft.amountSol} onInput=${set('amountSol')} /><//>
+      <${Field} label="Task title"><input value=${draft.title} onInput=${set('title')} required /></${Field}>
+      <${Field} label="Requirements"><textarea rows="5" value=${draft.requirements} onInput=${set('requirements')} required /></${Field}>
+      <${Field} label="Acceptance criteria"><textarea rows="4" value=${draft.acceptanceCriteria} onInput=${set('acceptanceCriteria')} required /></${Field}>
+      <${Field} label="Budget"><input type="number" min="0.001" step="0.001" value=${draft.amountSol} onInput=${set('amountSol')} /></${Field}>
       <${QuoteBreakdown} amountSol=${Number(draft.amountSol)} />
       <button class="primary" disabled=${busy}>Fund escrow</button>
     </form>
@@ -204,9 +205,9 @@ function SubmissionPanel({ job, onSubmitDelivery, busy }) {
       <div class="preset-row">
         ${SUBMISSION_PRESETS.map((preset) => html`<button type="button" key=${preset.label} disabled=${!canSubmit(job) || busy} onClick=${() => setSubmission({ ...preset.body })}>${preset.label}</button>`)}
       </div>
-      <${Field} label="Public URL"><input value=${submission.url} onInput=${set('url')} disabled=${!canSubmit(job) || busy} /><//>
-      <${Field} label="Repository"><input value=${submission.repo} onInput=${set('repo')} disabled=${!canSubmit(job) || busy} /><//>
-      <${Field} label="Build notes"><textarea rows="4" value=${submission.notes} onInput=${set('notes')} disabled=${!canSubmit(job) || busy} /><//>
+      <${Field} label="Public URL"><input value=${submission.url} onInput=${set('url')} disabled=${!canSubmit(job) || busy} /></${Field}>
+      <${Field} label="Repository"><input value=${submission.repo} onInput=${set('repo')} disabled=${!canSubmit(job) || busy} /></${Field}>
+      <${Field} label="Build notes"><textarea rows="4" value=${submission.notes} onInput=${set('notes')} disabled=${!canSubmit(job) || busy} /></${Field}>
       <button disabled=${!canSubmit(job) || busy}>Submit work</button>
     </form>
   </section>`
@@ -251,13 +252,14 @@ function EscrowPanel({ job, onReview, onDispute, onRefund, busy }) {
 
 function WalletPanel({ state, job }) {
   const wallets = state?.setup?.wallets || {}
+  const balances = wallets.balances || {}
   return html`<section class="panel wallet-panel">
     <div class="panel-head">
       <h2>Wallets</h2>
       <span class="mini">${state?.setup?.mode || 'local-demo'}</span>
     </div>
-    <div class="wallet-row"><span>employer</span><b>${wallets.configured ? 'ready' : '--'}</b><code>${shortAddr(wallets.employer)}</code></div>
-    <div class="wallet-row"><span>worker</span><b>${wallets.configured ? 'ready' : '--'}</b><code>${shortAddr(wallets.worker)}</code></div>
+    <div class="wallet-row"><span>employer</span><b>${fmtBalance(balances.employerSol)}</b><code>${shortAddr(wallets.employer)}</code></div>
+    <div class="wallet-row"><span>worker</span><b>${fmtBalance(balances.workerSol)}</b><code>${shortAddr(wallets.worker)}</code></div>
     <div class="wallet-row"><span>escrow</span><b>local</b><code>${shortAddr(job?.settlement?.escrow)}</code></div>
     <p class="muted">${state?.setup?.note}</p>
   </section>`
@@ -324,7 +326,7 @@ function App() {
 
   useEffect(() => { load().catch((err) => setError(err.message || String(err))) }, [])
 
-  return html`<>
+  return html`<div class="legacy-app">
     <header class="topbar">
       <div>
         <span class="eyebrow">Local demo</span>
@@ -357,7 +359,7 @@ function App() {
         </div>
       </div>
     </main>
-  </>`
+  </div>`
 }
 
 createRoot(document.getElementById('root')).render(html`<${App} />`)

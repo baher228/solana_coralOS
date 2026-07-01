@@ -468,6 +468,10 @@ input:focus, textarea:focus, select:focus {
   overflow-wrap: anywhere;
   color: #17211b;
 }
+.app .status-strip small {
+  color: #68756c;
+  overflow-wrap: anywhere;
+}
 .app .layout {
   max-width: none;
   margin: 0;

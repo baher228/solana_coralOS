@@ -29,8 +29,14 @@ function money(value) {
   return `${Number(value || 0).toFixed(3)} SOL`
 }
 
+function balance(value) {
+  return value == null ? '--' : `${Number(value).toFixed(Number(value) < 0.01 ? 6 : 3)} SOL`
+}
+
 function Shell({ data, selected, setSelected, tab, setTab, refresh, children }) {
   const jobs = data.jobs || []
+  const wallets = data.setup?.wallets || {}
+  const balances = wallets.balances || {}
   const total = jobs.reduce((sum, job) => sum + Number(job.amountSol || 0), 0)
   return html`<div class="app">
     <header class="topbar">
@@ -48,8 +54,8 @@ function Shell({ data, selected, setSelected, tab, setTab, refresh, children }) 
     <section class="status-strip">
       <div><span>Open jobs</span><b>${jobs.length}</b></div>
       <div><span>Total budget</span><b>${money(total)}</b></div>
-      <div><span>Employer</span><b>${short(data.setup?.wallets?.employer)}</b></div>
-      <div><span>Worker</span><b>${short(data.setup?.wallets?.worker)}</b></div>
+      <div><span>Employer</span><b>${balance(balances.employerSol)}</b><small>${short(wallets.employer)}</small></div>
+      <div><span>Worker</span><b>${balance(balances.workerSol)}</b><small>${short(wallets.worker)}</small></div>
     </section>
 
     <main class="layout">

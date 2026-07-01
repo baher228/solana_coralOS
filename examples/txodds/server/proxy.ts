@@ -4,12 +4,14 @@ import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import bs58 from 'bs58'
-import { Keypair, PublicKey } from '@solana/web3.js'
+import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
 
 const ENV_PATH = process.env.KIT_ENV ?? fileURLToPath(new URL('../../../.env', import.meta.url))
 const DATA_DIR = fileURLToPath(new URL('../.data/', import.meta.url))
 const DATA_FILE = `${DATA_DIR}jobs.json`
 const PORT = Number(process.env.PORT ?? 8801)
+const DEFAULT_RPC_URL = 'https://api.devnet.solana.com'
+const BALANCE_TIMEOUT_MS = 2500
 
 type Actor = 'employer' | 'worker' | 'agent' | 'system'
 type Status = 'funded' | 'submitted' | 'approved' | 'released' | 'revision_requested' | 'disputed' | 'refunded' | 'cancelled'
@@ -71,6 +73,29 @@ function wallets() {
   const employer = keypair('BUYER_KEYPAIR_B58')?.publicKey.toBase58()
   const worker = keypair('SELLER_KEYPAIR_B58')?.publicKey.toBase58() || process.env.WALLET || ''
   return { employer, worker, configured: Boolean(employer && worker) }
+}
+
+async function solBalance(connection: Connection, address?: string): Promise<number | null> {
+  if (!address) return null
+  try {
+    const lamports = await Promise.race([
+      connection.getBalance(new PublicKey(address), 'confirmed'),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), BALANCE_TIMEOUT_MS)),
+    ])
+    return typeof lamports === 'number' ? Number((lamports / LAMPORTS_PER_SOL).toFixed(9)) : null
+  } catch {
+    return null
+  }
+}
+
+async function walletsWithBalances() {
+  const w = wallets()
+  const connection = new Connection(process.env.SOLANA_RPC_URL || DEFAULT_RPC_URL, 'confirmed')
+  const [employerSol, workerSol] = await Promise.all([
+    solBalance(connection, w.employer),
+    solBalance(connection, w.worker),
+  ])
+  return { ...w, balances: { employerSol, workerSol } }
 }
 
 function referenceFor(input: string): string {
@@ -151,8 +176,8 @@ function send(res: http.ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body))
 }
 
-function state() {
-  const w = wallets()
+async function state() {
+  const w = await walletsWithBalances()
   return {
     jobs: [...jobs.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     setup: {
@@ -177,11 +202,11 @@ export function createHandler(): http.RequestListener {
     const route = url.pathname.match(/^\/api\/jobs\/([^/]+)\/(messages|submission|review|dispute|refund|cancel)$/)
 
     if (req.method === 'GET' && url.pathname === '/api/health') {
-      return send(res, 200, { ok: true, product: 'freelance-escrow', ...state().setup })
+      return send(res, 200, { ok: true, product: 'freelance-escrow', ...(await state()).setup })
     }
-    if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, state())
+    if (req.method === 'GET' && url.pathname === '/api/state') return send(res, 200, await state())
     if (req.method === 'GET' && url.pathname === '/api/export') {
-      return send(res, 200, { exportedAt: new Date().toISOString(), ...state() })
+      return send(res, 200, { exportedAt: new Date().toISOString(), ...(await state()) })
     }
     if (req.method === 'POST' && url.pathname === '/api/import') {
       const body = await readJson(req)
@@ -189,12 +214,12 @@ export function createHandler(): http.RequestListener {
       jobs.clear()
       for (const job of imported) if (job?.id) jobs.set(job.id, job)
       await saveJobs()
-      return send(res, 200, state())
+      return send(res, 200, await state())
     }
     if (req.method === 'POST' && url.pathname === '/api/jobs') {
       const job = createJob(await readJson(req))
       await saveJobs()
-      return send(res, 201, state())
+      return send(res, 201, await state())
     }
     if (req.method === 'POST' && url.pathname === '/api/demo/seed') {
       jobs.clear()
@@ -207,12 +232,12 @@ export function createHandler(): http.RequestListener {
       job.messages.push({ at: new Date().toISOString(), author: 'employer', text: 'Please include mobile screenshots and the repo.' })
       addEvent(job, 'system', 'seeded', 'Demo job seeded')
       await saveJobs()
-      return send(res, 200, state())
+      return send(res, 200, await state())
     }
     if (req.method === 'POST' && url.pathname === '/api/state/reset') {
       jobs.clear()
       await saveJobs()
-      return send(res, 200, state())
+      return send(res, 200, await state())
     }
     if (req.method === 'POST' && route) {
       const [, id, action] = route
@@ -251,7 +276,7 @@ export function createHandler(): http.RequestListener {
         addEvent(job, 'employer', 'cancelled', 'Job cancelled')
       }
       await saveJobs()
-      return send(res, 200, state())
+      return send(res, 200, await state())
     }
     send(res, 404, { error: 'not found' })
   } catch (e) {
