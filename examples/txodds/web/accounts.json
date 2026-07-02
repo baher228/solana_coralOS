@@ -1,0 +1,25 @@
+{
+  "accounts": [
+    {
+      "id": "northstar-employer",
+      "role": "employer",
+      "name": "Ava Hart",
+      "email": "ava@northstar.test",
+      "organization": "Northstar Studio"
+    },
+    {
+      "id": "checkout-worker",
+      "role": "worker",
+      "name": "Leo Marin",
+      "email": "leo@checkoutguild.test",
+      "organization": "Checkout Guild"
+    },
+    {
+      "id": "rivet-worker",
+      "role": "worker",
+      "name": "Mina Cole",
+      "email": "mina@rivetworks.test",
+      "organization": "Rivet Works"
+    }
+  ]
+}

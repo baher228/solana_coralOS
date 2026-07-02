@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// One-command Freelance Escrow Agent: local API + static web UI.
+// One-command Freelance Escrow Platform: local API + static web UI.
 
 import { spawn, spawnSync } from 'node:child_process'
 import { existsSync } from 'node:fs'

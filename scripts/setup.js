@@ -32,7 +32,7 @@ env = setKv(env, 'SOLANA_RPC_URL', getKv(env, 'SOLANA_RPC_URL') || 'https://api.
 writeFileSync(envPath, env)
 
 const block = [
-  'Freelance Escrow Agent - local devnet wallets',
+  'Freelance Escrow Platform - local devnet wallets',
   `Generated: ${new Date().toISOString()}`,
   '',
   `  Employer wallet  ${buyer}   <- funds jobs if you wire live devnet escrow`,

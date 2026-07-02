@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { Keypair } from '@solana/web3.js'
+import { Keypair, PublicKey } from '@solana/web3.js'
 import bs58 from 'bs58'
 import { generatePaymentUrl, loadKeypairB58 } from './pay.js'
 
@@ -11,7 +11,7 @@ describe('generatePaymentUrl', () => {
     expect(p.url.startsWith('solana:')).toBe(true)
     expect(p.url).toContain(recipient)
     expect(p.amountSol).toBe(0.0004)
-    expect(p.reference).toHaveLength(44) // base58 pubkey
+    expect(new PublicKey(p.reference).toBase58()).toBe(p.reference)
   })
 
   it('mints a unique reference per call (single-use binding)', () => {

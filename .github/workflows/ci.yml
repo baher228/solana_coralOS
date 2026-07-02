@@ -20,7 +20,7 @@ jobs:
       - run: cd packages/agent-runtime && npm test
 
   txodds:
-    name: TxODDS World Cup Oracle (typecheck + tests)
+    name: Freelance Escrow Platform (typecheck + tests)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -29,5 +29,5 @@ jobs:
           node-version: 20
       - name: Build the runtime (the example needs its dist)
         run: cd packages/agent-runtime && npm install && npm run build
-      - name: txodds (typecheck + tests)
+      - name: Freelance escrow platform (typecheck + tests)
         run: cd examples/txodds && npm install && npm run typecheck && npm test

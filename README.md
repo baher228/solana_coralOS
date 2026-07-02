@@ -1,11 +1,11 @@
-# Freelance Escrow Agent
+# Freelance Escrow Platform
 
-A no-build Solana CoralOS demo for freelance work: an employer opens a job, a worker submits evidence,
-and a review agent releases, disputes, or refunds the local demo escrow.
+A no-build Solana CoralOS freelance escrow platform v1: an employer funds a job, a worker tracks
+milestones and submits evidence, and review settles, disputes, or refunds the local demo escrow.
 
 This repo keeps the useful backbone from the referenced project: a root `npm run dev`, one Node proxy,
-a static React UI, the shared `packages/agent-runtime`, and the optional direct escrow program under
-`examples/txodds/escrow`. Secrets and generated state are not committed.
+a static React platform UI, the shared `packages/agent-runtime`, and the optional direct escrow program
+under `examples/txodds/escrow`. The previous dashboard remains available as `legacy.html`.
 
 ## Run
 
@@ -30,10 +30,12 @@ No third-party settlement key is generated or preserved.
 | Route | Purpose |
 |---|---|
 | `GET /api/health` | API status and wallet setup summary |
-| `GET /api/state` | Jobs, setup state, local escrow references |
-| `POST /api/jobs` | Create a funded local demo escrow job |
+| `GET /api/platform` | Platform dashboard state |
+| `GET /api/state` | Jobs, setup state, summary, and local escrow references |
+| `POST /api/jobs` | Create a funded platform escrow job |
 | `POST /api/jobs/:id/messages` | Add employer/worker/agent message |
 | `POST /api/jobs/:id/submission` | Add worker delivery evidence |
+| `POST /api/jobs/:id/milestones/:milestoneId/complete` | Mark a milestone complete |
 | `POST /api/jobs/:id/review` | Deterministic review and release/revision decision |
 | `POST /api/jobs/:id/dispute` | Mark job disputed |
 | `POST /api/jobs/:id/refund` | Mark local demo escrow refunded |

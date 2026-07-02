@@ -16,5 +16,5 @@ Both files are gitignored. No third-party settlement key is generated.
 npm run dev
 ```
 
-Starts the freelance escrow API on `http://localhost:8801` and the static dashboard on
+Starts the freelance escrow API on `http://localhost:8801` and the static platform UI on
 `http://localhost:3020`. The filename is kept for compatibility with the imported backbone.
