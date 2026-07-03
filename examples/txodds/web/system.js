@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import htm from 'htm'
 import {
@@ -9,13 +9,16 @@ import {
   Panel,
   Position,
   ReactFlow,
+  useNodesState,
 } from '@xyflow/react'
 import {
   ArrowLeft,
   Bot,
   BriefcaseBusiness,
   CheckCircle2,
+  ChevronDown,
   CircleDollarSign,
+  Copy,
   DatabaseZap,
   ExternalLink,
   GitBranch,
@@ -24,16 +27,22 @@ import {
   RefreshCw,
   RotateCcw,
   Scale,
+  Settings,
   ShieldCheck,
   StepForward,
   UserRound,
   Wallet,
+  X,
 } from 'lucide-react'
 
 const html = htm.bind(React.createElement)
 const API = window.FREELANCE_API
   ?? window.FREELANCE_ESCROW_API
   ?? (location.port === '3021' ? 'http://localhost:8802' : 'http://localhost:8801')
+
+const SPEEDS = [1, 1.5, 2, 0.5]
+
+const DEFAULT_KEYS = { play: ' ', step: 'ArrowRight', back: 'ArrowLeft', reset: 'r' }
 
 const SCRIPT = [
   {
@@ -101,18 +110,30 @@ const SCRIPT = [
   },
 ]
 
+// Swimlanes: [name, xStart, xEnd, tone]. Bands live in flow space so they pan/zoom with the graph.
+const LANES = [
+  ['Marketplace', 0, 520, 'paper'],
+  ['Agent Network', 520, 1320, 'green'],
+  ['Escrow', 1320, 1600, 'gold'],
+  ['Review', 1600, 2140, 'mint'],
+  ['Settlement', 2140, 2420, 'gold'],
+]
+const LANE_TOP = 20
+const LANE_HEIGHT = 380
+
+// [id, x, y, lane, icon, title, meta, detail]
 const BASE_NODES = [
-  ['employer', 0, 20, 'Marketplace', UserRound, 'Employer', 'Posts scoped work', 'Budget, criteria, milestones'],
-  ['job', 260, 20, 'Marketplace', BriefcaseBusiness, 'Open Job', 'Public task listing', 'Available to humans and agents'],
-  ['feed', 520, 20, 'Agent Network', DatabaseZap, 'Agent Feed', 'Polling API', 'Tokens identify each agent'],
-  ['bid', 780, 20, 'Agent Network', CircleDollarSign, 'Bid Window', 'Wallet-backed bids', 'Cheapest valid bid wins'],
-  ['auctioneer', 1040, 20, 'Agent Network', Scale, 'Auctioneer', 'Backend allocator', 'Awards once, blocks duplicates'],
-  ['escrow', 1300, 20, 'Escrow', Wallet, 'Devnet Escrow', 'Mandatory funding', 'Buyer deposits final bid amount'],
-  ['delivery', 1560, 20, 'Review', Bot, 'Worker Agent', 'Delivery evidence', 'URL, repo, and notes'],
-  ['review', 1820, 20, 'Review', ShieldCheck, 'Escrow Review', 'Artifact + AI gates', 'No release on fallback review'],
-  ['settlement', 2080, 20, 'Settlement', CheckCircle2, 'Settlement', 'Release or refund', 'Payout/refund signatures'],
-  ['human', 520, 260, 'Marketplace', UserRound, 'Human Worker', 'Manual claim path', 'Still supported for normal jobs'],
-  ['coral', 780, 260, 'Agent Network', GitBranch, 'Coral Adapter', 'Optional bridge', 'Coral is one connector, not the platform'],
+  ['employer', 40, 70, 'Marketplace', UserRound, 'Employer', 'Posts scoped work', 'Budget, criteria, milestones'],
+  ['job', 290, 70, 'Marketplace', BriefcaseBusiness, 'Open Job', 'Public task listing', 'Available to humans and agents'],
+  ['feed', 560, 70, 'Agent Network', DatabaseZap, 'Agent Feed', 'Polling API', 'Tokens identify each agent'],
+  ['bid', 810, 70, 'Agent Network', CircleDollarSign, 'Bid Window', 'Wallet-backed bids', 'Cheapest valid bid wins'],
+  ['auctioneer', 1060, 70, 'Agent Network', Scale, 'Auctioneer', 'Backend allocator', 'Awards once, blocks duplicates'],
+  ['escrow', 1360, 70, 'Escrow', Wallet, 'Devnet Escrow', 'Mandatory funding', 'Buyer deposits final bid amount'],
+  ['delivery', 1640, 70, 'Review', Bot, 'Worker Agent', 'Delivery evidence', 'URL, repo, and notes'],
+  ['review', 1890, 70, 'Review', ShieldCheck, 'Escrow Review', 'Artifact + AI gates', 'No release on fallback review'],
+  ['settlement', 2180, 70, 'Settlement', CheckCircle2, 'Settlement', 'Release or refund', 'Payout/refund signatures'],
+  ['human', 165, 250, 'Marketplace', UserRound, 'Human Worker', 'Manual claim path', 'Still supported for normal jobs'],
+  ['coral', 685, 250, 'Agent Network', GitBranch, 'Coral Adapter', 'Optional bridge', 'Coral is one connector, not the platform'],
 ]
 
 const EDGES = [
@@ -127,6 +148,34 @@ const EDGES = [
   ['e9', 'job', 'human'],
   ['e10', 'feed', 'coral'],
 ]
+
+function loadJSON(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : fallback
+  } catch {
+    return fallback
+  }
+}
+
+function saveJSON(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    /* storage unavailable — customisation just won't persist */
+  }
+}
+
+function normalizeKey(key) {
+  return key.length === 1 ? key.toLowerCase() : key
+}
+
+function keyLabel(key) {
+  if (!key) return 'unset'
+  const map = { ' ': 'Space', ArrowRight: '→', ArrowLeft: '←', ArrowUp: '↑', ArrowDown: '↓' }
+  if (map[key]) return map[key]
+  return key.length === 1 ? key.toUpperCase() : key
+}
 
 async function api(path, body) {
   const res = await fetch(`${API}${path}`, {
@@ -196,14 +245,34 @@ function edgeActive(source, target, step) {
     && [...(step.active || []), ...(step.complete || [])].includes(target)
 }
 
-function makeGraph(step) {
-  const nodes = BASE_NODES.map(([id, x, y, lane, icon, title, meta, detail]) => ({
+function laneNodesList() {
+  return LANES.map(([label, x0, x1, tone]) => ({
+    id: `lane-${label}`,
+    type: 'lane',
+    position: { x: x0, y: LANE_TOP },
+    data: { label, tone },
+    draggable: false,
+    selectable: false,
+    connectable: false,
+    focusable: false,
+    zIndex: 0,
+    style: { width: x1 - x0, height: LANE_HEIGHT },
+  }))
+}
+
+// Saved positions override the defaults so a dragged layout survives a reload.
+function systemNodesList(savedPos) {
+  return BASE_NODES.map(([id, x, y, lane, icon, title, meta, detail]) => ({
     id,
     type: 'system',
-    position: { x, y },
-    data: { icon, title, meta, detail, lane, state: nodeStatus(id, step) },
+    zIndex: 1,
+    position: savedPos && savedPos[id] ? { x: savedPos[id].x, y: savedPos[id].y } : { x, y },
+    data: { icon, title, meta, detail, lane, state: nodeStatus(id, SCRIPT[0]) },
   }))
-  const edges = EDGES.map(([id, source, target]) => ({
+}
+
+function buildEdges(step) {
+  return EDGES.map(([id, source, target]) => ({
     id,
     source,
     target,
@@ -212,16 +281,55 @@ function makeGraph(step) {
     markerEnd: { type: MarkerType.ArrowClosed },
     className: edgeActive(source, target, step) ? 'flow-edge-active' : 'flow-edge-idle',
   }))
-  return { nodes, edges }
+}
+
+function BrandMark() {
+  return html`<span className="brand-mark" aria-hidden="true">
+    <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+      <path d="M9.4 14.4 13 9.6M9.4 17.6 13 22.4M19 9.6 22.6 14.4M19 22.4 22.6 17.6" stroke="rgba(247,241,231,.34)" stroke-width="1.4" stroke-linecap="round" />
+      <circle cx="7" cy="16" r="2.6" fill="#91a782" />
+      <circle cx="16" cy="8" r="2.6" fill="#91a782" />
+      <circle cx="16" cy="24" r="2.6" fill="#91a782" />
+      <circle cx="25" cy="16" r="3" fill="#d3a34a" />
+    </svg>
+  </span>`
+}
+
+function SettingsPopover({ innerRef, bindings, listeningFor, onListen, onResetKeys, onResetPositions, onClose }) {
+  const rows = [['play', 'Play / Pause'], ['step', 'Step forward'], ['back', 'Step back'], ['reset', 'Reset']]
+  return html`<div className="settings-pop" ref=${innerRef}>
+    <div className="settings-head">
+      <span>Shortcuts</span>
+      <button className="icon-btn sm" onClick=${onClose} title="Close"><${X} size=${14} /></button>
+    </div>
+    <div className="kb-rows">
+      ${rows.map(([action, label]) => html`<div className="kb-row" key=${action}>
+        <span>${label}</span>
+        <button className=${`kb-key${listeningFor === action ? ' listening' : ''}`} onClick=${() => onListen(action)}>
+          ${listeningFor === action ? 'Press a key' : keyLabel(bindings[action])}
+        </button>
+      </div>`)}
+    </div>
+    <div className="settings-actions">
+      <button onClick=${onResetKeys}>Reset shortcuts</button>
+      <button onClick=${onResetPositions}>Reset node layout</button>
+    </div>
+    <p className="settings-hint">Click a shortcut, then press the new key. Esc cancels. Drag nodes on the map to rearrange; reset the layout above.</p>
+  </div>`
+}
+
+function LaneNode({ data }) {
+  return html`<div className="lane-node" data-tone=${data.tone}>
+    <span className="lane-label">${data.label}</span>
+  </div>`
 }
 
 function SystemNode({ data }) {
   const Icon = data.icon
-  return html`<div className=${`system-node ${data.state}`}>
+  return html`<div className=${`system-node ${data.state}`} data-lane=${data.lane}>
     <${Handle} type="target" position=${Position.Left} />
-    <span className="node-lane">${data.lane}</span>
     <div className="node-head">
-      <span><${Icon} size=${18} /></span>
+      <span className="node-icon"><${Icon} size=${17} /></span>
       <b>${data.title}</b>
     </div>
     <p>${data.meta}</p>
@@ -234,20 +342,13 @@ function Metric({ label, value }) {
   return html`<div className="system-metric"><span>${label}</span><b>${value}</b></div>`
 }
 
-function ProofList() {
-  return html`<section className="system-proof">
-    <span>What this proves</span>
-    <ul>
-      <li>Any MCP-capable agent can connect with a platform token.</li>
-      <li>Bids are permissioned and wallet-backed.</li>
-      <li>The backend awards automatically.</li>
-      <li>Escrow is mandatory for agent work.</li>
-      <li>Review gates settlement.</li>
-    </ul>
-  </section>`
+function StepChips({ steps }) {
+  return html`<div className="system-run-steps">
+    ${steps.map(([label, done]) => html`<span key=${label} className=${done ? 'done' : ''}>${label}</span>`)}
+  </div>`
 }
 
-function McpAgentDemo({ session, job, busy, error, onStart, onRefresh }) {
+function McpBody({ session, job, busy, error, onStart }) {
   const previewUrl = job?.submission?.url || session.previewUrl
   const setup = session.setup || `MCP_URL=${session.mcpUrl || `${API}/mcp`}\nMCP_AUTH_HEADER=Authorization: Bearer <start demo to mint key>`
   const copySetup = () => navigator.clipboard?.writeText(setup)
@@ -261,22 +362,18 @@ function McpAgentDemo({ session, job, busy, error, onStart, onRefresh }) {
     ['Delivery', session.steps?.deliverySubmitted || Boolean(job?.submission)],
     ['Review', session.steps?.reviewCaptured || Boolean(job?.review)],
   ]
-  return html`<section className="system-run system-mcp">
-    <div className="system-run-head">
-      <div><span>MCP agent demo</span><b>${session.active ? session.steps?.connected ? 'Connected' : 'Key ready' : 'Idle'}</b></div>
-      <button onClick=${onRefresh} title="Refresh MCP demo"><${RefreshCw} size=${15} /></button>
-    </div>
+  return html`<div className="run-body">
     <div className="system-run-actions">
-      <button onClick=${onStart} disabled=${busy}><${Play} size=${15} />${busy ? 'Starting' : session.active ? 'Show MCP setup' : 'Start MCP demo'}</button>
-      <button onClick=${copySetup} disabled=${!session.setup}>Copy OpenClaw setup</button>
-      ${previewUrl
-        ? html`<a className="system-run-link" href=${previewUrl} target="_blank" rel="noreferrer"><${ExternalLink} size=${15} />Open agent build</a>`
-        : html`<button disabled><${ExternalLink} size=${15} />Open agent build</button>`}
+      <button className="run-primary" onClick=${onStart} disabled=${busy}><${Play} size=${15} />${busy ? 'Starting' : session.active ? 'Show MCP setup' : 'Start MCP demo'}</button>
+      <div className="run-actions-row">
+        <button onClick=${copySetup} disabled=${!session.setup}><${Copy} size=${14} />Copy setup</button>
+        ${previewUrl
+          ? html`<a className="system-run-link" href=${previewUrl} target="_blank" rel="noreferrer"><${ExternalLink} size=${14} />Agent build</a>`
+          : html`<button disabled><${ExternalLink} size=${14} />Agent build</button>`}
+      </div>
     </div>
     <pre className="system-mcp-setup">${setup}</pre>
-    <div className="system-run-steps">
-      ${steps.map(([label, done]) => html`<span key=${label} className=${done ? 'done' : ''}>${label}</span>`)}
-    </div>
+    <${StepChips} steps=${steps} />
     <dl>
       <div><dt>Job</dt><dd>${job?.title || session.jobId || '--'}</dd></div>
       <div><dt>Status</dt><dd>${job?.status || '--'}</dd></div>
@@ -287,24 +384,10 @@ function McpAgentDemo({ session, job, busy, error, onStart, onRefresh }) {
     ${session.events?.length ? html`<div className="system-run-log">
       ${session.events.slice(0, 5).map((line) => html`<small key=${line}>${line}</small>`)}
     </div>` : null}
-  </section>`
+  </div>`
 }
 
-function LiveFacts({ data, enabled, error }) {
-  const { job, agents } = liveSnapshot(data)
-  return html`<section className="system-live">
-    <div><span>Read-only live data</span><b>${enabled ? 'On' : 'Off'}</b></div>
-    ${error ? html`<p className="system-error small">${error}</p>` : null}
-    <dl>
-      <div><dt>Latest job</dt><dd>${job?.title || 'No job loaded'}</dd></div>
-      <div><dt>Status</dt><dd>${job?.status || '--'}</dd></div>
-      <div><dt>Awarded</dt><dd>${job?.marketplace?.awardedBid?.by || '--'}</dd></div>
-      <div><dt>Connected agents</dt><dd>${agents.filter((agent) => agent.status === 'active').length}</dd></div>
-    </dl>
-  </section>`
-}
-
-function LiveAgentRun({ runner, job, busy, error, onStart, onRefresh }) {
+function LiveBody({ runner, job, busy, error, onStart }) {
   const previewUrl = job?.submission?.url || runner.previewUrl
   const steps = [
     ['Agent', runner.steps?.agentStarted || runner.running],
@@ -314,20 +397,16 @@ function LiveAgentRun({ runner, job, busy, error, onStart, onRefresh }) {
     ['Build', runner.steps?.buildServed || Boolean(previewUrl)],
     ['Review', runner.steps?.reviewCaptured || Boolean(job?.review)],
   ]
-  return html`<section className="system-run">
-    <div className="system-run-head">
-      <div><span>Live agent run</span><b>${runner.running ? 'Running' : runner.jobId ? 'Started' : 'Idle'}</b></div>
-      <button onClick=${onRefresh} title="Refresh live run"><${RefreshCw} size=${15} /></button>
-    </div>
+  return html`<div className="run-body">
     <div className="system-run-actions">
-      <button onClick=${onStart} disabled=${busy}><${Play} size=${15} />${busy ? 'Starting' : runner.jobId ? 'Resume live run' : 'Run live agent demo'}</button>
-      ${previewUrl
-        ? html`<a className="system-run-link" href=${previewUrl} target="_blank" rel="noreferrer"><${ExternalLink} size=${15} />Open agent build</a>`
-        : html`<button disabled><${ExternalLink} size=${15} />Open agent build</button>`}
+      <button className="run-primary" onClick=${onStart} disabled=${busy}><${Play} size=${15} />${busy ? 'Starting' : runner.jobId ? 'Resume live run' : 'Run live agent demo'}</button>
+      <div className="run-actions-row">
+        ${previewUrl
+          ? html`<a className="system-run-link" href=${previewUrl} target="_blank" rel="noreferrer"><${ExternalLink} size=${14} />Agent build</a>`
+          : html`<button disabled><${ExternalLink} size=${14} />Agent build</button>`}
+      </div>
     </div>
-    <div className="system-run-steps">
-      ${steps.map(([label, done]) => html`<span key=${label} className=${done ? 'done' : ''}>${label}</span>`)}
-    </div>
+    <${StepChips} steps=${steps} />
     ${job ? html`<dl>
       <div><dt>Job</dt><dd>${job.title}</dd></div>
       <div><dt>Status</dt><dd>${job.status}</dd></div>
@@ -337,12 +416,67 @@ function LiveAgentRun({ runner, job, busy, error, onStart, onRefresh }) {
     ${runner.logs?.length ? html`<div className="system-run-log">
       ${runner.logs.slice(-4).map((line) => html`<small key=${line}>${line}</small>`)}
     </div>` : null}
+  </div>`
+}
+
+function RunDemo({ tab, onTab, mcp, live }) {
+  const status = tab === 'mcp'
+    ? (mcp.session.active ? (mcp.session.steps?.connected ? 'Connected' : 'Key ready') : 'Idle')
+    : (live.runner.running ? 'Running' : live.runner.jobId ? 'Started' : 'Idle')
+  const onRefresh = tab === 'mcp' ? mcp.onRefresh : live.onRefresh
+  return html`<section className="system-run">
+    <div className="system-run-head">
+      <div><span>Run demo</span><b>${status}</b></div>
+      <button className="icon-btn" onClick=${onRefresh} title="Refresh"><${RefreshCw} size=${15} /></button>
+    </div>
+    <div className="run-tabs" role="tablist">
+      <button role="tab" aria-selected=${tab === 'mcp'} className=${tab === 'mcp' ? 'on' : ''} onClick=${() => onTab('mcp')}>MCP agent</button>
+      <button role="tab" aria-selected=${tab === 'live'} className=${tab === 'live' ? 'on' : ''} onClick=${() => onTab('live')}>Live agent</button>
+    </div>
+    ${tab === 'mcp'
+      ? html`<${McpBody} session=${mcp.session} job=${mcp.job} busy=${mcp.busy} error=${mcp.error} onStart=${mcp.onStart} />`
+      : html`<${LiveBody} runner=${live.runner} job=${live.job} busy=${live.busy} error=${live.error} onStart=${live.onStart} />`}
+  </section>`
+}
+
+function NetworkStatus({ data, enabled, error }) {
+  const { job, agents } = liveSnapshot(data)
+  return html`<section className="system-live">
+    <div><span>Network status</span><b className=${enabled ? 'live-on' : ''}>${enabled ? 'Live' : 'Static'}</b></div>
+    ${error ? html`<p className="system-error small">${error}</p>` : null}
+    <dl>
+      <div><dt>Latest job</dt><dd>${job?.title || 'No job loaded'}</dd></div>
+      <div><dt>Status</dt><dd>${job?.status || '--'}</dd></div>
+      <div><dt>Awarded</dt><dd>${job?.marketplace?.awardedBid?.by || '--'}</dd></div>
+      <div><dt>Active agents</dt><dd>${agents.filter((agent) => agent.status === 'active').length}</dd></div>
+    </dl>
+  </section>`
+}
+
+function ProofPanel() {
+  const [open, setOpen] = useState(false)
+  const points = [
+    'Any MCP-capable agent can connect with a platform token.',
+    'Bids are permissioned and wallet-backed.',
+    'The backend awards automatically.',
+    'Escrow is mandatory for agent work.',
+    'Review gates settlement.',
+  ]
+  return html`<section className=${`system-proof${open ? ' open' : ''}`}>
+    <button className="proof-toggle" onClick=${() => setOpen((v) => !v)} aria-expanded=${open}>
+      <span>What this proves</span>
+      <${ChevronDown} size=${16} />
+    </button>
+    ${open ? html`<ul>
+      ${points.map((point) => html`<li key=${point}>${point}</li>`)}
+    </ul>` : null}
   </section>`
 }
 
 function App() {
   const [stepIndex, setStepIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
+  const [speed, setSpeed] = useState(1)
   const [liveEnabled, setLiveEnabled] = useState(false)
   const [liveData, setLiveData] = useState({ jobs: [], agents: [], summary: {} })
   const [liveError, setLiveError] = useState('')
@@ -355,15 +489,35 @@ function App() {
   const [followLive, setFollowLive] = useState(false)
   const [followMcp, setFollowMcp] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [runTab, setRunTab] = useState('mcp')
+
+  // remappable keyboard shortcuts (persisted)
+  const [bindings, setBindings] = useState(() => ({ ...DEFAULT_KEYS, ...loadJSON('agentnet.keys', {}) }))
+  const [listeningFor, setListeningFor] = useState(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  // React Flow owns node positions so a dragged process box stays put across steps
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    useMemo(() => [...laneNodesList(), ...systemNodesList(loadJSON('agentnet.nodepos', {}))], []),
+  )
+
+  const settingsWrapRef = useRef(null)
+  const bindingsRef = useRef(bindings)
+  const listeningRef = useRef(listeningFor)
+  const actionsRef = useRef({})
+  bindingsRef.current = bindings
+  listeningRef.current = listeningFor
 
   const live = liveSnapshot(liveData)
   const trackedJobId = followMcp ? mcpSession.jobId : runner.jobId
   const runJob = jobById(liveData, trackedJobId) || (followLive || followMcp ? live.job : null)
   const runnerJob = jobById(liveData, runner.jobId)
   const progress = followMcp ? { steps: mcpSession.steps } : runner
-  const activeStepIndex = followLive || followMcp ? liveStepIndex(progress, runJob) : stepIndex
+  const following = followLive || followMcp
+  const activeStepIndex = following ? liveStepIndex(progress, runJob) : stepIndex
   const step = SCRIPT[activeStepIndex]
   const metrics = liveEnabled ? { ...step.metrics, ...live.metrics } : step.metrics
+  const edges = useMemo(() => buildEdges(step), [step])
 
   const refreshLive = async (force = false) => {
     if (!force && !liveEnabled) return
@@ -395,6 +549,7 @@ function App() {
   }
 
   const startRunner = async () => {
+    setRunTab('live')
     setRunnerBusy(true)
     setRunnerError('')
     setLiveEnabled(true)
@@ -412,6 +567,7 @@ function App() {
   }
 
   const startMcp = async () => {
+    setRunTab('mcp')
     setMcpBusy(true)
     setMcpError('')
     setLiveEnabled(true)
@@ -432,9 +588,9 @@ function App() {
     if (!playing) return
     const timer = setInterval(() => {
       setStepIndex((current) => current >= SCRIPT.length - 1 ? 0 : current + 1)
-    }, 1800)
+    }, Math.max(500, 1800 / speed))
     return () => clearInterval(timer)
-  }, [playing])
+  }, [playing, speed])
 
   useEffect(() => {
     refreshLive()
@@ -455,14 +611,50 @@ function App() {
     return () => clearInterval(timer)
   }, [followMcp, mcpSession.active])
 
-  const graph = useMemo(() => makeGraph(step), [step])
-  const nodeTypes = useMemo(() => ({ system: SystemNode }), [])
-  const selectedNode = selected ? graph.nodes.find((node) => node.id === selected.id) : null
+  const nodeTypes = useMemo(() => ({ system: SystemNode, lane: LaneNode }), [])
+  const selectedNode = selected ? nodes.find((node) => node.id === selected.id) : null
 
+  // recolour nodes on step change without touching their (possibly dragged) positions
+  useEffect(() => {
+    setNodes((nds) => nds.map((node) => (
+      node.type === 'system' ? { ...node, data: { ...node.data, state: nodeStatus(node.id, step) } } : node
+    )))
+  }, [step, setNodes])
+
+  // persist dragged process positions
+  useEffect(() => {
+    const map = {}
+    nodes.forEach((node) => { if (node.type === 'system') map[node.id] = node.position })
+    saveJSON('agentnet.nodepos', map)
+  }, [nodes])
+
+  useEffect(() => { saveJSON('agentnet.keys', bindings) }, [bindings])
+
+  useEffect(() => {
+    if (!settingsOpen) return
+    const onDown = (e) => {
+      if (settingsWrapRef.current && !settingsWrapRef.current.contains(e.target)) setSettingsOpen(false)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [settingsOpen])
+
+  const togglePlay = () => { setFollowLive(false); setFollowMcp(false); setPlaying((p) => !p) }
   const nextStep = () => {
     setFollowLive(false)
     setFollowMcp(false)
     setStepIndex((current) => Math.min(SCRIPT.length - 1, current + 1))
+  }
+  const prevStep = () => {
+    setFollowLive(false)
+    setFollowMcp(false)
+    setStepIndex((current) => Math.max(0, current - 1))
+  }
+  const jumpTo = (index) => {
+    setPlaying(false)
+    setFollowLive(false)
+    setFollowMcp(false)
+    setStepIndex(index)
   }
   const reset = () => {
     setPlaying(false)
@@ -471,49 +663,129 @@ function App() {
     setStepIndex(0)
     setSelected(null)
   }
+  const cycleSpeed = () => setSpeed((s) => SPEEDS[(SPEEDS.indexOf(s) + 1) % SPEEDS.length])
+
+  actionsRef.current = { play: togglePlay, step: nextStep, back: prevStep, reset }
+
+  const assignBinding = (action, rawKey) => {
+    if (['Shift', 'Control', 'Alt', 'Meta'].includes(rawKey)) return
+    const kn = normalizeKey(rawKey)
+    setBindings((b) => {
+      const next = { ...b }
+      for (const other of Object.keys(next)) if (next[other] === kn) next[other] = null
+      next[action] = kn
+      return next
+    })
+    setListeningFor(null)
+  }
+
+  const resetPositions = () => {
+    setNodes((nds) => nds.map((node) => {
+      if (node.type !== 'system') return node
+      const base = BASE_NODES.find((entry) => entry[0] === node.id)
+      return base ? { ...node, position: { x: base[1], y: base[2] } } : node
+    }))
+    saveJSON('agentnet.nodepos', {})
+  }
+
+  useEffect(() => {
+    const onKey = (e) => {
+      const t = e.target
+      const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)
+      if (listeningRef.current) {
+        e.preventDefault()
+        if (e.key === 'Escape') { setListeningFor(null); return }
+        assignBinding(listeningRef.current, e.key)
+        return
+      }
+      if (typing) return
+      if (t && t.tagName === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) return
+      const kn = normalizeKey(e.key)
+      const match = Object.keys(bindingsRef.current).find((a) => bindingsRef.current[a] && bindingsRef.current[a] === kn)
+      if (match && actionsRef.current[match]) { e.preventDefault(); actionsRef.current[match]() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const stepLabel = String(activeStepIndex + 1).padStart(2, '0')
+  const totalLabel = String(SCRIPT.length).padStart(2, '0')
 
   return html`<main className="system-shell">
-    <header className="system-topbar">
-      <a href="./index.html"><${ArrowLeft} size=${18} />Platform</a>
-      <div className="system-title">
-        <span>Standalone demo</span>
-        <h1>Agent Network Demo</h1>
+    <header className="topbar">
+      <div className="brand">
+        <${BrandMark} />
+        <div className="brand-text">
+          <span className="eyebrow">Solana · Devnet escrow</span>
+          <h1>Agent Network</h1>
+        </div>
       </div>
-      <div className="system-actions">
-        <button onClick=${() => { setFollowLive(false); setFollowMcp(false); setPlaying(!playing) }}><${playing ? Pause : Play} size=${17} />${playing ? 'Pause' : 'Play'}</button>
-        <button onClick=${nextStep} disabled=${stepIndex === SCRIPT.length - 1}><${StepForward} size=${17} />Step</button>
-        <button onClick=${reset}><${RotateCcw} size=${17} />Reset</button>
-        <label><input type="checkbox" checked=${liveEnabled} onChange=${(e) => { setLiveEnabled(e.target.checked); if (!e.target.checked) { setFollowLive(false); setFollowMcp(false) } }} />Live Data</label>
-        <button onClick=${refreshLive} disabled=${!liveEnabled}><${RefreshCw} size=${17} />Refresh</button>
+      <div className="transport" role="group" aria-label="Playback">
+        <button className="t-btn" onClick=${reset} title=${`Reset (${keyLabel(bindings.reset)})`}><${RotateCcw} size=${16} />Reset</button>
+        <button className="t-btn" onClick=${prevStep} disabled=${!following && stepIndex === 0} title=${`Back (${keyLabel(bindings.back)})`}><${StepForward} size=${16} style=${{ transform: 'scaleX(-1)' }} /></button>
+        <button className=${`t-btn primary${playing ? ' is-playing' : ''}`} onClick=${togglePlay} title=${`Play / Pause (${keyLabel(bindings.play)})`}><${playing ? Pause : Play} size=${16} />${playing ? 'Pause' : 'Play'}</button>
+        <button className="t-btn" onClick=${nextStep} disabled=${!following && stepIndex === SCRIPT.length - 1} title=${`Step (${keyLabel(bindings.step)})`}><${StepForward} size=${16} />Step</button>
+        <span className="t-sep" />
+        <button className="t-btn t-speed" onClick=${cycleSpeed} title="Playback speed">${speed}×</button>
+      </div>
+      <div className="live-controls">
+        <label className=${`switch${liveEnabled ? ' on' : ''}`}>
+          <input type="checkbox" checked=${liveEnabled} onChange=${(e) => { setLiveEnabled(e.target.checked); if (!e.target.checked) { setFollowLive(false); setFollowMcp(false) } }} />
+          Live data
+        </label>
+        <button className="ghost-btn" onClick=${() => refreshLive(true)} disabled=${!liveEnabled} title="Refresh live data"><${RefreshCw} size=${16} />Refresh</button>
+        <div className="settings-wrap" ref=${settingsWrapRef}>
+          <button className=${`ghost-btn icon-only${settingsOpen ? ' active' : ''}`} onClick=${() => setSettingsOpen((v) => !v)} title="Shortcuts" aria-label="Shortcuts"><${Settings} size=${16} /></button>
+          ${settingsOpen ? html`<${SettingsPopover}
+            innerRef=${settingsWrapRef}
+            bindings=${bindings}
+            listeningFor=${listeningFor}
+            onListen=${setListeningFor}
+            onResetKeys=${() => setBindings({ ...DEFAULT_KEYS })}
+            onResetPositions=${resetPositions}
+            onClose=${() => setSettingsOpen(false)}
+          />` : null}
+        </div>
+        <a className="ghost-link subtle" href="./index.html"><${ArrowLeft} size=${16} />Platform</a>
       </div>
     </header>
-    <section className="system-demo-copy">
-      <div className="system-step-copy">
-        <div className="system-step-line">
-          <span>${followLive ? 'Live step' : 'Step'} ${activeStepIndex + 1} of ${SCRIPT.length}</span>
-          <b>${activeStepIndex + 1}/${SCRIPT.length}</b>
+    <section className="stepband">
+      <div className="step-main">
+        <div className="step-meta">
+          <span className="step-index">STEP <b>${stepLabel}</b> / ${totalLabel}</span>
+          ${following ? html`<span className="badge-live"><i />${followMcp ? 'MCP LIVE' : 'LIVE'}</span>` : null}
         </div>
-        <h2>${step.title}</h2>
-        <p>${step.copy}</p>
+        <h2 className="step-title">${step.title}</h2>
+        <p className="step-copy">${step.copy}</p>
       </div>
-      <div className="system-step-progress" aria-hidden="true">
-        ${SCRIPT.map((item, index) => html`<i key=${item.id} className=${index < activeStepIndex ? 'complete' : index === activeStepIndex ? 'active' : 'idle'} />`)}
+      <div className="rail">
+        ${SCRIPT.map((item, index) => html`<button
+          key=${item.id}
+          type="button"
+          className=${`rail-seg ${index < activeStepIndex ? 'complete' : index === activeStepIndex ? 'active' : 'idle'}`}
+          onClick=${() => jumpTo(index)}
+          title=${`Step ${index + 1}: ${item.title}`}
+          aria-label=${`Step ${index + 1}: ${item.title}`}
+        />`)}
       </div>
     </section>
     <section className="system-stage">
       <${ReactFlow}
-        nodes=${graph.nodes}
-        edges=${graph.edges}
+        nodes=${nodes}
+        edges=${edges}
+        onNodesChange=${onNodesChange}
         nodeTypes=${nodeTypes}
         fitView=${true}
-        fitViewOptions=${{ padding: 0.08 }}
-        minZoom=${0.14}
+        fitViewOptions=${{ padding: 0.1 }}
+        minZoom=${0.12}
         maxZoom=${1.4}
         nodesDraggable=${true}
-        onNodeClick=${(_, node) => setSelected(node)}
+        proOptions=${{ hideAttribution: true }}
+        onNodeClick=${(_, node) => { if (node.type === 'system') setSelected(node) }}
+        onPaneClick=${() => setSelected(null)}
       >
-        <${Background} color="#d7d1c2" gap=${22} />
-        <${Controls} />
+        <${Background} color="rgba(215,209,194,.14)" gap=${24} />
+        <${Controls} position="top-right" showInteractive=${false} />
         <${Panel} position="top-left" className="system-panel">
           <${Metric} label="Budget" value=${metrics.budget} />
           <${Metric} label="Winning bid" value=${metrics.bid} />
@@ -521,21 +793,33 @@ function App() {
           <${Metric} label="Review" value=${metrics.review} />
           <${Metric} label="Settlement" value=${metrics.settlement} />
         </${Panel}>
-        <${Panel} position="bottom-left" className="system-lanes">
-          <b>Marketplace</b><b>Agent Network</b><b>Escrow</b><b>Review</b><b>Settlement</b>
+        <${Panel} position="bottom-left" className="state-legend">
+          <b data-state="idle">Idle</b>
+          <b data-state="active">Active</b>
+          <b data-state="complete">Complete</b>
         </${Panel}>
-        <${Panel} position="bottom-right" className="system-inspector">
-          <span>${selectedNode ? selectedNode.data.lane : 'Inspector'}</span>
-          <b>${selectedNode ? selectedNode.data.title : step.title}</b>
-          <p>${selectedNode ? selectedNode.data.detail : step.copy}</p>
+        <${Panel} position="bottom-right" className=${`system-inspector${selectedNode ? '' : ' is-empty'}`}>
+          ${selectedNode
+            ? html`
+              <span>${selectedNode.data.lane}</span>
+              <b>${selectedNode.data.title}</b>
+              <p>${selectedNode.data.detail}</p>
+              <small className="inspector-hint">Click empty canvas to clear</small>`
+            : html`
+              <span>Inspector</span>
+              <p>Select any node to see its role in the pipeline.</p>`}
         </${Panel}>
       </${ReactFlow}>
     </section>
     <aside className="system-side">
-      <${McpAgentDemo} session=${mcpSession} job=${jobById(liveData, mcpSession.jobId)} busy=${mcpBusy} error=${mcpError} onStart=${startMcp} onRefresh=${refreshMcp} />
-      <${LiveAgentRun} runner=${runner} job=${runnerJob} busy=${runnerBusy} error=${runnerError} onStart=${startRunner} onRefresh=${refreshRunner} />
-      <${LiveFacts} data=${liveData} enabled=${liveEnabled} error=${liveError} />
-      <${ProofList} />
+      <${NetworkStatus} data=${liveData} enabled=${liveEnabled} error=${liveError} />
+      <${RunDemo}
+        tab=${runTab}
+        onTab=${setRunTab}
+        mcp=${{ session: mcpSession, job: jobById(liveData, mcpSession.jobId), busy: mcpBusy, error: mcpError, onStart: startMcp, onRefresh: refreshMcp }}
+        live=${{ runner, job: runnerJob, busy: runnerBusy, error: runnerError, onStart: startRunner, onRefresh: refreshRunner }}
+      />
+      <${ProofPanel} />
     </aside>
   </main>`
 }
