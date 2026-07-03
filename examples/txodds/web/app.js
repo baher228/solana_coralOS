@@ -7,6 +7,7 @@ import {
   BriefcaseBusiness,
   ChevronDown,
   LayoutDashboard,
+  LogOut,
   MessageCircle,
   Plus,
   RefreshCw,
@@ -394,13 +395,40 @@ function Sidebar({ view, setView, data, session }) {
 }
 
 function Topbar({ session, refresh, busy, onLogout }) {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => { if (!e.target.closest('.escrow-account')) setOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  const runRefresh = () => { setOpen(false); refresh() }
+  const runLogout = () => { setOpen(false); onLogout() }
   return html`<header class="escrow-topbar">
     <div class="escrow-search"><${Icon} icon=${Search} /><input placeholder="Search jobs, clients, references" /></div>
-    <div class="escrow-account">
-      <button class="escrow-ghost iconed" disabled=${busy} onClick=${refresh}><${Icon} icon=${RefreshCw} /><span>Refresh</span></button>
-      <${Avatar} name=${session.name} />
-      <div><b>${session.name}</b><span>${session.email}</span></div>
-      <button class="escrow-ghost" onClick=${onLogout}>Switch account</button>
+    <div class=${`escrow-account ${open ? 'open' : ''}`}>
+      <button class="escrow-account-trigger" aria-haspopup="menu" aria-expanded=${open} onClick=${() => setOpen((v) => !v)}>
+        <${Avatar} name=${session.name} />
+        <span class="escrow-account-id"><b>${session.name}</b><span>${session.email}</span></span>
+        <${Icon} icon=${ChevronDown} size=${16} />
+      </button>
+      ${open && html`<div class="escrow-account-menu" role="menu">
+        <div class="escrow-account-menu-head">
+          <b>${session.name}</b>
+          <span>${session.organization} · ${session.role}</span>
+        </div>
+        <button role="menuitem" disabled=${busy} onClick=${runRefresh}>
+          <${Icon} icon=${RefreshCw} size=${16} /><span>${busy ? 'Refreshing…' : 'Refresh data'}</span>
+        </button>
+        <button role="menuitem" onClick=${runLogout}>
+          <${Icon} icon=${LogOut} size=${16} /><span>Switch account</span>
+        </button>
+      </div>`}
     </div>
   </header>`
 }

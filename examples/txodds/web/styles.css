@@ -34,7 +34,7 @@ button {
   border-radius: 6px;
   padding: 9px 12px;
   cursor: pointer;
-  font-weight: 650;
+  font-weight: 600;
 }
 button:hover:not(:disabled) { border-color: var(--blue); color: var(--blue); }
 button:disabled { opacity: .55; cursor: not-allowed; }
@@ -72,7 +72,7 @@ code {
   margin-bottom: 4px;
   color: var(--green);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: .08em;
 }
@@ -206,7 +206,7 @@ input:focus, textarea:focus, select:focus {
   color: var(--muted);
   background: var(--panel-soft);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   white-space: nowrap;
 }
 .status.open { color: var(--green); background: var(--green-soft); border-color: #a9dec6; }
@@ -240,7 +240,7 @@ input:focus, textarea:focus, select:focus {
   margin-bottom: 2px;
   color: var(--muted);
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .msg p { overflow-wrap: anywhere; }
@@ -353,7 +353,7 @@ input:focus, textarea:focus, select:focus {
 .missing span, .disputes span, .criteria-list > span, .history > span, .events > span {
   color: var(--muted);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .missing ul { margin: 0; padding-left: 18px; color: var(--muted); }
@@ -421,7 +421,7 @@ input:focus, textarea:focus, select:focus {
   color: white;
   background: rgba(255,255,255,.1);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .app .page-link:hover { text-decoration: none; border-color: #9fd4bd; }
@@ -462,7 +462,7 @@ input:focus, textarea:focus, select:focus {
 .app .status-strip span {
   color: #68756c;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .app .status-strip b {
@@ -577,13 +577,13 @@ input:focus, textarea:focus, select:focus {
 .app .panel-title span {
   color: #68756c;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .app label {
   display: grid;
   gap: 6px;
-  font-weight: 650;
+  font-weight: 600;
 }
 .app input,
 .app textarea {
@@ -640,7 +640,7 @@ input:focus, textarea:focus, select:focus {
   border-radius: 6px;
   background: #e8eee9;
   color: #173a2c;
-  font-weight: 800;
+  font-weight: 600;
 }
 .app .score b { font-size: 36px; line-height: 1; }
 .app .kv {
@@ -653,7 +653,7 @@ input:focus, textarea:focus, select:focus {
 }
 .app .kv span {
   color: #68756c;
-  font-weight: 800;
+  font-weight: 600;
 }
 .app .kv b,
 .app pre {
@@ -677,7 +677,7 @@ input:focus, textarea:focus, select:focus {
   color: #31473b;
   font-size: 12px;
   text-transform: uppercase;
-  font-weight: 800;
+  font-weight: 600;
 }
 .app .badge.released { background: #dff5e9; color: #11603e; }
 .app .badge.revision_requested,
@@ -766,7 +766,7 @@ input:focus, textarea:focus, select:focus {
   background: #1660a8;
   color: white;
   padding: 10px 13px;
-  font-weight: 750;
+  font-weight: 600;
 }
 .platform button:hover:not(:disabled) { color: white; background: #104a82; }
 .platform button.secondary,
@@ -807,7 +807,7 @@ input:focus, textarea:focus, select:focus {
 .platform-kicker {
   color: #88d0a5;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   letter-spacing: .08em;
   text-transform: uppercase;
 }
@@ -831,7 +831,7 @@ input:focus, textarea:focus, select:focus {
   background: rgba(255,255,255,.08);
   color: white;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
   text-decoration: none;
 }
@@ -863,7 +863,7 @@ input:focus, textarea:focus, select:focus {
 }
 .platform-metric span {
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .platform-metric b {
@@ -905,7 +905,7 @@ input:focus, textarea:focus, select:focus {
 .platform-panel-title span {
   color: #65727b;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .platform-list {
@@ -935,7 +935,7 @@ input:focus, textarea:focus, select:focus {
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.platform-job span { font-weight: 800; }
+.platform-job span { font-weight: 600; }
 .platform-job small {
   grid-column: 1 / -1;
   color: #65727b;
@@ -991,7 +991,7 @@ input:focus, textarea:focus, select:focus {
 }
 .platform-kv span {
   color: #65727b;
-  font-weight: 850;
+  font-weight: 600;
 }
 .platform-kv b,
 .platform-kv p,
@@ -1066,7 +1066,7 @@ input:focus, textarea:focus, select:focus {
   border-radius: 6px;
   background: #e8edf1;
   color: #24313a;
-  font-weight: 850;
+  font-weight: 600;
   text-decoration: none;
 }
 .platform-links a:hover { background: #dce8f2; }
@@ -1087,7 +1087,7 @@ input:focus, textarea:focus, select:focus {
   background: #e8edf1;
   color: #35444d;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -1229,7 +1229,7 @@ input:focus, textarea:focus, select:focus {
 .escrow-login-form a {
   width: fit-content;
   color: #245c9e;
-  font-weight: 800;
+  font-weight: 600;
 }
 .escrow-login-ledger {
   display: grid;
@@ -1251,7 +1251,7 @@ input:focus, textarea:focus, select:focus {
 .escrow-kicker {
   color: #7f8b98;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .escrow-login-copy .escrow-kicker { color: #8fd0a7; }
@@ -1266,7 +1266,7 @@ input:focus, textarea:focus, select:focus {
   border-radius: 8px;
   background: #245c9e;
   color: white;
-  font-weight: 900;
+  font-weight: 700;
 }
 .escrow-role-picker {
   display: grid;
@@ -1335,7 +1335,7 @@ input:focus, textarea:focus, select:focus {
   border-radius: 6px;
   border: 1px solid transparent;
   padding: 9px 12px;
-  font-weight: 800;
+  font-weight: 600;
   text-decoration: none;
   outline: none;
 }
@@ -1436,7 +1436,7 @@ button.escrow-ghost:hover:not(:disabled) {
 }
 .escrow-account a {
   color: #245c9e;
-  font-weight: 800;
+  font-weight: 600;
 }
 .escrow-avatar {
   width: 36px;
@@ -1447,7 +1447,7 @@ button.escrow-ghost:hover:not(:disabled) {
   background: #26313d;
   color: white;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
 }
 .escrow-view {
   display: grid;
@@ -1477,7 +1477,7 @@ button.escrow-ghost:hover:not(:disabled) {
 .escrow-stat span {
   color: #697586;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .escrow-stat b {
@@ -1513,7 +1513,7 @@ button.escrow-ghost:hover:not(:disabled) {
 }
 .escrow-field span {
   color: #465365;
-  font-weight: 800;
+  font-weight: 600;
 }
 .escrow-field input,
 .escrow-field textarea,
@@ -1613,7 +1613,7 @@ button.escrow-ghost:hover:not(:disabled) {
   background: #f7f9fb;
   color: #697586;
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .escrow-row {
@@ -1660,12 +1660,12 @@ button.escrow-row.on:hover:not(:disabled) {
 .escrow-row b {
   font-size: 15px;
   line-height: 1.25;
-  font-weight: 780;
+  font-weight: 600;
 }
 .escrow-row small {
   margin-top: 3px;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
 }
 .escrow-badge {
   width: fit-content;
@@ -1675,7 +1675,7 @@ button.escrow-row.on:hover:not(:disabled) {
   background: #e8edf2;
   color: #344054;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -1726,7 +1726,7 @@ button.escrow-row.on:hover:not(:disabled) {
 }
 .escrow-definition dt {
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .escrow-definition dd {
@@ -1736,7 +1736,7 @@ button.escrow-row.on:hover:not(:disabled) {
   word-break: break-word;
   font-size: 14px;
   line-height: 1.35;
-  font-weight: 800;
+  font-weight: 600;
 }
 .escrow-terms,
 .escrow-mini-list {
@@ -1858,13 +1858,13 @@ button.escrow-row.on:hover:not(:disabled) {
 }
 .escrow-evidence span {
   color: #697586;
-  font-weight: 850;
+  font-weight: 600;
 }
 .escrow-evidence a {
   min-width: 0;
   overflow-wrap: anywhere;
   color: #245c9e;
-  font-weight: 800;
+  font-weight: 600;
 }
 .escrow-dispute-panel,
 .escrow-dispute-form {
@@ -1885,7 +1885,7 @@ button.escrow-row.on:hover:not(:disabled) {
 .escrow-dispute-panel strong {
   color: #8a4f13;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
 }
 .escrow-dispute-panel p,
@@ -2278,7 +2278,7 @@ button.escrow-row.on:hover:not(:disabled) {
 .escrow-badge {
   background: #e8eee9;
   color: #31473b;
-  font-weight: 780;
+  font-weight: 600;
 }
 .escrow-badge.open {
   background: #e7f6ef;
@@ -2365,7 +2365,7 @@ button.escrow-row.on:hover:not(:disabled) {
 }
 .escrow-account-card span {
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .escrow-account-card b,
@@ -2414,7 +2414,7 @@ button.escrow-row.on:hover:not(:disabled) {
   background: rgba(255,255,255,.08);
   color: #9fd4bd;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 .escrow-page-metrics b {
@@ -2448,7 +2448,7 @@ button.escrow-row.on:hover:not(:disabled) {
 .escrow-screenshots span {
   color: #68756c;
   font-size: 12px;
-  font-weight: 850;
+  font-weight: 600;
 }
 .escrow-artifact-status b {
   text-transform: uppercase;
@@ -2526,7 +2526,7 @@ button.escrow-row.on:hover:not(:disabled) {
 .escrow-review-list b {
   color: #68756c;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
 }
 .escrow-review-top b {
@@ -2580,7 +2580,7 @@ button.escrow-row.on:hover:not(:disabled) {
 .escrow-review-check span {
   color: #68756c;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 700;
   text-transform: uppercase;
 }
 .escrow-review-check.pass span {
@@ -2782,7 +2782,7 @@ button.escrow-new:hover:not(:disabled) {
 .escrow-side-tools a {
   justify-content: center;
   color: #d7d7c9;
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .escrow-content {
@@ -3306,7 +3306,7 @@ button.escrow-row.on:hover:not(:disabled) {
 .escrow-transaction-breakdown dt {
   color: var(--desk-muted);
   font-size: 11px;
-  font-weight: 850;
+  font-weight: 600;
   text-transform: uppercase;
 }
 
@@ -3314,7 +3314,7 @@ button.escrow-row.on:hover:not(:disabled) {
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
-  font-weight: 750;
+  font-weight: 600;
 }
 
 .escrow-action-bar.wallet {
@@ -3472,7 +3472,7 @@ button.escrow-ghost:hover:not(:disabled) {
   border-radius: 6px;
   background: var(--desk-panel);
   color: var(--desk-ink);
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .doc-link:hover {
@@ -3582,4 +3582,97 @@ button.escrow-ghost:hover:not(:disabled) {
   .escrow-transaction-trigger svg {
     display: none;
   }
+}
+
+/* Account menu: refresh + switch account collapsed behind the avatar. */
+.escrow-account {
+  position: relative;
+}
+.escrow-account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px;
+  border: 1px solid var(--desk-line);
+  border-radius: 10px;
+  background: var(--desk-panel);
+  color: var(--desk-ink);
+}
+.escrow-account-trigger:hover:not(:disabled) {
+  border-color: var(--desk-line-strong);
+  background: #f6f8f6;
+}
+.escrow-account-id {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+.escrow-account-id b {
+  font-size: 13px;
+}
+.escrow-account-id > span {
+  font-size: 12px;
+  color: var(--desk-muted);
+}
+.escrow-account-trigger > svg {
+  flex: 0 0 auto;
+  color: var(--desk-muted);
+  transition: transform .16s ease;
+}
+.escrow-account.open .escrow-account-trigger > svg {
+  transform: rotate(180deg);
+}
+.escrow-account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  min-width: 244px;
+  max-width: calc(100vw - 28px);
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--desk-line);
+  border-radius: 12px;
+  background: var(--desk-panel);
+  box-shadow: 0 16px 44px rgba(16, 24, 40, .17);
+}
+.escrow-account-menu-head {
+  display: grid;
+  gap: 2px;
+  padding: 6px 10px 9px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--desk-line);
+}
+.escrow-account-menu-head b {
+  font-size: 13px;
+}
+.escrow-account-menu-head span {
+  font-size: 12px;
+  color: var(--desk-muted);
+  text-transform: capitalize;
+}
+.escrow-account-menu button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--desk-ink);
+  text-align: left;
+}
+.escrow-account-menu button:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--desk-green-soft);
+  color: #46523f;
+}
+.escrow-account-menu button svg {
+  flex: 0 0 auto;
+  color: var(--desk-muted);
 }
