@@ -2303,6 +2303,83 @@ input:focus, textarea:focus, select:focus {
   color: #17211b;
   font-size: 18px;
 }
+.escrow-artifact-report {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dde5df;
+  border-radius: 8px;
+  background: #ffffff;
+}
+.escrow-artifact-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.escrow-artifact-status {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid #dde5df;
+  border-radius: 6px;
+  background: #f6f8f6;
+}
+.escrow-artifact-status span,
+.escrow-artifact-status small,
+.escrow-log-links a,
+.escrow-screenshots span {
+  color: #68756c;
+  font-size: 12px;
+  font-weight: 850;
+}
+.escrow-artifact-status b {
+  text-transform: uppercase;
+}
+.escrow-artifact-status.pass b {
+  color: #11563c;
+}
+.escrow-artifact-status.fail b {
+  color: #9b1c1c;
+}
+.escrow-artifact-status.skipped b {
+  color: #68756c;
+}
+.escrow-artifact-status p {
+  margin: 0;
+  color: #48564d;
+}
+.escrow-screenshots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.escrow-screenshots a {
+  display: grid;
+  gap: 6px;
+  color: inherit;
+  text-decoration: none;
+}
+.escrow-screenshots img {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  object-position: top;
+  border: 1px solid #dde5df;
+  border-radius: 6px;
+  background: #f6f8f6;
+}
+.escrow-log-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.escrow-log-links a {
+  padding: 6px 8px;
+  border: 1px solid #cbd7cf;
+  border-radius: 6px;
+  background: #f6f8f6;
+  text-decoration: none;
+}
 .escrow-review-result {
   gap: 12px;
   border: 1px solid #dde5df;
@@ -2373,10 +2450,14 @@ input:focus, textarea:focus, select:focus {
   border-top: 1px solid rgba(23, 33, 27, .1);
 }
 .escrow-review-check p,
+.escrow-review-check small,
 .escrow-review-list p {
   grid-column: 1 / -1;
   margin: 0;
   color: #48564d;
+}
+.escrow-review-check small {
+  color: #68756c;
 }
 .escrow-review-check span {
   color: #68756c;
@@ -2455,6 +2536,10 @@ input:focus, textarea:focus, select:focus {
   .escrow-page-metrics span {
     min-width: 0;
     flex: 1;
+  }
+  .escrow-artifact-grid,
+  .escrow-screenshots {
+    grid-template-columns: 1fr;
   }
 }
 

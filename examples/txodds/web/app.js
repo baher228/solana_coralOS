@@ -468,30 +468,74 @@ function Delivery({ job, act }) {
   </div>`
 }
 
+function artifactHref(job, artifact) {
+  return `${API}/api/jobs/${job.id}/artifacts/${artifact.id}`
+}
+
+function ArtifactStatus({ label, item }) {
+  return html`<div class=${`escrow-artifact-status ${item?.status || 'skipped'}`}>
+    <span>${label}</span>
+    <b>${statusText(item?.status || 'skipped')}</b>
+    <p>${item?.summary || 'Not run'}</p>
+    ${item?.commit ? html`<small>Commit ${item.commit}</small>` : null}
+    ${item?.title ? html`<small>${item.title}</small>` : null}
+    ${item?.command ? html`<small>${item.command}</small>` : null}
+  </div>`
+}
+
+function ArtifactReport({ job, run }) {
+  if (!run) return null
+  const screenshots = run.screenshots || []
+  const logs = run.logs || []
+  return html`<section class="escrow-artifact-report">
+    <div class="escrow-section-head">
+      <h3>Artifact review</h3>
+      <span>${new Date(run.at).toLocaleString()}</span>
+    </div>
+    <div class="escrow-artifact-grid">
+      <${ArtifactStatus} label="Repository" item=${run.repo} />
+      <${ArtifactStatus} label="Build" item=${run.build} />
+      <${ArtifactStatus} label="Preview" item=${run.preview} />
+    </div>
+    ${screenshots.length ? html`<div class="escrow-screenshots">
+      ${screenshots.map((shot) => html`<a key=${shot.id} href=${artifactHref(job, shot)} target="_blank">
+        <img src=${artifactHref(job, shot)} alt=${shot.label} />
+        <span>${shot.label}</span>
+      </a>`)}
+    </div>` : html`<p class="escrow-muted">No screenshots captured.</p>`}
+    ${logs.length ? html`<div class="escrow-log-links">
+      ${logs.map((log) => html`<a key=${log.id} href=${artifactHref(job, log)} target="_blank">${log.label}</a>`)}
+    </div>` : null}
+  </section>`
+}
+
 function ReviewReport({ review }) {
-  const checks = review.checks || []
+  const checks = review.criteriaResults?.length ? review.criteriaResults : (review.checks || [])
   const missing = review.missing || []
-  const risks = review.risks || []
+  const risks = [...(review.criticalRisks || []), ...(review.risks || [])]
   const recommendation = review.recommendation || (review.approved ? 'approve' : 'revision')
-  const source = review.source === 'ai' ? 'AI review' : review.source === 'fallback' ? 'Review unavailable' : 'Legacy review'
+  const source = review.source === 'ai' ? 'Artifact AI review' : review.source === 'fallback' ? 'Review unavailable' : 'Legacy review'
   return html`<section class=${`escrow-review-result ${recommendation}`}>
     <div class="escrow-review-top">
       <div>
         <span>${source}</span>
         <b>${review.score ?? 0}<small>/100</small></b>
       </div>
-      <strong class=${`escrow-review-pill ${recommendation}`}>${statusText(recommendation)}</strong>
+      <strong class=${`escrow-review-pill ${review.releaseEligible ? 'approve' : recommendation}`}>${review.releaseEligible ? 'release eligible' : statusText(recommendation)}</strong>
     </div>
     <p>${review.summary}</p>
+    ${typeof review.confidence === 'number' ? html`<div class="escrow-review-list"><b>Confidence</b><p>${review.confidence}/100</p></div>` : null}
     ${checks.length ? html`<div class="escrow-review-checks">
       ${checks.map((check, i) => html`<div class=${`escrow-review-check ${check.status}`} key=${i}>
         <b>${check.label}</b>
         <span>${statusText(check.status)}</span>
-        <p>${check.reason || check.evidence || 'No detail provided.'}</p>
+        <p>${check.reason || 'No detail provided.'}</p>
+        ${check.evidence ? html`<small>${check.evidence}</small>` : null}
       </div>`)}
     </div>` : null}
     ${missing.length ? html`<div class="escrow-review-list"><b>Missing evidence</b><p>${missing.join(', ')}</p></div>` : null}
     ${risks.length ? html`<div class="escrow-review-list"><b>Risks</b><p>${risks.join(', ')}</p></div>` : null}
+    ${review.revisionInstructions ? html`<div class="escrow-review-list"><b>Revision instructions</b><p>${review.revisionInstructions}</p></div>` : null}
   </section>`
 }
 
@@ -502,8 +546,8 @@ function Review({ job, act }) {
     <${DetailPanel} job=${job} />
   </div>`
   const canReview = Boolean(job.submission) && !isTerminal(job) && job.status !== 'disputed'
-  const canRelease = canReview && job.review?.recommendation === 'approve'
-  const revisionNote = (job.review?.missing || []).join('; ') || 'Please address the AI review notes and resubmit evidence.'
+  const canRelease = canReview && job.review?.releaseEligible
+  const revisionNote = job.review?.revisionInstructions || (job.review?.missing || []).join('; ') || 'Please address the AI review notes and resubmit evidence.'
   return html`<div class="escrow-workspace-grid">
     <section class="escrow-main-panel">
       <div class="escrow-section-head"><h2>Review desk</h2><${Badge} status=${job.status} /></div>
@@ -512,6 +556,7 @@ function Review({ job, act }) {
         <div><span>Repository</span>${job.submission?.repo ? html`<a href=${job.submission.repo} target="_blank">${job.submission.repo}</a>` : html`<b>Missing</b>`}</div>
         <p>${job.submission?.notes || 'No worker evidence has been submitted yet.'}</p>
       </div>
+      ${job.review?.artifactRun && html`<${ArtifactReport} job=${job} run=${job.review.artifactRun} />`}
       ${job.review && html`<${ReviewReport} review=${job.review} />`}
       <div class="escrow-action-bar">
         <button class="escrow-primary" disabled=${!canReview} onClick=${() => act(() => api(`/api/jobs/${job.id}/review`, { action: 'assess' }))}>Run AI review</button>

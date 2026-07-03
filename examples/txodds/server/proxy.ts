@@ -1,5 +1,6 @@
 import http from 'node:http'
 import fs from 'node:fs/promises'
+import { spawn } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
@@ -10,9 +11,13 @@ import { complete, parseJsonReply } from '../../../packages/agent-runtime/src/ll
 const ENV_PATH = process.env.KIT_ENV ?? fileURLToPath(new URL('../../../.env', import.meta.url))
 const DATA_DIR = fileURLToPath(new URL('../.data/', import.meta.url))
 const DATA_FILE = `${DATA_DIR}jobs.json`
+const REVIEW_DIR = `${DATA_DIR}reviews`
 const PORT = Number(process.env.PORT ?? 8801)
 const DEFAULT_RPC_URL = 'https://api.devnet.solana.com'
 const BALANCE_TIMEOUT_MS = 2500
+const REVIEW_TIMEOUT_MS = Number(process.env.REVIEW_TIMEOUT_MS ?? 90000)
+const MAX_LOG_CHARS = 6000
+const MAX_SNIPPET_CHARS = 2000
 
 type Actor = 'employer' | 'worker' | 'agent' | 'system'
 type Status = 'open' | 'funded' | 'submitted' | 'approved' | 'released' | 'revision_requested' | 'disputed' | 'refunded' | 'cancelled'
@@ -21,11 +26,33 @@ type SettlementEventType = 'funded' | 'submitted' | 'reviewed' | 'released' | 'd
 type ReviewSource = 'ai' | 'legacy-heuristic' | 'fallback'
 type ReviewRecommendation = 'approve' | 'revision' | 'dispute'
 type ReviewCheckStatus = 'pass' | 'fail' | 'unclear'
+type ArtifactStatus = 'pass' | 'fail' | 'skipped'
+type ArtifactKind = 'screenshot' | 'log' | 'text'
 
 interface Event { at: string; actor: Actor; type: string; summary: string }
 interface Message { at: string; author: Exclude<Actor, 'system'>; text: string }
 interface Submission { at: string; url: string; repo: string; notes: string }
 interface ReviewCheck { label: string; status: ReviewCheckStatus; reason: string; evidence: string }
+interface ReviewArtifact { id: string; kind: ArtifactKind; label: string; file: string; mime: string }
+interface ArtifactResult { status: ArtifactStatus; summary: string; error?: string; log?: string }
+interface RepoArtifact extends ArtifactResult {
+  url?: string
+  commit?: string
+  packageManager?: string
+  scripts?: Record<string, string>
+  files?: Array<{ path: string; snippet: string }>
+}
+interface BuildArtifact extends ArtifactResult { command?: string; outputDir?: string }
+interface PreviewArtifact extends ArtifactResult { url?: string; httpStatus?: number; title?: string }
+interface ArtifactRun {
+  id: string
+  at: string
+  repo: RepoArtifact
+  build: BuildArtifact
+  preview: PreviewArtifact
+  screenshots: ReviewArtifact[]
+  logs: ReviewArtifact[]
+}
 interface Review {
   at: string
   approved: boolean
@@ -36,6 +63,12 @@ interface Review {
   recommendation: ReviewRecommendation
   checks: ReviewCheck[]
   risks: string[]
+  criteriaResults: ReviewCheck[]
+  artifactRun?: ArtifactRun
+  confidence: number
+  criticalRisks: string[]
+  releaseEligible: boolean
+  revisionInstructions: string
 }
 interface Milestone { id: string; title: string; description: string; amountSol: number; status: MilestoneStatus; completedAt?: string }
 interface Dispute { at: string; by: Exclude<Actor, 'system' | 'agent'>; note: string; status: 'open' }
@@ -327,21 +360,275 @@ export function submitJob(job: Job, input: Record<string, unknown>): Submission 
 }
 
 type ReviewCompletion = (opts: { system: string; user: string; maxTokens?: number }) => Promise<string>
+type ArtifactCollector = (job: Job) => Promise<ArtifactRun>
+type CommandResult = { ok: boolean; code: number | null; timedOut: boolean; output: string }
 
 interface AiReviewReply {
   score?: unknown
   recommendation?: unknown
   summary?: unknown
   checks?: unknown
+  criteriaResults?: unknown
   missing?: unknown
   risks?: unknown
+  confidence?: unknown
+  criticalRisks?: unknown
+  releaseEligible?: unknown
+  revisionInstructions?: unknown
 }
 
 const REVIEW_SYSTEM = `You are the escrow review agent for a freelance marketplace.
-Review only the platform-visible job data you are given: scope, acceptance criteria, milestones, messages, events, and submission fields.
-You cannot browse external URLs or Git repos; treat links as references unless the worker explains what they prove.
-Reject keyword stuffing, generic promises, and unsupported claims. Approve only when the evidence demonstrates all material acceptance items.
-Return only JSON with this shape: {"score":0-100,"recommendation":"approve|revision|dispute","summary":"...","checks":[{"label":"...","status":"pass|fail|unclear","reason":"...","evidence":"..."}],"missing":["..."],"risks":["..."]}.`
+Review the job against the artifact evidence collected by the backend: repository scan, build result, preview metadata, screenshots, worker notes, messages, milestones, scope, and acceptance criteria.
+Reject keyword stuffing, generic promises, unsupported claims, and links that could not be inspected. Use unclear when evidence is incomplete.
+Approve only when every material acceptance item is demonstrated by inspected artifacts.
+Return only JSON with this shape: {"score":0-100,"recommendation":"approve|revision|dispute","confidence":0-100,"summary":"...","criteriaResults":[{"label":"...","status":"pass|fail|unclear","reason":"...","evidence":"..."}],"missing":["..."],"criticalRisks":["..."],"risks":["..."],"releaseEligible":false,"revisionInstructions":"..."}.`
+
+function safeReviewEnv(): NodeJS.ProcessEnv {
+  const keys = ['PATH', 'Path', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA']
+  return Object.fromEntries(keys.flatMap((key) => process.env[key] ? [[key, process.env[key] as string]] : []))
+}
+
+function npmCommand() {
+  return process.platform === 'win32' ? 'npm.cmd' : 'npm'
+}
+
+function artifactFile(file: string) {
+  return path.relative(REVIEW_DIR, file).replace(/\\/g, '/')
+}
+
+async function addArtifact(run: ArtifactRun, dir: string, kind: ArtifactKind, label: string, fileName: string, content: string | Buffer, mime: string): Promise<ReviewArtifact> {
+  const file = path.join(dir, fileName)
+  await fs.writeFile(file, content)
+  const artifact = { id: `${run.id}_${fileName.replace(/[^a-z0-9.]+/gi, '_')}`, kind, label, file: artifactFile(file), mime }
+  if (kind === 'screenshot') run.screenshots.push(artifact)
+  else run.logs.push(artifact)
+  return artifact
+}
+
+function trimLog(input: string) {
+  return input.length > MAX_LOG_CHARS ? input.slice(-MAX_LOG_CHARS) : input
+}
+
+function runCommand(command: string, args: string[], cwd: string, timeoutMs = REVIEW_TIMEOUT_MS): Promise<CommandResult> {
+  return new Promise((resolve) => {
+    let output = ''
+    let timedOut = false
+    const child = spawn(command, args, { cwd, env: safeReviewEnv(), windowsHide: true })
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill()
+    }, timeoutMs)
+    child.stdout.on('data', (chunk) => { output = trimLog(output + chunk.toString()) })
+    child.stderr.on('data', (chunk) => { output = trimLog(output + chunk.toString()) })
+    child.on('error', (error) => {
+      clearTimeout(timer)
+      resolve({ ok: false, code: null, timedOut, output: trimLog(`${output}\n${error.message}`) })
+    })
+    child.on('close', (code) => {
+      clearTimeout(timer)
+      resolve({ ok: code === 0 && !timedOut, code, timedOut, output: trimLog(output) })
+    })
+  })
+}
+
+function githubCloneUrl(input: string): string | null {
+  try {
+    const url = new URL(input.trim())
+    if (url.protocol !== 'https:' || url.hostname.toLowerCase() !== 'github.com') return null
+    const [owner, repo] = url.pathname.replace(/\.git$/i, '').split('/').filter(Boolean)
+    if (!owner || !repo) return null
+    return `https://github.com/${owner}/${repo}.git`
+  } catch {
+    return null
+  }
+}
+
+async function exists(file: string) {
+  try { await fs.access(file); return true } catch { return false }
+}
+
+async function readJsonFile<T = Record<string, unknown>>(file: string): Promise<T | null> {
+  try { return JSON.parse(await fs.readFile(file, 'utf8')) as T } catch { return null }
+}
+
+async function detectPackageManager(repoDir: string): Promise<string> {
+  if (await exists(path.join(repoDir, 'pnpm-lock.yaml'))) return 'pnpm'
+  if (await exists(path.join(repoDir, 'yarn.lock'))) return 'yarn'
+  if (await exists(path.join(repoDir, 'bun.lockb')) || await exists(path.join(repoDir, 'bun.lock'))) return 'bun'
+  return 'npm'
+}
+
+async function walkRepoFiles(root: string, dir = root, out: string[] = []): Promise<string[]> {
+  if (out.length >= 24) return out
+  const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => [])
+  for (const entry of entries) {
+    if (out.length >= 24) break
+    if (['.git', 'node_modules', 'dist', 'build', '.next', 'coverage'].includes(entry.name)) continue
+    const full = path.join(dir, entry.name)
+    const rel = path.relative(root, full).replace(/\\/g, '/')
+    if (entry.isDirectory()) {
+      if (rel.split('/').length <= 3) await walkRepoFiles(root, full, out)
+    } else if (/^(readme|package\.json)|\.(tsx?|jsx?|css|html|md)$/i.test(entry.name)) {
+      out.push(full)
+    }
+  }
+  return out
+}
+
+async function scanRepo(repoDir: string): Promise<Pick<RepoArtifact, 'packageManager' | 'scripts' | 'files'>> {
+  const pkg = await readJsonFile<{ scripts?: Record<string, string> }>(path.join(repoDir, 'package.json'))
+  const files = []
+  for (const file of await walkRepoFiles(repoDir)) {
+    const stat = await fs.stat(file).catch(() => null)
+    if (!stat || stat.size > 120_000) continue
+    files.push({
+      path: path.relative(repoDir, file).replace(/\\/g, '/'),
+      snippet: (await fs.readFile(file, 'utf8')).slice(0, MAX_SNIPPET_CHARS),
+    })
+    if (files.length >= 12) break
+  }
+  return { packageManager: await detectPackageManager(repoDir), scripts: pkg?.scripts || {}, files }
+}
+
+async function findBuildOutput(repoDir: string): Promise<string | undefined> {
+  for (const name of ['dist', 'build', 'out', 'public']) {
+    const candidate = path.join(repoDir, name)
+    if (await exists(candidate)) return candidate
+  }
+  return undefined
+}
+
+async function buildRepo(repoDir: string, run: ArtifactRun, dir: string): Promise<BuildArtifact> {
+  const pkg = await readJsonFile<{ scripts?: Record<string, string> }>(path.join(repoDir, 'package.json'))
+  if (!pkg?.scripts?.build) return { status: 'skipped', summary: 'No package build script found' }
+  const npm = npmCommand()
+  const hasLock = await exists(path.join(repoDir, 'package-lock.json'))
+  const installArgs = hasLock ? ['ci', '--ignore-scripts', '--no-audit', '--no-fund'] : ['install', '--ignore-scripts', '--no-audit', '--no-fund']
+  const install = await runCommand(npm, installArgs, repoDir)
+  await addArtifact(run, dir, 'log', 'Install log', 'install.log', install.output || '(no output)', 'text/plain')
+  if (!install.ok) return { status: 'fail', summary: install.timedOut ? 'Install timed out' : 'Install failed', command: `${npm} ${installArgs.join(' ')}`, log: install.output }
+  const build = await runCommand(npm, ['run', 'build'], repoDir)
+  await addArtifact(run, dir, 'log', 'Build log', 'build.log', build.output || '(no output)', 'text/plain')
+  const outputDir = build.ok ? await findBuildOutput(repoDir) : undefined
+  return {
+    status: build.ok ? 'pass' : 'fail',
+    summary: build.ok ? 'Build completed' : build.timedOut ? 'Build timed out' : 'Build failed',
+    command: `${npm} run build`,
+    ...(outputDir ? { outputDir } : {}),
+    log: build.output,
+  }
+}
+
+async function inspectPreview(url: string): Promise<PreviewArtifact> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15000) })
+    const contentType = res.headers.get('content-type') || ''
+    const text = contentType.includes('text/html') ? (await res.text()).slice(0, 120_000) : ''
+    const title = text.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim()
+    return { status: res.ok ? 'pass' : 'fail', summary: res.ok ? 'Preview URL loaded' : `Preview returned HTTP ${res.status}`, url, httpStatus: res.status, ...(title ? { title } : {}) }
+  } catch (e) {
+    return { status: 'fail', summary: 'Preview URL failed to load', url, error: (e as Error).message }
+  }
+}
+
+async function serveStatic(root: string, fn: (url: string) => Promise<void>): Promise<void> {
+  const server = http.createServer(async (req, res) => {
+    try {
+      const requested = decodeURIComponent(new URL(req.url || '/', 'http://local').pathname)
+      const rel = requested === '/' ? 'index.html' : requested.replace(/^\/+/, '')
+      const file = path.resolve(root, rel)
+      if (!file.startsWith(path.resolve(root))) {
+        res.statusCode = 403; res.end('forbidden'); return
+      }
+      const stat = await fs.stat(file).catch(() => null)
+      const chosen = stat?.isDirectory() ? path.join(file, 'index.html') : file
+      res.end(await fs.readFile(chosen))
+    } catch {
+      res.statusCode = 404
+      res.end('not found')
+    }
+  })
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  const port = typeof address === 'object' && address ? address.port : 0
+  try {
+    await fn(`http://127.0.0.1:${port}/`)
+  } finally {
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+}
+
+async function takeScreenshots(targetUrl: string, run: ArtifactRun, dir: string, prefix: string): Promise<ArtifactResult> {
+  try {
+    const { chromium } = await import('playwright')
+    const browser = await chromium.launch({ headless: true })
+    try {
+      for (const viewport of [
+        { name: 'desktop', width: 1365, height: 900 },
+        { name: 'mobile', width: 390, height: 844 },
+      ]) {
+        const page = await browser.newPage({ viewport: { width: viewport.width, height: viewport.height } })
+        await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 25000 })
+        const fileName = `${prefix}-${viewport.name}.png`
+        const file = path.join(dir, fileName)
+        await page.screenshot({ path: file, fullPage: true })
+        run.screenshots.push({ id: `${run.id}_${fileName}`, kind: 'screenshot', label: `${prefix} ${viewport.name}`, file: artifactFile(file), mime: 'image/png' })
+        await page.close()
+      }
+    } finally {
+      await browser.close()
+    }
+    return { status: 'pass', summary: `${prefix} screenshots captured` }
+  } catch (e) {
+    await addArtifact(run, dir, 'log', `${prefix} screenshot error`, `${prefix}-screenshot.log`, (e as Error).message, 'text/plain')
+    return { status: 'fail', summary: `${prefix} screenshot failed`, error: (e as Error).message }
+  }
+}
+
+export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
+  const run: ArtifactRun = {
+    id: `review_${Date.now().toString(36)}`,
+    at: now(),
+    repo: { status: 'skipped', summary: 'No repository submitted' },
+    build: { status: 'skipped', summary: 'No build attempted' },
+    preview: { status: 'skipped', summary: 'No preview URL submitted' },
+    screenshots: [],
+    logs: [],
+  }
+  const dir = path.join(REVIEW_DIR, job.id, run.id)
+  await fs.mkdir(dir, { recursive: true })
+  if (job.submission?.repo) {
+    const cloneUrl = githubCloneUrl(job.submission.repo)
+    if (!cloneUrl) {
+      run.repo = { status: 'fail', summary: 'Only public HTTPS GitHub repos are supported in v1', url: job.submission.repo }
+    } else {
+      const repoDir = path.join(dir, 'repo')
+      const clone = await runCommand('git', ['clone', '--depth', '1', cloneUrl, repoDir], dir)
+      await addArtifact(run, dir, 'log', 'Clone log', 'clone.log', clone.output || '(no output)', 'text/plain')
+      if (!clone.ok) {
+        run.repo = { status: 'fail', summary: clone.timedOut ? 'Repository clone timed out' : 'Repository clone failed', url: job.submission.repo, log: clone.output }
+      } else {
+        const commit = await runCommand('git', ['-C', repoDir, 'rev-parse', '--short', 'HEAD'], dir, 10000)
+        run.repo = { status: 'pass', summary: 'Repository cloned and scanned', url: job.submission.repo, commit: commit.output.trim(), ...(await scanRepo(repoDir)) }
+        run.build = await buildRepo(repoDir, run, dir)
+        if (run.build.outputDir) {
+          const outputDir = run.build.outputDir
+          await serveStatic(outputDir, async (url) => {
+            const shot = await takeScreenshots(url, run, dir, 'local-build')
+            if (shot.status === 'fail') run.build = { ...run.build, status: 'fail', summary: shot.summary, error: shot.error }
+          })
+          run.build.outputDir = path.relative(dir, outputDir).replace(/\\/g, '/')
+        }
+      }
+    }
+  }
+  if (job.submission?.url) {
+    run.preview = await inspectPreview(job.submission.url)
+    const shot = await takeScreenshots(job.submission.url, run, dir, 'preview')
+    if (shot.status === 'fail') run.preview = { ...run.preview, status: 'fail', summary: shot.summary, error: shot.error }
+  }
+  return run
+}
 
 function textList(input: unknown, limit = 8): string[] {
   if (!Array.isArray(input)) return []
@@ -371,7 +658,46 @@ function reviewChecks(input: unknown): ReviewCheck[] {
   }).filter((item) => item.label).slice(0, 10)
 }
 
-function fallbackReview(summary = 'AI review is unavailable; request clearer evidence or retry assessment.'): Review {
+function visualReviewRequired(job: Job): boolean {
+  return /preview|screenshot|mobile|responsive|ui|ux|layout|page|frontend|design|visual/i.test(`${job.scope} ${job.acceptanceCriteria}`)
+}
+
+function artifactGateProblems(job: Job, run?: ArtifactRun): string[] {
+  if (!run) return ['Artifact review did not run']
+  const problems = []
+  if (job.submission?.repo && run.repo.status !== 'pass') problems.push('Repository could not be inspected')
+  if (run.build.status === 'fail') problems.push('Submitted project did not build cleanly')
+  if (job.submission?.url && run.preview.status !== 'pass') problems.push('Preview URL could not be inspected')
+  if (visualReviewRequired(job) && run.screenshots.length < 2) problems.push('Required visual screenshots were not captured')
+  return problems
+}
+
+function releaseGateProblems(job: Job, review: Review): string[] {
+  const criteria = review.criteriaResults.length ? review.criteriaResults : review.checks
+  return [
+    ...(review.recommendation !== 'approve' ? ['AI did not recommend release'] : []),
+    ...(review.score < 80 ? ['Review score is below 80'] : []),
+    ...(!criteria.length ? ['Acceptance criteria were not checked'] : criteria.filter((check) => check.status !== 'pass').map((check) => `${check.label} is ${check.status}`)),
+    ...review.missing,
+    ...review.criticalRisks,
+    ...artifactGateProblems(job, review.artifactRun),
+    ...(job.disputes.some((dispute) => dispute.status === 'open') ? ['An active dispute blocks release'] : []),
+  ].filter(Boolean).slice(0, 12)
+}
+
+function finalizeReviewGates(job: Job, review: Review): Review {
+  const problems = releaseGateProblems(job, review)
+  const missing = [...new Set([...review.missing, ...problems])]
+  return {
+    ...review,
+    missing: missing.slice(0, 12),
+    releaseEligible: problems.length === 0,
+    approved: problems.length === 0,
+    revisionInstructions: review.revisionInstructions || (problems.length ? `Please address: ${problems.join('; ')}` : 'Ready for employer release.'),
+  }
+}
+
+function fallbackReview(summary = 'AI review is unavailable; request clearer evidence or retry assessment.', artifactRun?: ArtifactRun): Review {
   return {
     at: now(),
     approved: false,
@@ -382,10 +708,16 @@ function fallbackReview(summary = 'AI review is unavailable; request clearer evi
     recommendation: 'revision',
     checks: [],
     risks: ['No funds were released automatically.'],
+    criteriaResults: [],
+    ...(artifactRun ? { artifactRun } : {}),
+    confidence: 0,
+    criticalRisks: ['Reliable AI assessment is missing'],
+    releaseEligible: false,
+    revisionInstructions: summary,
   }
 }
 
-function reviewPrompt(job: Job): string {
+function reviewPrompt(job: Job, artifactRun?: ArtifactRun): string {
   return JSON.stringify({
     job: {
       title: job.title,
@@ -400,20 +732,29 @@ function reviewPrompt(job: Job): string {
       submission: job.submission,
       activity: job.events.slice(0, 20).reverse(),
     },
+    artifactRun,
+    releasePolicy: {
+      minimumScore: 80,
+      requireEveryCriterionPass: true,
+      requireNoCriticalRisks: true,
+      requireScreenshotsForVisualWork: visualReviewRequired(job),
+      finalReleaseBy: 'employer',
+    },
   }, null, 2)
 }
 
-function normalizeAiReview(reply: AiReviewReply | null): Review | null {
+function normalizeAiReview(job: Job, artifactRun: ArtifactRun, reply: AiReviewReply | null): Review | null {
   if (!reply) return null
-  const checks = reviewChecks(reply.checks)
+  const criteriaResults = reviewChecks(reply.criteriaResults || reply.checks)
+  const checks = criteriaResults.length ? criteriaResults : reviewChecks(reply.checks)
   const missing = textList(reply.missing)
   let recommendation = reviewRecommendation(reply.recommendation)
   if (recommendation === 'approve' && (!checks.length || checks.some((check) => check.status !== 'pass') || missing.length)) {
     recommendation = 'revision'
   }
-  return {
+  const review: Review = {
     at: now(),
-    approved: recommendation === 'approve',
+    approved: false,
     score: reviewScore(reply.score),
     summary: String(reply.summary || '').trim() || 'AI review completed.',
     missing: recommendation === 'revision' && !missing.length ? ['Clearer delivery evidence'] : missing,
@@ -421,7 +762,14 @@ function normalizeAiReview(reply: AiReviewReply | null): Review | null {
     recommendation,
     checks,
     risks: textList(reply.risks),
+    criteriaResults,
+    artifactRun,
+    confidence: reviewScore(reply.confidence),
+    criticalRisks: textList(reply.criticalRisks),
+    releaseEligible: false,
+    revisionInstructions: String(reply.revisionInstructions || '').trim(),
   }
+  return finalizeReviewGates(job, review)
 }
 
 export function reviewJob(job: Job): Review {
@@ -447,6 +795,11 @@ export function reviewJob(job: Job): Review {
     recommendation: (score >= 45 && hasEvidence ? 'approve' : 'revision') as ReviewRecommendation,
     checks: [],
     risks: [],
+    criteriaResults: [],
+    confidence: score,
+    criticalRisks: [],
+    releaseEligible: score >= 45 && hasEvidence,
+    revisionInstructions: score >= 45 && hasEvidence ? '' : 'Provide clearer delivery evidence before release.',
   }
   job.review = review
   job.status = review.approved ? 'released' : 'revision_requested'
@@ -461,22 +814,24 @@ export function reviewJob(job: Job): Review {
   return review
 }
 
-export async function assessJobWithAi(job: Job, reviewer: ReviewCompletion = complete): Promise<Review> {
+export async function assessJobWithAi(job: Job, reviewer: ReviewCompletion = complete, collectArtifacts: ArtifactCollector = collectReviewArtifacts): Promise<Review> {
   ensureStatus(job, ['submitted', 'revision_requested'], 'review')
   if (!job.submission) fail('worker submission is required')
   let review: Review
+  let artifactRun: ArtifactRun | undefined
   try {
-    review = normalizeAiReview(parseJsonReply<AiReviewReply>(await reviewer({
+    artifactRun = await collectArtifacts(job)
+    review = normalizeAiReview(job, artifactRun, parseJsonReply<AiReviewReply>(await reviewer({
       system: REVIEW_SYSTEM,
-      user: reviewPrompt(job),
-      maxTokens: 1000,
-    }))) ?? fallbackReview('AI review returned an unreadable assessment; request clearer evidence or retry.')
+      user: reviewPrompt(job, artifactRun),
+      maxTokens: 2000,
+    }))) ?? finalizeReviewGates(job, fallbackReview('AI review returned an unreadable assessment; request clearer evidence or retry.', artifactRun))
   } catch {
-    review = fallbackReview()
+    review = finalizeReviewGates(job, fallbackReview('Artifact or AI review failed; request clearer evidence or retry assessment.', artifactRun))
   }
   job.review = review
   addEvent(job, 'agent', 'ai_reviewed', review.summary)
-  addSettlementEvent(job, 'reviewed', review.approved ? 'AI recommends release; employer approval is pending' : 'AI review requested clearer delivery evidence')
+  addSettlementEvent(job, 'reviewed', review.releaseEligible ? 'Artifact review passed; employer release is enabled' : 'Artifact review requested clearer delivery evidence')
   return review
 }
 
@@ -484,7 +839,7 @@ export function approveReviewedJob(job: Job, input: Record<string, unknown> = {}
   ensureStatus(job, ['submitted', 'revision_requested'], 'approve')
   if (!job.submission) fail('worker submission is required')
   if (!job.review) fail('AI review is required before release', 409)
-  if (job.review.recommendation !== 'approve' && input.override !== true) fail('AI review does not recommend release', 409)
+  if (!job.review.releaseEligible) fail('review gates do not allow release', 409)
   job.review = { ...job.review, approved: true, recommendation: 'approve' }
   job.status = 'released'
   job.settlement.release = `demo-release-${job.reference.slice(0, 10)}`
@@ -570,6 +925,22 @@ function send(res: http.ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body))
 }
 
+function reviewArtifacts(job: Job): ReviewArtifact[] {
+  const run = job.review?.artifactRun
+  return run ? [...run.screenshots, ...run.logs] : []
+}
+
+async function sendArtifact(res: http.ServerResponse, job: Job, artifactId: string) {
+  const artifact = reviewArtifacts(job).find((item) => item.id === artifactId)
+  if (!artifact) fail('artifact not found', 404)
+  const root = path.resolve(REVIEW_DIR)
+  const file = path.resolve(REVIEW_DIR, artifact.file)
+  if (!file.startsWith(root + path.sep)) fail('artifact path is invalid', 400)
+  res.statusCode = 200
+  res.setHeader('Content-Type', artifact.mime)
+  res.end(await fs.readFile(file))
+}
+
 async function state() {
   const w = await walletsWithBalances()
   const list = [...jobs.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -614,9 +985,16 @@ export function createHandler(): http.RequestListener {
       const url = new URL(req.url || '/', `http://localhost:${PORT}`)
       const route = url.pathname.match(/^\/api\/jobs\/([^/]+)\/(claim|messages|submission|review|dispute|refund|cancel)$/)
       const milestoneRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/milestones\/([^/]+)\/complete$/)
+      const artifactRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/artifacts\/([^/]+)$/)
 
       if (req.method === 'GET' && url.pathname === '/api/health') {
         return send(res, 200, { ok: true, product: 'freelance-escrow-platform', ...(await state()).setup })
+      }
+      if (req.method === 'GET' && artifactRoute) {
+        const [, id, artifactId] = artifactRoute
+        const job = jobs.get(id)
+        if (!job) fail('job not found', 404)
+        return await sendArtifact(res, job, artifactId)
       }
       if (req.method === 'GET' && (url.pathname === '/api/state' || url.pathname === '/api/platform')) {
         return send(res, 200, await state())

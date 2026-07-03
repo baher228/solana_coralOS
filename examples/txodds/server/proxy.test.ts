@@ -55,6 +55,44 @@ function aiReply(input: Record<string, unknown>) {
   return async () => JSON.stringify(input)
 }
 
+function artifactRun(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'review_test',
+    at: new Date().toISOString(),
+    repo: { status: 'pass', summary: 'Repository cloned and scanned', url: 'https://github.com/example/repo', commit: 'abc123', packageManager: 'npm', scripts: { build: 'vite build' }, files: [] },
+    build: { status: 'pass', summary: 'Build completed', command: 'npm run build', outputDir: 'dist' },
+    preview: { status: 'pass', summary: 'Preview URL loaded', url: 'https://example.test/preview', httpStatus: 200 },
+    screenshots: [
+      { id: 'shot_desktop', kind: 'screenshot', label: 'preview desktop', file: 'job/review/desktop.png', mime: 'image/png' },
+      { id: 'shot_mobile', kind: 'screenshot', label: 'preview mobile', file: 'job/review/mobile.png', mime: 'image/png' },
+    ],
+    logs: [],
+    ...overrides,
+  } as any
+}
+
+function collectArtifacts(run = artifactRun()) {
+  return async () => run
+}
+
+function aiApprove(extra: Record<string, unknown> = {}) {
+  return aiReply({
+    score: 92,
+    recommendation: 'approve',
+    confidence: 88,
+    summary: 'Evidence satisfies the task.',
+    criteriaResults: [
+      { label: 'Preview URL', status: 'pass', reason: 'Preview loaded and screenshots were captured.', evidence: 'preview desktop/mobile screenshots' },
+      { label: 'Mobile proof', status: 'pass', reason: 'Mobile screenshot shows responsive layout.', evidence: 'preview mobile screenshot' },
+    ],
+    missing: [],
+    risks: [],
+    criticalRisks: [],
+    revisionInstructions: '',
+    ...extra,
+  })
+}
+
 describe('freelance escrow platform flow', () => {
   it('keeps legacy job creation funded when a worker is supplied', () => {
     const job = platformJob()
@@ -131,23 +169,15 @@ describe('freelance escrow platform flow', () => {
     expect(job.milestones.every((m) => m.status === 'complete')).toBe(true)
   })
 
-  it('stores AI approval without auto-releasing until employer approves', async () => {
+  it('stores artifact AI approval without auto-releasing until employer approves', async () => {
     const job = submittedTask()
 
-    const review = await assessJobWithAi(job, aiReply({
-      score: 92,
-      recommendation: 'approve',
-      summary: 'Evidence satisfies the task.',
-      checks: [
-        { label: 'Preview URL', status: 'pass', reason: 'Preview link and notes are present.', evidence: 'preview and notes' },
-        { label: 'Mobile proof', status: 'pass', reason: 'Worker described mobile proof.', evidence: 'submission notes' },
-      ],
-      missing: [],
-      risks: [],
-    }))
+    const review = await assessJobWithAi(job, aiApprove(), collectArtifacts())
 
     expect(review.source).toBe('ai')
     expect(review.approved).toBe(true)
+    expect(review.releaseEligible).toBe(true)
+    expect(review.artifactRun?.screenshots).toHaveLength(2)
     expect(job.status).toBe('submitted')
     expect(job.settlement.release).toBeUndefined()
 
@@ -155,6 +185,53 @@ describe('freelance escrow platform flow', () => {
 
     expect(job.status).toBe('released')
     expect(job.settlement.release).toContain('demo-release')
+  })
+
+  it('blocks release when AI approves but a criterion is unclear', async () => {
+    const job = submittedTask()
+
+    const review = await assessJobWithAi(job, aiApprove({
+      criteriaResults: [
+        { label: 'Preview URL', status: 'pass', reason: 'Preview loaded.', evidence: 'preview screenshot' },
+        { label: 'Mobile proof', status: 'unclear', reason: 'Mobile screenshot does not show the checkout section.', evidence: 'mobile screenshot' },
+      ],
+    }), collectArtifacts())
+
+    expect(review.releaseEligible).toBe(false)
+    expect(review.missing.join(' ')).toMatch(/Mobile proof is unclear/)
+    expect(() => approveReviewedJob(job)).toThrow(/review gates/)
+  })
+
+  it('blocks release when the submitted project build fails', async () => {
+    const job = submittedTask()
+
+    const review = await assessJobWithAi(job, aiApprove(), collectArtifacts(artifactRun({
+      build: { status: 'fail', summary: 'Build failed', command: 'npm run build', log: 'missing script' },
+    })))
+
+    expect(review.releaseEligible).toBe(false)
+    expect(review.missing.join(' ')).toMatch(/build/i)
+    expect(() => approveReviewedJob(job)).toThrow(/review gates/)
+  })
+
+  it('blocks release when visual work has no screenshots', async () => {
+    const job = submittedTask()
+
+    const review = await assessJobWithAi(job, aiApprove(), collectArtifacts(artifactRun({ screenshots: [] })))
+
+    expect(review.releaseEligible).toBe(false)
+    expect(review.missing.join(' ')).toMatch(/screenshots/i)
+  })
+
+  it('blocks release when the preview cannot be inspected', async () => {
+    const job = submittedTask()
+
+    const review = await assessJobWithAi(job, aiApprove(), collectArtifacts(artifactRun({
+      preview: { status: 'fail', summary: 'Preview URL failed to load', url: 'https://example.test/preview', error: 'timeout' },
+    })))
+
+    expect(review.releaseEligible).toBe(false)
+    expect(review.missing.join(' ')).toMatch(/Preview URL/)
   })
 
   it('keeps AI revision recommendations from releasing funds', async () => {
@@ -167,11 +244,11 @@ describe('freelance escrow platform flow', () => {
       checks: [{ label: 'Delivery evidence', status: 'fail', reason: 'Notes are only a claim.', evidence: 'submission notes' }],
       missing: ['preview evidence', 'mobile proof'],
       risks: [],
-    }))
+    }), collectArtifacts())
 
     expect(review.approved).toBe(false)
     expect(job.status).toBe('submitted')
-    expect(() => approveReviewedJob(job)).toThrow(/does not recommend/)
+    expect(() => approveReviewedJob(job)).toThrow(/review gates/)
 
     requestRevisionJob(job, {})
 
@@ -181,12 +258,12 @@ describe('freelance escrow platform flow', () => {
   it('fails closed when AI review is unavailable or unreadable', async () => {
     const job = submittedTask()
 
-    const review = await assessJobWithAi(job, async () => 'not json')
+    const review = await assessJobWithAi(job, async () => 'not json', collectArtifacts())
 
     expect(review.source).toBe('fallback')
     expect(review.approved).toBe(false)
     expect(job.status).toBe('submitted')
-    expect(() => approveReviewedJob(job)).toThrow(/does not recommend/)
+    expect(() => approveReviewedJob(job)).toThrow(/review gates/)
   })
 
   it('does not release keyword-stuffed submissions through AI review', async () => {
@@ -199,11 +276,19 @@ describe('freelance escrow platform flow', () => {
       checks: [{ label: 'Actual evidence', status: 'fail', reason: 'Keyword stuffing without concrete proof.', evidence: 'submission notes' }],
       missing: ['specific implementation proof'],
       risks: ['keyword stuffing'],
-    }))
+    }), collectArtifacts())
 
     expect(review.risks).toContain('keyword stuffing')
     expect(job.status).toBe('submitted')
-    expect(() => approveReviewedJob(job)).toThrow(/does not recommend/)
+    expect(() => approveReviewedJob(job)).toThrow(/review gates/)
+  })
+
+  it('blocks release while a dispute is active', async () => {
+    const job = submittedTask()
+    await assessJobWithAi(job, aiApprove(), collectArtifacts())
+    disputeJob(job, { by: 'worker', note: 'Evidence is contested' })
+
+    expect(() => approveReviewedJob(job)).toThrow(/cannot approve while job is disputed/)
   })
 
   it('blocks invalid transitions after release', () => {
