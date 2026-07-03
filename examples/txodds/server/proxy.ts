@@ -15,6 +15,7 @@ const DATA_FILE = `${DATA_DIR}jobs.json`
 const AGENTS_FILE = `${DATA_DIR}agents.json`
 const REVIEW_DIR = `${DATA_DIR}reviews`
 const PORT = Number(process.env.PORT ?? 8801)
+const ROOT_DIR = path.resolve(fileURLToPath(new URL('../../../', import.meta.url)))
 const DEFAULT_RPC_URL = 'https://api.devnet.solana.com'
 const BALANCE_TIMEOUT_MS = 2500
 const REVIEW_TIMEOUT_MS = Number(process.env.REVIEW_TIMEOUT_MS ?? 90000)
@@ -149,6 +150,32 @@ export interface Job {
   events: Event[]
 }
 
+export interface DemoRunStatus {
+  running: boolean
+  agentName: string
+  pid?: number
+  jobId?: string
+  previewUrl?: string
+  startedAt?: string
+  error?: string
+  logs: string[]
+  steps: {
+    agentStarted: boolean
+    jobPosted: boolean
+    bidPlaced: boolean
+    awarded: boolean
+    funded: boolean
+    buildServed: boolean
+    deliverySubmitted: boolean
+    reviewCaptured: boolean
+  }
+}
+
+interface DemoRunner {
+  start(input?: Record<string, unknown>): Promise<DemoRunStatus>
+  status(): Promise<DemoRunStatus>
+}
+
 const terminal = new Set<Status>(['released', 'refunded', 'cancelled'])
 const statuses = new Set<Status>(['open', 'funded', 'submitted', 'approved', 'released', 'revision_requested', 'disputed', 'refunded', 'cancelled'])
 
@@ -165,6 +192,210 @@ async function loadEnv() {
 
 const jobs = new Map<string, Job>()
 const connectedAgents = new Map<string, ConnectedAgent>()
+const demoAgentBase = 'demo-worker-live'
+const demoRunState: {
+  child?: ReturnType<typeof spawn>
+  agentName?: string
+  token?: string
+  jobId?: string
+  previewUrl?: string
+  startedAt?: string
+  error?: string
+  logs: string[]
+} = { logs: [] }
+
+function demoSteps(job?: Job): DemoRunStatus['steps'] {
+  const market = job?.marketplace
+  return {
+    agentStarted: Boolean(demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed),
+    jobPosted: Boolean(job),
+    bidPlaced: Boolean(market?.bids?.length),
+    awarded: Boolean(market?.awardedBid),
+    funded: job?.settlement.mode === 'devnet-escrow',
+    buildServed: Boolean(demoRunState.previewUrl || job?.submission?.url),
+    deliverySubmitted: Boolean(job?.submission),
+    reviewCaptured: Boolean(job?.review),
+  }
+}
+
+function cleanDemoText(value: unknown): string {
+  return String(value ?? '')
+    .replace(/agt_[A-Za-z0-9_-]+/g, 'agt_[redacted]')
+    .replace(/AGENT_API_TOKEN=\S+/g, 'AGENT_API_TOKEN=[redacted]')
+}
+
+function appendDemoLog(value: unknown): void {
+  for (const line of cleanDemoText(value).split(/\r?\n/).map((item) => item.trim()).filter(Boolean)) {
+    const preview = line.match(/serving generated delivery at\s+(https?:\/\/\S+)/i)?.[1]
+    if (preview) demoRunState.previewUrl = preview
+    demoRunState.logs.push(line)
+  }
+  demoRunState.logs = demoRunState.logs.slice(-40)
+}
+
+function demoJob(): Job | undefined {
+  return demoRunState.jobId ? jobs.get(demoRunState.jobId) : undefined
+}
+
+function demoStatus(): DemoRunStatus {
+  const job = demoJob()
+  const running = Boolean(demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed)
+  const previewUrl = job?.submission?.url || demoRunState.previewUrl
+  const error = demoRunState.error || job?.marketplace?.awardError
+  return {
+    running,
+    agentName: demoRunState.agentName || demoAgentBase,
+    ...(running && demoRunState.child?.pid ? { pid: demoRunState.child.pid } : {}),
+    ...(demoRunState.jobId ? { jobId: demoRunState.jobId } : {}),
+    ...(previewUrl ? { previewUrl } : {}),
+    ...(demoRunState.startedAt ? { startedAt: demoRunState.startedAt } : {}),
+    ...(error ? { error: cleanDemoText(error) } : {}),
+    logs: demoRunState.logs.map(cleanDemoText),
+    steps: demoSteps(job),
+  }
+}
+
+function sanitizeDemoStatus(input: DemoRunStatus | Record<string, unknown>): DemoRunStatus {
+  const source = input as Partial<DemoRunStatus>
+  const steps = source.steps || {} as DemoRunStatus['steps']
+  return {
+    running: Boolean(source.running),
+    agentName: String(source.agentName || demoAgentBase),
+    ...(Number.isFinite(Number(source.pid)) ? { pid: Number(source.pid) } : {}),
+    ...(source.jobId ? { jobId: String(source.jobId) } : {}),
+    ...(source.previewUrl ? { previewUrl: String(source.previewUrl) } : {}),
+    ...(source.startedAt ? { startedAt: String(source.startedAt) } : {}),
+    ...(source.error ? { error: cleanDemoText(source.error) } : {}),
+    logs: Array.isArray(source.logs) ? source.logs.map(cleanDemoText).slice(-40) : [],
+    steps: {
+      agentStarted: Boolean(steps.agentStarted),
+      jobPosted: Boolean(steps.jobPosted),
+      bidPlaced: Boolean(steps.bidPlaced),
+      awarded: Boolean(steps.awarded),
+      funded: Boolean(steps.funded),
+      buildServed: Boolean(steps.buildServed),
+      deliverySubmitted: Boolean(steps.deliverySubmitted),
+      reviewCaptured: Boolean(steps.reviewCaptured),
+    },
+  }
+}
+
+function resetDemoRun(): void {
+  if (demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed) {
+    demoRunState.child.kill()
+  }
+  demoRunState.child = undefined
+  demoRunState.agentName = undefined
+  demoRunState.token = undefined
+  demoRunState.jobId = undefined
+  demoRunState.previewUrl = undefined
+  demoRunState.startedAt = undefined
+  demoRunState.error = undefined
+  demoRunState.logs = []
+}
+
+function demoAgentName(): string {
+  if (![...connectedAgents.values()].some((agent) => agent.status === 'active' && agent.name === demoAgentBase)) {
+    return demoAgentBase
+  }
+  return `${demoAgentBase}-${Date.now().toString(36)}`
+}
+
+function createDemoRunJob(): Job {
+  const job = createJob({
+    title: 'Build a live agent checkout page',
+    employer: 'Northstar Studio',
+    marketplace: true,
+    scope: 'Generate and serve a responsive checkout mini-site with pricing copy, mobile proof, and delivery notes.',
+    acceptanceCriteria: 'Includes a clickable preview URL; generated checkout hero; pricing proof; mobile responsive layout; delivery notes for every acceptance item.',
+    amountSol: 0.003,
+    milestones: [
+      'Generate checkout mini-site',
+      'Serve local preview',
+      'Submit preview URL and delivery notes',
+    ],
+  })
+  if (job.marketplace) {
+    const fastBidWindow = Number(process.env.DEMO_RUN_BID_WINDOW_MS ?? 3000)
+    job.marketplace.bidWindowEndsAt = new Date(Date.now() + (Number.isFinite(fastBidWindow) ? fastBidWindow : 3000)).toISOString()
+  }
+  job.messages.push({ at: now(), author: 'employer', text: 'Demo run: worker agent should generate and submit a clickable preview.' })
+  addEvent(job, 'system', 'demo_run', 'One-click live agent demo started')
+  return job
+}
+
+async function startLocalDemoRun(input: Record<string, unknown> = {}): Promise<DemoRunStatus> {
+  const restart = Boolean(input.restart)
+  const running = Boolean(demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed)
+  if (running && !restart) return demoStatus()
+  if (running && restart) resetDemoRun()
+
+  const workerWallet = wallets().worker
+  if (!publicKey(workerWallet)) fail('SELLER_KEYPAIR_B58 or WALLET is required before running the live agent demo', 503)
+
+  const created = createConnectedAgent({ name: demoAgentName(), wallet: workerWallet })
+  const job = createDemoRunJob()
+  await saveAgents()
+  await saveJobs()
+
+  demoRunState.agentName = created.agent.name
+  demoRunState.token = created.token
+  demoRunState.jobId = job.id
+  demoRunState.previewUrl = undefined
+  demoRunState.startedAt = now()
+  demoRunState.error = undefined
+  demoRunState.logs = []
+
+  const env = {
+    ...process.env,
+    AGENT_TRANSPORT: 'api',
+    AGENT_API_BASE: `http://localhost:${PORT}`,
+    AGENT_API_TOKEN: created.token,
+    AGENT_NAME: created.agent.name,
+    DEMO_WORKER_WALLET: workerWallet,
+    DEMO_GENERATE_DELIVERY: '1',
+    DEMO_DELIVERY_URL: '',
+    DEMO_DELIVERY_REPO: '',
+    DEMO_DELIVERY_PORT: String(process.env.DEMO_RUN_DELIVERY_PORT ?? 0),
+    DEMO_DELIVERY_DELAY_MS: String(process.env.DEMO_RUN_DELIVERY_DELAY_MS ?? 300),
+    DEMO_AGENT_POLL_MS: String(process.env.DEMO_RUN_POLL_MS ?? 750),
+    DEMO_BID_PRICE_SOL: String(process.env.DEMO_RUN_BID_PRICE_SOL ?? 0.001),
+  }
+  let child: ReturnType<typeof spawn>
+  try {
+    child = spawn(npmCommand(), ['--prefix', 'agents/demo-worker', 'run', 'dev'], {
+      cwd: ROOT_DIR,
+      env,
+      windowsHide: true,
+      shell: process.platform === 'win32',
+    })
+  } catch (e) {
+    const message = (e as Error).message
+    demoRunState.error = message
+    appendDemoLog(`[demo-run] worker error: ${message}`)
+    return demoStatus()
+  }
+  demoRunState.child = child
+  appendDemoLog(`[demo-run] started ${created.agent.name} for ${job.id}`)
+  child.stdout?.on('data', appendDemoLog)
+  child.stderr?.on('data', appendDemoLog)
+  child.on('error', (error) => {
+    demoRunState.error = error.message
+    appendDemoLog(`[demo-run] worker error: ${error.message}`)
+  })
+  child.on('exit', (code) => {
+    if (code && !demoRunState.error) demoRunState.error = `worker exited with code ${code}`
+    appendDemoLog(`[demo-run] worker exited with code ${code ?? 'unknown'}`)
+  })
+  return demoStatus()
+}
+
+const localDemoRunner: DemoRunner = {
+  start: startLocalDemoRun,
+  async status() {
+    return demoStatus()
+  },
+}
 
 async function loadJobs(): Promise<void> {
   try {
@@ -734,6 +965,7 @@ export function submitAgentDelivery(job: Job, input: Record<string, unknown>): S
   if (marketplace.awardedBid && by && by !== marketplace.awardedBid.by) fail('only the awarded agent can deliver', 403)
   const submission = submitJob(job, input)
   marketplace.status = 'delivered'
+  delete marketplace.awardError
   addEvent(job, 'agent', 'delivered', `${by || job.worker} submitted agent delivery`)
   return submission
 }
@@ -795,6 +1027,7 @@ export async function runAgentMarketTick(
           await awardAgentBid(job, { deadlineSecs: ESCROW_DEADLINE_SECS }, adapter)
           changed += 1
         } catch (e) {
+          if (job.status !== 'open' || market.awardedBid) continue
           const message = (e as Error).message
           if (market.awardError !== message) {
             market.awardError = message
@@ -1448,6 +1681,15 @@ async function readJson(req: http.IncomingMessage): Promise<Record<string, unkno
   }
 }
 
+function requireLocalRequest(req: http.IncomingMessage): void {
+  const address = req.socket.remoteAddress || ''
+  const local = address === '127.0.0.1'
+    || address === '::1'
+    || address === '::ffff:127.0.0.1'
+    || address.startsWith('::ffff:127.')
+  if (!local) fail('demo runner is local only', 403)
+}
+
 function requireAgentAuth(req: http.IncomingMessage): AgentAuth {
   const platformToken = process.env.AGENT_API_TOKEN?.trim()
   const raw = req.headers.authorization
@@ -1553,6 +1795,7 @@ async function state() {
 }
 
 export function resetJobsForTest(): void {
+  resetDemoRun()
   jobs.clear()
   connectedAgents.clear()
 }
@@ -1561,6 +1804,7 @@ interface HandlerOptions {
   escrowAdapter?: DevnetEscrowAdapter
   reviewer?: ReviewCompletion
   collectArtifacts?: ArtifactCollector
+  demoRunner?: DemoRunner
 }
 
 async function runBackendTicks(options: HandlerOptions): Promise<number> {
@@ -1576,12 +1820,20 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
 
     try {
       const url = new URL(req.url || '/', `http://localhost:${PORT}`)
+      const demoRunner = options.demoRunner || localDemoRunner
       const agentRoute = url.pathname.match(/^\/api\/agent\/jobs(?:\/([^/]+)\/(bids|award|delivery|settle))?$/)
       const agentsRoute = url.pathname.match(/^\/api\/agents(?:\/([^/]+)\/(revoke))?$/)
       const route = url.pathname.match(/^\/api\/jobs\/([^/]+)\/(claim|messages|submission|review|dispute|refund|cancel)$/)
       const disputeReviewRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/dispute\/review$/)
       const milestoneRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/milestones\/([^/]+)\/complete$/)
       const artifactRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/artifacts\/([^/]+)$/)
+
+      if (url.pathname === '/api/demo/agent-run') {
+        requireLocalRequest(req)
+        if (req.method === 'GET') return send(res, 200, sanitizeDemoStatus(await demoRunner.status()))
+        if (req.method === 'POST') return send(res, 200, sanitizeDemoStatus(await demoRunner.start(await readJson(req))))
+        return send(res, 404, { error: 'not found' })
+      }
 
       if (req.method === 'GET' && url.pathname === '/api/agents') {
         return send(res, 200, { agents: listConnectedAgents() })

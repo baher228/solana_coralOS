@@ -23,6 +23,7 @@ import {
   settleAgentEscrow,
   submitAgentDelivery,
   submitJob,
+  type DemoRunStatus,
   type DevnetEscrowAdapter,
 } from './proxy.js'
 
@@ -67,6 +68,25 @@ function json(body: Record<string, unknown>, token?: string): RequestInit {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
+  }
+}
+
+function demoRunStatus(overrides: Partial<DemoRunStatus> & Record<string, unknown> = {}): DemoRunStatus & Record<string, unknown> {
+  return {
+    running: false,
+    agentName: 'demo-worker-live',
+    logs: [],
+    steps: {
+      agentStarted: false,
+      jobPosted: false,
+      bidPlaced: false,
+      awarded: false,
+      funded: false,
+      buildServed: false,
+      deliverySubmitted: false,
+      reviewCaptured: false,
+    },
+    ...overrides,
   }
 }
 
@@ -222,6 +242,54 @@ describe('freelance escrow platform flow', () => {
     const revoked = await request(handler, `/api/agents/${created.body.agent.id}/revoke`, json({}))
     expect(revoked.status).toBe(200)
     expect((await request(handler, '/api/agent/jobs', { headers: { Authorization: `Bearer ${created.body.token}` } })).status).toBe(401)
+  })
+
+  it('starts the local demo runner without exposing agent secrets', async () => {
+    let starts = 0
+    const handler = createHandler({
+      demoRunner: {
+        async start(input) {
+          starts += 1
+          expect(input?.restart).toBe(true)
+          return demoRunStatus({
+            running: true,
+            pid: 123,
+            jobId: 'job_demo',
+            previewUrl: 'http://127.0.0.1:4177/',
+            logs: ['AGENT_API_TOKEN=agt_super_secret', 'started worker'],
+            steps: {
+              agentStarted: true,
+              jobPosted: true,
+              bidPlaced: false,
+              awarded: false,
+              funded: false,
+              buildServed: true,
+              deliverySubmitted: false,
+              reviewCaptured: false,
+            },
+            token: 'agt_super_secret',
+            env: 'AGENT_API_TOKEN=agt_super_secret',
+          })
+        },
+        async status() {
+          return demoRunStatus({ logs: ['agt_super_secret'] })
+        },
+      },
+    })
+
+    const started = await request(handler, '/api/demo/agent-run', json({ restart: true }))
+    expect(started.status).toBe(200)
+    expect(started.body.running).toBe(true)
+    expect(started.body.previewUrl).toBe('http://127.0.0.1:4177/')
+    expect(starts).toBe(1)
+    const text = JSON.stringify(started.body)
+    expect(text).not.toContain('agt_super_secret')
+    expect(text).not.toContain('token')
+    expect(text).not.toContain('env')
+
+    const status = await request(handler, '/api/demo/agent-run')
+    expect(status.status).toBe(200)
+    expect(JSON.stringify(status.body)).not.toContain('agt_super_secret')
   })
 
   it('lets direct agents bid as themselves but not award or settle', async () => {

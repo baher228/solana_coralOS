@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   CircleDollarSign,
   DatabaseZap,
+  ExternalLink,
   GitBranch,
   Pause,
   Play,
@@ -127,8 +128,12 @@ const EDGES = [
   ['e10', 'feed', 'coral'],
 ]
 
-async function api(path) {
-  const res = await fetch(`${API}${path}`)
+async function api(path, body) {
+  const res = await fetch(`${API}${path}`, {
+    method: body ? 'POST' : 'GET',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(data.error || res.statusText)
   return data
@@ -147,6 +152,10 @@ function latestAgentJob(jobs) {
   return newest(jobs.filter((job) => job.marketplace || job.settlement?.mode === 'devnet-escrow')) || newest(jobs)
 }
 
+function jobById(data, id) {
+  return id ? (data.jobs || []).find((job) => job.id === id) : null
+}
+
 function liveSnapshot(data) {
   const jobs = data.jobs || []
   const agents = data.agents || []
@@ -163,6 +172,17 @@ function liveSnapshot(data) {
       settlement: job?.settlement?.release ? short(job.settlement.release) : job?.settlement?.refund ? short(job.settlement.refund) : '--',
     },
   }
+}
+
+function liveStepIndex(runner, job) {
+  if (job?.settlement?.release || job?.settlement?.refund) return 7
+  if (job?.review || runner.steps?.reviewCaptured) return 6
+  if (job?.submission || runner.steps?.deliverySubmitted) return 5
+  if (job?.settlement?.devnet?.deposit || runner.steps?.funded) return 4
+  if (job?.marketplace?.awardedBid || runner.steps?.awarded) return 3
+  if (job?.marketplace?.bids?.length || runner.steps?.bidPlaced) return 2
+  if (job || runner.steps?.jobPosted) return 1
+  return 0
 }
 
 function nodeStatus(id, step) {
@@ -241,24 +261,92 @@ function LiveFacts({ data, enabled, error }) {
   </section>`
 }
 
+function LiveAgentRun({ runner, job, busy, error, onStart, onRefresh }) {
+  const previewUrl = job?.submission?.url || runner.previewUrl
+  const steps = [
+    ['Agent', runner.steps?.agentStarted || runner.running],
+    ['Job', runner.steps?.jobPosted || Boolean(job)],
+    ['Bid', runner.steps?.bidPlaced || Boolean(job?.marketplace?.bids?.length)],
+    ['Award', runner.steps?.awarded || Boolean(job?.marketplace?.awardedBid)],
+    ['Build', runner.steps?.buildServed || Boolean(previewUrl)],
+    ['Review', runner.steps?.reviewCaptured || Boolean(job?.review)],
+  ]
+  return html`<section className="system-run">
+    <div className="system-run-head">
+      <div><span>Live agent run</span><b>${runner.running ? 'Running' : runner.jobId ? 'Started' : 'Idle'}</b></div>
+      <button onClick=${onRefresh} title="Refresh live run"><${RefreshCw} size=${15} /></button>
+    </div>
+    <div className="system-run-actions">
+      <button onClick=${onStart} disabled=${busy}><${Play} size=${15} />${busy ? 'Starting' : runner.jobId ? 'Resume live run' : 'Run live agent demo'}</button>
+      ${previewUrl
+        ? html`<a className="system-run-link" href=${previewUrl} target="_blank" rel="noreferrer"><${ExternalLink} size=${15} />Open agent build</a>`
+        : html`<button disabled><${ExternalLink} size=${15} />Open agent build</button>`}
+    </div>
+    <div className="system-run-steps">
+      ${steps.map(([label, done]) => html`<span key=${label} className=${done ? 'done' : ''}>${label}</span>`)}
+    </div>
+    ${job ? html`<dl>
+      <div><dt>Job</dt><dd>${job.title}</dd></div>
+      <div><dt>Status</dt><dd>${job.status}</dd></div>
+      <div><dt>Agent</dt><dd>${runner.agentName || '--'}</dd></div>
+    </dl>` : null}
+    ${error || runner.error ? html`<p className="system-error small">${error || runner.error}</p>` : null}
+    ${runner.logs?.length ? html`<div className="system-run-log">
+      ${runner.logs.slice(-4).map((line) => html`<small key=${line}>${line}</small>`)}
+    </div>` : null}
+  </section>`
+}
+
 function App() {
   const [stepIndex, setStepIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [liveEnabled, setLiveEnabled] = useState(false)
   const [liveData, setLiveData] = useState({ jobs: [], agents: [], summary: {} })
   const [liveError, setLiveError] = useState('')
+  const [runner, setRunner] = useState({ running: false, agentName: 'demo-worker-live', logs: [], steps: {} })
+  const [runnerBusy, setRunnerBusy] = useState(false)
+  const [runnerError, setRunnerError] = useState('')
+  const [followLive, setFollowLive] = useState(false)
   const [selected, setSelected] = useState(null)
 
-  const step = SCRIPT[stepIndex]
-  const metrics = liveEnabled ? { ...step.metrics, ...liveSnapshot(liveData).metrics } : step.metrics
+  const live = liveSnapshot(liveData)
+  const runJob = jobById(liveData, runner.jobId) || (followLive ? live.job : null)
+  const activeStepIndex = followLive ? liveStepIndex(runner, runJob) : stepIndex
+  const step = SCRIPT[activeStepIndex]
+  const metrics = liveEnabled ? { ...step.metrics, ...live.metrics } : step.metrics
 
-  const refreshLive = async () => {
-    if (!liveEnabled) return
+  const refreshLive = async (force = false) => {
+    if (!force && !liveEnabled) return
     setLiveError('')
     try {
       setLiveData(await api('/api/platform'))
     } catch (e) {
       setLiveError(e.message || String(e))
+    }
+  }
+
+  const refreshRunner = async () => {
+    setRunnerError('')
+    try {
+      setRunner(await api('/api/demo/agent-run'))
+    } catch (e) {
+      setRunnerError(e.message || String(e))
+    }
+  }
+
+  const startRunner = async () => {
+    setRunnerBusy(true)
+    setRunnerError('')
+    setLiveEnabled(true)
+    setFollowLive(true)
+    setPlaying(false)
+    try {
+      setRunner(await api('/api/demo/agent-run', {}))
+      await refreshLive(true)
+    } catch (e) {
+      setRunnerError(e.message || String(e))
+    } finally {
+      setRunnerBusy(false)
     }
   }
 
@@ -272,18 +360,28 @@ function App() {
 
   useEffect(() => {
     refreshLive()
-    if (!liveEnabled) return
-    const timer = setInterval(refreshLive, 5000)
+    if (!liveEnabled && !followLive) return
+    const timer = setInterval(refreshLive, followLive ? 1500 : 5000)
     return () => clearInterval(timer)
-  }, [liveEnabled])
+  }, [liveEnabled, followLive])
+
+  useEffect(() => {
+    refreshRunner()
+    const timer = setInterval(refreshRunner, followLive || runner.running ? 1500 : 5000)
+    return () => clearInterval(timer)
+  }, [followLive, runner.running])
 
   const graph = useMemo(() => makeGraph(step), [step])
   const nodeTypes = useMemo(() => ({ system: SystemNode }), [])
   const selectedNode = selected ? graph.nodes.find((node) => node.id === selected.id) : null
 
-  const nextStep = () => setStepIndex((current) => Math.min(SCRIPT.length - 1, current + 1))
+  const nextStep = () => {
+    setFollowLive(false)
+    setStepIndex((current) => Math.min(SCRIPT.length - 1, current + 1))
+  }
   const reset = () => {
     setPlaying(false)
+    setFollowLive(false)
     setStepIndex(0)
     setSelected(null)
   }
@@ -296,24 +394,24 @@ function App() {
         <h1>Agent Network Demo</h1>
       </div>
       <div className="system-actions">
-        <button onClick=${() => setPlaying(!playing)}><${playing ? Pause : Play} size=${17} />${playing ? 'Pause' : 'Play'}</button>
+        <button onClick=${() => { setFollowLive(false); setPlaying(!playing) }}><${playing ? Pause : Play} size=${17} />${playing ? 'Pause' : 'Play'}</button>
         <button onClick=${nextStep} disabled=${stepIndex === SCRIPT.length - 1}><${StepForward} size=${17} />Step</button>
         <button onClick=${reset}><${RotateCcw} size=${17} />Reset</button>
-        <label><input type="checkbox" checked=${liveEnabled} onChange=${(e) => setLiveEnabled(e.target.checked)} />Live Data</label>
+        <label><input type="checkbox" checked=${liveEnabled} onChange=${(e) => { setLiveEnabled(e.target.checked); if (!e.target.checked) setFollowLive(false) }} />Live Data</label>
         <button onClick=${refreshLive} disabled=${!liveEnabled}><${RefreshCw} size=${17} />Refresh</button>
       </div>
     </header>
     <section className="system-demo-copy">
       <div className="system-step-copy">
         <div className="system-step-line">
-          <span>Step ${stepIndex + 1} of ${SCRIPT.length}</span>
-          <b>${stepIndex + 1}/${SCRIPT.length}</b>
+          <span>${followLive ? 'Live step' : 'Step'} ${activeStepIndex + 1} of ${SCRIPT.length}</span>
+          <b>${activeStepIndex + 1}/${SCRIPT.length}</b>
         </div>
         <h2>${step.title}</h2>
         <p>${step.copy}</p>
       </div>
       <div className="system-step-progress" aria-hidden="true">
-        ${SCRIPT.map((item, index) => html`<i key=${item.id} className=${index < stepIndex ? 'complete' : index === stepIndex ? 'active' : 'idle'} />`)}
+        ${SCRIPT.map((item, index) => html`<i key=${item.id} className=${index < activeStepIndex ? 'complete' : index === activeStepIndex ? 'active' : 'idle'} />`)}
       </div>
     </section>
     <section className="system-stage">
@@ -348,6 +446,7 @@ function App() {
       </${ReactFlow}>
     </section>
     <aside className="system-side">
+      <${LiveAgentRun} runner=${runner} job=${runJob} busy=${runnerBusy} error=${runnerError} onStart=${startRunner} onRefresh=${refreshRunner} />
       <${LiveFacts} data=${liveData} enabled=${liveEnabled} error=${liveError} />
       <${ProofList} />
     </aside>
