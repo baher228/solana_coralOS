@@ -1,6 +1,8 @@
 import http from 'node:http'
 import bs58 from 'bs58'
 import { Keypair } from '@solana/web3.js'
+import { Client } from '@modelcontextprotocol/sdk/client/index.js'
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
   approveReviewedJob,
@@ -60,6 +62,25 @@ async function request(handler: http.RequestListener, path: string, init: Reques
   }
 }
 
+async function withMcpClient<T>(handler: http.RequestListener, token: string, fn: (client: Client) => Promise<T>): Promise<T> {
+  const server = http.createServer(handler)
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  const port = typeof address === 'object' && address ? address.port : 0
+  const transport = new StreamableHTTPClientTransport(new URL(`http://127.0.0.1:${port}/mcp`), {
+    requestInit: { headers: { Authorization: `Bearer ${token}` } },
+  })
+  const client = new Client({ name: 'txodds-test-client', version: '1.0.0' }, { capabilities: {} })
+  try {
+    await client.connect(transport)
+    return await fn(client)
+  } finally {
+    await client.close().catch(() => {})
+    await transport.close().catch(() => {})
+    await new Promise<void>((resolve) => server.close(() => resolve()))
+  }
+}
+
 function json(body: Record<string, unknown>, token?: string): RequestInit {
   return {
     method: 'POST',
@@ -68,6 +89,31 @@ function json(body: Record<string, unknown>, token?: string): RequestInit {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify(body),
+  }
+}
+
+function mcpJson(body: Record<string, unknown>, token?: string): RequestInit {
+  return {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json, text/event-stream',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  }
+}
+
+function mcpInitialize(id = 1) {
+  return {
+    jsonrpc: '2.0',
+    id,
+    method: 'initialize',
+    params: {
+      protocolVersion: '2025-06-18',
+      capabilities: {},
+      clientInfo: { name: 'txodds-test-client', version: '1.0.0' },
+    },
   }
 }
 
@@ -242,6 +288,169 @@ describe('freelance escrow platform flow', () => {
     const revoked = await request(handler, `/api/agents/${created.body.agent.id}/revoke`, json({}))
     expect(revoked.status).toBe(200)
     expect((await request(handler, '/api/agent/jobs', { headers: { Authorization: `Bearer ${created.body.token}` } })).status).toBe(401)
+  })
+
+  it('rejects missing, revoked, and cross-origin MCP API keys', async () => {
+    const wallet = Keypair.generate().publicKey.toBase58()
+    const handler = createHandler()
+    const created = await request(handler, '/api/agents', json({ name: 'mcp-worker', wallet }))
+    const token = created.body.token
+
+    expect((await request(handler, '/mcp', mcpJson(mcpInitialize()))).status).toBe(401)
+
+    const blocked = await request(handler, '/mcp', {
+      ...mcpJson(mcpInitialize(2), token),
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json, text/event-stream',
+        Authorization: `Bearer ${token}`,
+        Origin: 'https://evil.test',
+      },
+    })
+    expect(blocked.status).toBe(403)
+
+    await request(handler, `/api/agents/${created.body.agent.id}/revoke`, json({}))
+    expect((await request(handler, '/mcp', mcpJson(mcpInitialize(3), token))).status).toBe(401)
+  })
+
+  it('lists only worker MCP tools', async () => {
+    const wallet = Keypair.generate().publicKey.toBase58()
+    const handler = createHandler()
+    const created = await request(handler, '/api/agents', json({ name: 'mcp-worker', wallet }))
+
+    await withMcpClient(handler, created.body.token, async (client) => {
+      const tools = await client.listTools()
+      expect(tools.tools.map((tool) => tool.name).sort()).toEqual([
+        'txodds_agent_status',
+        'txodds_bid_job',
+        'txodds_get_job',
+        'txodds_list_jobs',
+        'txodds_submit_delivery',
+      ])
+    })
+  })
+
+  it('keeps MCP job visibility scoped to open and awarded jobs', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const wallet = Keypair.generate().publicKey.toBase58()
+      const otherWallet = Keypair.generate().publicKey.toBase58()
+      const handler = createHandler({ escrowAdapter: fakeEscrow() })
+      const created = await request(handler, '/api/agents', json({ name: 'mcp-worker', wallet }))
+      const open = openTask()
+      const own = openTask()
+      const hidden = openTask()
+      recordAgentBid(own, { by: 'mcp-worker', wallet, priceSol: 0.001 })
+      recordAgentBid(hidden, { by: 'other-agent', wallet: otherWallet, priceSol: 0.001 })
+      await awardAgentBid(own, { by: 'mcp-worker' }, fakeEscrow())
+      await awardAgentBid(hidden, { by: 'other-agent' }, fakeEscrow())
+
+      await withMcpClient(handler, created.body.token, async (client) => {
+        const result = await client.callTool({ name: 'txodds_list_jobs', arguments: {} })
+        const ids = ((result.structuredContent as { jobs: Array<{ id: string }> }).jobs).map((job) => job.id)
+        expect(ids).toContain(open.id)
+        expect(ids).toContain(own.id)
+        expect(ids).not.toContain(hidden.id)
+      })
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('lets MCP agents bid as themselves without leaking API keys', async () => {
+    const wallet = Keypair.generate().publicKey.toBase58()
+    const handler = createHandler()
+    const created = await request(handler, '/api/agents', json({ name: 'mcp-bidder', wallet }))
+    const job = openTask()
+
+    await withMcpClient(handler, created.body.token, async (client) => {
+      const result = await client.callTool({
+        name: 'txodds_bid_job',
+        arguments: { jobId: job.id, priceSol: 0.001, note: 'ready to build' },
+      })
+      expect(job.marketplace?.bids[0].by).toBe('mcp-bidder')
+      expect(job.marketplace?.bids[0].wallet).toBe(wallet)
+      const text = JSON.stringify(result)
+      expect(text).not.toContain(created.body.token)
+      expect(text).not.toContain('tokenHash')
+      expect(text).not.toContain('SELLER_KEYPAIR')
+      expect(text).not.toContain('BUYER_KEYPAIR')
+    })
+  })
+
+  it('rejects MCP delivery from an agent that has not been awarded', async () => {
+    const wallet = Keypair.generate().publicKey.toBase58()
+    const handler = createHandler()
+    const created = await request(handler, '/api/agents', json({ name: 'mcp-worker', wallet }))
+    const job = openTask()
+
+    await withMcpClient(handler, created.body.token, async (client) => {
+      const result = await client.callTool({
+        name: 'txodds_submit_delivery',
+        arguments: { jobId: job.id, notes: 'Preview is ready for review.' },
+      })
+      expect(result.isError).toBe(true)
+    })
+  })
+
+  it('lets an awarded MCP agent submit delivery and trigger review', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const wallet = Keypair.generate().publicKey.toBase58()
+      const job = openTask()
+      const handler = createHandler({ escrowAdapter: fakeEscrow(), reviewer: aiApprove(), collectArtifacts: collectArtifacts() })
+      const created = await request(handler, '/api/agents', json({ name: 'mcp-worker', wallet }))
+      recordAgentBid(job, { by: 'mcp-worker', wallet, priceSol: 0.001 })
+      await awardAgentBid(job, { by: 'mcp-worker' }, fakeEscrow())
+
+      await withMcpClient(handler, created.body.token, async (client) => {
+        const result = await client.callTool({
+          name: 'txodds_submit_delivery',
+          arguments: {
+            jobId: job.id,
+            url: 'https://example.test/preview',
+            notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
+          },
+        })
+        expect(job.submission?.url).toBe('https://example.test/preview')
+        expect(job.review?.source).toBe('ai')
+        expect(job.review?.releaseEligible).toBe(true)
+        const structured = result.structuredContent as { job: { review?: { releaseEligible?: boolean } } }
+        expect(structured.job.review?.releaseEligible).toBe(true)
+      })
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('starts an MCP demo session and tracks real MCP activity safely', async () => {
+    const wallet = Keypair.generate().publicKey.toBase58()
+    const handler = createHandler()
+
+    const started = await request(handler, '/api/demo/mcp-session', json({ wallet }))
+    expect(started.status).toBe(200)
+    expect(started.body.token).toMatch(/^agt_/)
+    expect(started.body.setup).toContain('/mcp')
+    expect(started.body.jobId).toMatch(/^job_/)
+    expect(started.body.steps.registered).toBe(true)
+    expect(started.body.steps.jobPosted).toBe(true)
+
+    const safeStatus = await request(handler, '/api/demo/mcp-session')
+    expect(safeStatus.status).toBe(200)
+    expect(JSON.stringify(safeStatus.body)).not.toContain(started.body.token)
+    expect(JSON.stringify(safeStatus.body)).not.toContain('tokenHash')
+
+    await withMcpClient(handler, started.body.token, async (client) => {
+      await client.callTool({
+        name: 'txodds_bid_job',
+        arguments: { jobId: started.body.jobId, priceSol: 0.001, wallet },
+      })
+    })
+
+    const afterMcp = await request(handler, '/api/demo/mcp-session')
+    expect(afterMcp.body.steps.connected).toBe(true)
+    expect(afterMcp.body.steps.bidPlaced).toBe(true)
+    expect(afterMcp.body.lastSeenAt).toBeTruthy()
   })
 
   it('starts the local demo runner without exposing agent secrets', async () => {

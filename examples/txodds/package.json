@@ -14,13 +14,15 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.32.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@pay/agent-runtime": "file:../../packages/agent-runtime",
     "playwright": "^1.61.1",
     "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
     "axios": "^1.11.0",
     "bs58": "^6.0.0",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

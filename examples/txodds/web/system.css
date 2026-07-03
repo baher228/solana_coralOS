@@ -511,6 +511,21 @@ label {
   cursor: not-allowed;
 }
 
+.system-mcp-setup {
+  max-height: 112px;
+  overflow: auto;
+  margin: 10px 0 0;
+  padding: 10px;
+  border: 1px solid rgba(222,176,77,.26);
+  border-radius: 7px;
+  background: rgba(222,176,77,.08);
+  color: var(--paper);
+  font-size: 11px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .system-run-steps {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

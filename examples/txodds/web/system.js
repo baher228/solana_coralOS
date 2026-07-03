@@ -46,7 +46,7 @@ const SCRIPT = [
   {
     id: 'feed',
     title: 'Agent network sees it',
-    copy: 'Connected agents poll the job feed using their own service-account token. No Coral session is required.',
+    copy: 'Connected agents use the platform MCP server or REST API with their own service-account token.',
     metrics: { budget: '0.003 SOL', bid: '--', escrow: 'not funded', review: 'not run', settlement: '--' },
     active: ['feed'],
     complete: ['employer', 'job'],
@@ -238,12 +238,55 @@ function ProofList() {
   return html`<section className="system-proof">
     <span>What this proves</span>
     <ul>
-      <li>Any agent can connect with a platform token.</li>
+      <li>Any MCP-capable agent can connect with a platform token.</li>
       <li>Bids are permissioned and wallet-backed.</li>
       <li>The backend awards automatically.</li>
       <li>Escrow is mandatory for agent work.</li>
       <li>Review gates settlement.</li>
     </ul>
+  </section>`
+}
+
+function McpAgentDemo({ session, job, busy, error, onStart, onRefresh }) {
+  const previewUrl = job?.submission?.url || session.previewUrl
+  const setup = session.setup || `MCP_URL=${session.mcpUrl || `${API}/mcp`}\nMCP_AUTH_HEADER=Authorization: Bearer <start demo to mint key>`
+  const copySetup = () => navigator.clipboard?.writeText(setup)
+  const steps = [
+    ['Key', session.steps?.registered],
+    ['Job', session.steps?.jobPosted || Boolean(job)],
+    ['OpenClaw', session.steps?.connected],
+    ['Bid', session.steps?.bidPlaced || Boolean(job?.marketplace?.bids?.length)],
+    ['Award', session.steps?.awarded || Boolean(job?.marketplace?.awardedBid)],
+    ['Escrow', session.steps?.funded || Boolean(job?.settlement?.devnet?.deposit)],
+    ['Delivery', session.steps?.deliverySubmitted || Boolean(job?.submission)],
+    ['Review', session.steps?.reviewCaptured || Boolean(job?.review)],
+  ]
+  return html`<section className="system-run system-mcp">
+    <div className="system-run-head">
+      <div><span>MCP agent demo</span><b>${session.active ? session.steps?.connected ? 'Connected' : 'Key ready' : 'Idle'}</b></div>
+      <button onClick=${onRefresh} title="Refresh MCP demo"><${RefreshCw} size=${15} /></button>
+    </div>
+    <div className="system-run-actions">
+      <button onClick=${onStart} disabled=${busy}><${Play} size=${15} />${busy ? 'Starting' : session.active ? 'Show MCP setup' : 'Start MCP demo'}</button>
+      <button onClick=${copySetup} disabled=${!session.setup}>Copy OpenClaw setup</button>
+      ${previewUrl
+        ? html`<a className="system-run-link" href=${previewUrl} target="_blank" rel="noreferrer"><${ExternalLink} size=${15} />Open agent build</a>`
+        : html`<button disabled><${ExternalLink} size=${15} />Open agent build</button>`}
+    </div>
+    <pre className="system-mcp-setup">${setup}</pre>
+    <div className="system-run-steps">
+      ${steps.map(([label, done]) => html`<span key=${label} className=${done ? 'done' : ''}>${label}</span>`)}
+    </div>
+    <dl>
+      <div><dt>Job</dt><dd>${job?.title || session.jobId || '--'}</dd></div>
+      <div><dt>Status</dt><dd>${job?.status || '--'}</dd></div>
+      <div><dt>Agent</dt><dd>${session.agentName || '--'}</dd></div>
+      <div><dt>Last MCP call</dt><dd>${session.lastSeenAt ? new Date(session.lastSeenAt).toLocaleTimeString() : '--'}</dd></div>
+    </dl>
+    ${error || session.error ? html`<p className="system-error small">${error || session.error}</p>` : null}
+    ${session.events?.length ? html`<div className="system-run-log">
+      ${session.events.slice(0, 5).map((line) => html`<small key=${line}>${line}</small>`)}
+    </div>` : null}
   </section>`
 }
 
@@ -306,12 +349,19 @@ function App() {
   const [runner, setRunner] = useState({ running: false, agentName: 'demo-worker-live', logs: [], steps: {} })
   const [runnerBusy, setRunnerBusy] = useState(false)
   const [runnerError, setRunnerError] = useState('')
+  const [mcpSession, setMcpSession] = useState({ active: false, agentName: 'openclaw-mcp-demo', mcpUrl: `${API}/mcp`, events: [], steps: {} })
+  const [mcpBusy, setMcpBusy] = useState(false)
+  const [mcpError, setMcpError] = useState('')
   const [followLive, setFollowLive] = useState(false)
+  const [followMcp, setFollowMcp] = useState(false)
   const [selected, setSelected] = useState(null)
 
   const live = liveSnapshot(liveData)
-  const runJob = jobById(liveData, runner.jobId) || (followLive ? live.job : null)
-  const activeStepIndex = followLive ? liveStepIndex(runner, runJob) : stepIndex
+  const trackedJobId = followMcp ? mcpSession.jobId : runner.jobId
+  const runJob = jobById(liveData, trackedJobId) || (followLive || followMcp ? live.job : null)
+  const runnerJob = jobById(liveData, runner.jobId)
+  const progress = followMcp ? { steps: mcpSession.steps } : runner
+  const activeStepIndex = followLive || followMcp ? liveStepIndex(progress, runJob) : stepIndex
   const step = SCRIPT[activeStepIndex]
   const metrics = liveEnabled ? { ...step.metrics, ...live.metrics } : step.metrics
 
@@ -334,11 +384,22 @@ function App() {
     }
   }
 
+  const refreshMcp = async () => {
+    setMcpError('')
+    try {
+      const next = await api('/api/demo/mcp-session')
+      setMcpSession((current) => ({ ...current, ...next }))
+    } catch (e) {
+      setMcpError(e.message || String(e))
+    }
+  }
+
   const startRunner = async () => {
     setRunnerBusy(true)
     setRunnerError('')
     setLiveEnabled(true)
     setFollowLive(true)
+    setFollowMcp(false)
     setPlaying(false)
     try {
       setRunner(await api('/api/demo/agent-run', {}))
@@ -347,6 +408,23 @@ function App() {
       setRunnerError(e.message || String(e))
     } finally {
       setRunnerBusy(false)
+    }
+  }
+
+  const startMcp = async () => {
+    setMcpBusy(true)
+    setMcpError('')
+    setLiveEnabled(true)
+    setFollowMcp(true)
+    setFollowLive(false)
+    setPlaying(false)
+    try {
+      setMcpSession(await api('/api/demo/mcp-session', {}))
+      await refreshLive(true)
+    } catch (e) {
+      setMcpError(e.message || String(e))
+    } finally {
+      setMcpBusy(false)
     }
   }
 
@@ -360,10 +438,10 @@ function App() {
 
   useEffect(() => {
     refreshLive()
-    if (!liveEnabled && !followLive) return
-    const timer = setInterval(refreshLive, followLive ? 1500 : 5000)
+    if (!liveEnabled && !followLive && !followMcp) return
+    const timer = setInterval(refreshLive, followLive || followMcp ? 1500 : 5000)
     return () => clearInterval(timer)
-  }, [liveEnabled, followLive])
+  }, [liveEnabled, followLive, followMcp])
 
   useEffect(() => {
     refreshRunner()
@@ -371,17 +449,25 @@ function App() {
     return () => clearInterval(timer)
   }, [followLive, runner.running])
 
+  useEffect(() => {
+    refreshMcp()
+    const timer = setInterval(refreshMcp, followMcp || mcpSession.active ? 1500 : 5000)
+    return () => clearInterval(timer)
+  }, [followMcp, mcpSession.active])
+
   const graph = useMemo(() => makeGraph(step), [step])
   const nodeTypes = useMemo(() => ({ system: SystemNode }), [])
   const selectedNode = selected ? graph.nodes.find((node) => node.id === selected.id) : null
 
   const nextStep = () => {
     setFollowLive(false)
+    setFollowMcp(false)
     setStepIndex((current) => Math.min(SCRIPT.length - 1, current + 1))
   }
   const reset = () => {
     setPlaying(false)
     setFollowLive(false)
+    setFollowMcp(false)
     setStepIndex(0)
     setSelected(null)
   }
@@ -394,10 +480,10 @@ function App() {
         <h1>Agent Network Demo</h1>
       </div>
       <div className="system-actions">
-        <button onClick=${() => { setFollowLive(false); setPlaying(!playing) }}><${playing ? Pause : Play} size=${17} />${playing ? 'Pause' : 'Play'}</button>
+        <button onClick=${() => { setFollowLive(false); setFollowMcp(false); setPlaying(!playing) }}><${playing ? Pause : Play} size=${17} />${playing ? 'Pause' : 'Play'}</button>
         <button onClick=${nextStep} disabled=${stepIndex === SCRIPT.length - 1}><${StepForward} size=${17} />Step</button>
         <button onClick=${reset}><${RotateCcw} size=${17} />Reset</button>
-        <label><input type="checkbox" checked=${liveEnabled} onChange=${(e) => { setLiveEnabled(e.target.checked); if (!e.target.checked) setFollowLive(false) }} />Live Data</label>
+        <label><input type="checkbox" checked=${liveEnabled} onChange=${(e) => { setLiveEnabled(e.target.checked); if (!e.target.checked) { setFollowLive(false); setFollowMcp(false) } }} />Live Data</label>
         <button onClick=${refreshLive} disabled=${!liveEnabled}><${RefreshCw} size=${17} />Refresh</button>
       </div>
     </header>
@@ -446,7 +532,8 @@ function App() {
       </${ReactFlow}>
     </section>
     <aside className="system-side">
-      <${LiveAgentRun} runner=${runner} job=${runJob} busy=${runnerBusy} error=${runnerError} onStart=${startRunner} onRefresh=${refreshRunner} />
+      <${McpAgentDemo} session=${mcpSession} job=${jobById(liveData, mcpSession.jobId)} busy=${mcpBusy} error=${mcpError} onStart=${startMcp} onRefresh=${refreshMcp} />
+      <${LiveAgentRun} runner=${runner} job=${runnerJob} busy=${runnerBusy} error=${runnerError} onStart=${startRunner} onRefresh=${refreshRunner} />
       <${LiveFacts} data=${liveData} enabled=${liveEnabled} error=${liveError} />
       <${ProofList} />
     </aside>

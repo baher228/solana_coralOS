@@ -6,6 +6,10 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import bs58 from 'bs58'
 import { Connection, Keypair, LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js'
+import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
+import type { CallToolResult, GetPromptResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js'
+import * as z from 'zod'
 import { complete, parseJsonReply } from '../../../packages/agent-runtime/src/llm/complete.ts'
 import { deposit as escrowDeposit, escrowPda, makeProgram, release as escrowRelease, refund as escrowRefund } from '../agent/escrow.ts'
 
@@ -176,6 +180,31 @@ interface DemoRunner {
   status(): Promise<DemoRunStatus>
 }
 
+interface McpDemoStatus {
+  active: boolean
+  agentName: string
+  mcpUrl: string
+  jobId?: string
+  previewUrl?: string
+  startedAt?: string
+  lastSeenAt?: string
+  authorizationHeader?: string
+  setup?: string
+  token?: string
+  error?: string
+  events: string[]
+  steps: {
+    registered: boolean
+    jobPosted: boolean
+    connected: boolean
+    bidPlaced: boolean
+    awarded: boolean
+    funded: boolean
+    deliverySubmitted: boolean
+    reviewCaptured: boolean
+  }
+}
+
 const terminal = new Set<Status>(['released', 'refunded', 'cancelled'])
 const statuses = new Set<Status>(['open', 'funded', 'submitted', 'approved', 'released', 'revision_requested', 'disputed', 'refunded', 'cancelled'])
 
@@ -193,6 +222,14 @@ async function loadEnv() {
 const jobs = new Map<string, Job>()
 const connectedAgents = new Map<string, ConnectedAgent>()
 const demoAgentBase = 'demo-worker-live'
+const mcpDemoAgentBase = 'openclaw-mcp-demo'
+const mcpDemoState: {
+  agentId?: string
+  agentName?: string
+  token?: string
+  jobId?: string
+  startedAt?: string
+} = {}
 const demoRunState: {
   child?: ReturnType<typeof spawn>
   agentName?: string
@@ -395,6 +432,101 @@ const localDemoRunner: DemoRunner = {
   async status() {
     return demoStatus()
   },
+}
+
+function resetMcpDemoSession(): void {
+  if (mcpDemoState.agentId) {
+    const agent = connectedAgents.get(mcpDemoState.agentId)
+    if (agent) agent.status = 'revoked'
+  }
+  mcpDemoState.agentId = undefined
+  mcpDemoState.agentName = undefined
+  mcpDemoState.token = undefined
+  mcpDemoState.jobId = undefined
+  mcpDemoState.startedAt = undefined
+}
+
+function mcpDemoAgentName(): string {
+  if (![...connectedAgents.values()].some((agent) => agent.status === 'active' && agent.name === mcpDemoAgentBase)) {
+    return mcpDemoAgentBase
+  }
+  return `${mcpDemoAgentBase}-${Date.now().toString(36)}`
+}
+
+function mcpDemoAgent(): ConnectedAgent | undefined {
+  return mcpDemoState.agentId ? connectedAgents.get(mcpDemoState.agentId) : undefined
+}
+
+function mcpDemoJob(): Job | undefined {
+  return mcpDemoState.jobId ? jobs.get(mcpDemoState.jobId) : undefined
+}
+
+function mcpDemoUrl(): string {
+  return `http://localhost:${PORT}/mcp`
+}
+
+function mcpDemoSteps(agent?: ConnectedAgent, job?: Job): McpDemoStatus['steps'] {
+  const market = job?.marketplace
+  return {
+    registered: Boolean(agent),
+    jobPosted: Boolean(job),
+    connected: Boolean(agent?.lastSeenAt),
+    bidPlaced: Boolean(market?.bids?.length),
+    awarded: Boolean(market?.awardedBid),
+    funded: job?.settlement.mode === 'devnet-escrow',
+    deliverySubmitted: Boolean(job?.submission),
+    reviewCaptured: Boolean(job?.review),
+  }
+}
+
+function mcpDemoStatus(includeSecret = false): McpDemoStatus {
+  const agent = mcpDemoAgent()
+  const job = mcpDemoJob()
+  const previewUrl = job?.submission?.url
+  const token = includeSecret ? mcpDemoState.token : undefined
+  const authorizationHeader = token ? `Authorization: Bearer ${token}` : undefined
+  const setup = token ? [
+    `MCP_URL=${mcpDemoUrl()}`,
+    `MCP_AUTH_HEADER=${authorizationHeader}`,
+    `MCP_JOB_ID=${mcpDemoState.jobId || ''}`,
+  ].join('\n') : undefined
+  return {
+    active: Boolean(agent || job),
+    agentName: agent?.name || mcpDemoState.agentName || mcpDemoAgentBase,
+    mcpUrl: mcpDemoUrl(),
+    ...(mcpDemoState.jobId ? { jobId: mcpDemoState.jobId } : {}),
+    ...(previewUrl ? { previewUrl } : {}),
+    ...(mcpDemoState.startedAt ? { startedAt: mcpDemoState.startedAt } : {}),
+    ...(agent?.lastSeenAt ? { lastSeenAt: agent.lastSeenAt } : {}),
+    ...(authorizationHeader ? { authorizationHeader } : {}),
+    ...(setup ? { setup } : {}),
+    ...(token ? { token } : {}),
+    ...(job?.marketplace?.awardError ? { error: cleanDemoText(job.marketplace.awardError) } : {}),
+    events: (job?.events || []).slice(0, 8).map((event) => `${event.type}: ${event.summary}`),
+    steps: mcpDemoSteps(agent, job),
+  }
+}
+
+async function startMcpDemoSession(input: Record<string, unknown> = {}): Promise<McpDemoStatus> {
+  if (input.restart) resetMcpDemoSession()
+  if (mcpDemoState.token && mcpDemoState.jobId && mcpDemoAgent()?.status === 'active') {
+    return mcpDemoStatus(true)
+  }
+
+  const wallet = String(input.wallet || wallets().worker || '').trim()
+  if (wallet && !publicKey(wallet)) fail('valid payout wallet is required')
+  const created = createConnectedAgent({ name: mcpDemoAgentName(), wallet })
+  const job = createDemoRunJob()
+  job.messages.push({ at: now(), author: 'employer', text: 'MCP demo: connect OpenClaw to the platform MCP server, bid, build, and submit delivery evidence.' })
+  addEvent(job, 'system', 'mcp_demo', 'MCP worker-agent demo session created')
+  mcpDemoState.agentId = created.agent.id
+  mcpDemoState.agentName = created.agent.name
+  mcpDemoState.token = created.token
+  mcpDemoState.jobId = job.id
+  mcpDemoState.startedAt = now()
+  await saveAgents()
+  await saveJobs()
+  return mcpDemoStatus(true)
 }
 
 async function loadJobs(): Promise<void> {
@@ -1745,6 +1877,275 @@ function agentVisibleJobs(auth: AgentAuth) {
   }
 }
 
+type McpAgentAuth = Extract<AgentAuth, { kind: 'agent' }>
+
+function mcpAllowedOrigin(origin: string): boolean {
+  const configured = (process.env.MCP_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+  if (configured.includes('*') || configured.includes(origin)) return true
+  try {
+    const url = new URL(origin)
+    return ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  } catch {
+    return false
+  }
+}
+
+function requireMcpOrigin(req: http.IncomingMessage, res: http.ServerResponse): void {
+  const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin
+  if (!origin) return
+  if (!mcpAllowedOrigin(origin)) fail('MCP origin is not allowed', 403)
+  res.setHeader('Access-Control-Allow-Origin', origin)
+}
+
+function requireMcpAgentAuth(req: http.IncomingMessage): McpAgentAuth {
+  const auth = requireAgentAuth(req)
+  if (auth.kind !== 'agent') fail('MCP requires a connected worker-agent API key', 403)
+  return auth
+}
+
+function mcpAgentJob(job: Job) {
+  const review = job.review ? {
+    at: job.review.at,
+    approved: job.review.approved,
+    score: job.review.score,
+    source: job.review.source,
+    recommendation: job.review.recommendation,
+    releaseEligible: job.review.releaseEligible,
+    summary: job.review.summary,
+    missing: job.review.missing,
+    revisionInstructions: job.review.revisionInstructions,
+    autoReleaseAt: job.review.autoReleaseAt || '',
+  } : undefined
+  return {
+    ...agentJob(job),
+    ...(job.submission ? { submission: job.submission } : {}),
+    ...(review ? { review } : {}),
+  }
+}
+
+function mcpCanSeeJob(auth: McpAgentAuth, job: Job): boolean {
+  return job.status === 'open' || job.marketplace?.awardedBid?.by === auth.agent.name
+}
+
+function mcpVisibleJobs(auth: McpAgentAuth) {
+  return [...jobs.values()]
+    .filter((job) => mcpCanSeeJob(auth, job))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map(mcpAgentJob)
+}
+
+function requireMcpJob(auth: McpAgentAuth, jobId: unknown): Job {
+  const id = String(jobId || '').trim()
+  if (!id) fail('jobId is required')
+  const job = jobs.get(id)
+  if (!job) fail('job not found', 404)
+  if (!mcpCanSeeJob(auth, job)) fail('job is not visible to this agent', 403)
+  return job
+}
+
+function mcpResult(summary: string, structuredContent: Record<string, unknown>): CallToolResult {
+  return {
+    content: [{ type: 'text', text: `${summary}\n\n${JSON.stringify(structuredContent, null, 2)}` }],
+    structuredContent,
+  }
+}
+
+function mcpResource(uri: string, payload: unknown): ReadResourceResult {
+  return {
+    contents: [{
+      uri,
+      mimeType: 'application/json',
+      text: JSON.stringify(payload, null, 2),
+    }],
+  }
+}
+
+function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): McpServer {
+  const server = new McpServer({
+    name: 'txodds-platform',
+    version: '0.1.0',
+  })
+
+  server.registerTool('txodds_list_jobs', {
+    title: 'List TxOdds Jobs',
+    description: 'List open jobs and jobs already awarded to the authenticated worker agent.',
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  }, async () => {
+    if (await runBackendTicks(options)) await saveJobs()
+    const visible = mcpVisibleJobs(auth)
+    return mcpResult(`Found ${visible.length} visible job(s).`, { jobs: visible })
+  })
+
+  server.registerTool('txodds_get_job', {
+    title: 'Get TxOdds Job',
+    description: 'Read one job if it is open or awarded to the authenticated worker agent.',
+    inputSchema: { jobId: z.string().min(1) },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  }, async ({ jobId }) => {
+    const job = requireMcpJob(auth, jobId)
+    return mcpResult(`Loaded job ${job.id}.`, { job: mcpAgentJob(job) })
+  })
+
+  server.registerTool('txodds_bid_job', {
+    title: 'Bid On TxOdds Job',
+    description: 'Place or replace this worker agent’s bid on an open marketplace job.',
+    inputSchema: {
+      jobId: z.string().min(1),
+      priceSol: z.number().positive(),
+      wallet: z.string().optional(),
+      note: z.string().optional(),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  }, async ({ jobId, priceSol, wallet, note }) => {
+    const job = requireMcpJob(auth, jobId)
+    const bid = recordAgentBid(job, {
+      by: auth.agent.name,
+      wallet: wallet || auth.agent.wallet,
+      priceSol,
+      note,
+    })
+    await saveJobs()
+    await saveAgents()
+    return mcpResult(`Bid ${bid.priceSol} SOL on ${job.id} as ${auth.agent.name}.`, { bid, job: mcpAgentJob(job) })
+  })
+
+  server.registerTool('txodds_submit_delivery', {
+    title: 'Submit TxOdds Delivery',
+    description: 'Submit preview URL, repository, or notes for a job awarded to this worker agent.',
+    inputSchema: {
+      jobId: z.string().min(1),
+      url: z.string().optional(),
+      repo: z.string().optional(),
+      notes: z.string().optional(),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  }, async ({ jobId, url, repo, notes }) => {
+    const job = requireMcpJob(auth, jobId)
+    const submission = submitAgentDelivery(job, { by: auth.agent.name, url, repo, notes })
+    await assessJobWithAi(job, options.reviewer, options.collectArtifacts)
+    await runAgentMarketTick(options.escrowAdapter)
+    await saveJobs()
+    await saveAgents()
+    return mcpResult(`Submitted delivery evidence for ${job.id}.`, { submission, job: mcpAgentJob(job) })
+  })
+
+  server.registerTool('txodds_agent_status', {
+    title: 'TxOdds Agent Status',
+    description: 'Show the authenticated worker agent profile and visible job counts.',
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  }, async () => {
+    if (await runBackendTicks(options)) await saveJobs()
+    const visible = mcpVisibleJobs(auth)
+    return mcpResult(`Agent ${auth.agent.name} is ${auth.agent.status}.`, {
+      agent: {
+        id: auth.agent.id,
+        name: auth.agent.name,
+        wallet: auth.agent.wallet || '',
+        status: auth.agent.status,
+        createdAt: auth.agent.createdAt,
+        lastSeenAt: auth.agent.lastSeenAt || '',
+      },
+      counts: {
+        visibleJobs: visible.length,
+        openJobs: visible.filter((job) => job.status === 'open').length,
+        awardedJobs: visible.filter((job) => job.marketplace?.awardedBid?.by === auth.agent.name).length,
+      },
+    })
+  })
+
+  server.registerResource('txodds-agent-profile', 'txodds://agent/profile', {
+    title: 'TxOdds Agent Profile',
+    mimeType: 'application/json',
+  }, async (uri) => mcpResource(uri.toString(), {
+    id: auth.agent.id,
+    name: auth.agent.name,
+    wallet: auth.agent.wallet || '',
+    status: auth.agent.status,
+    createdAt: auth.agent.createdAt,
+    lastSeenAt: auth.agent.lastSeenAt || '',
+  }))
+
+  server.registerResource('txodds-open-jobs', 'txodds://jobs/open', {
+    title: 'TxOdds Open Jobs',
+    mimeType: 'application/json',
+  }, async (uri) => mcpResource(uri.toString(), {
+    jobs: mcpVisibleJobs(auth).filter((job) => job.status === 'open'),
+  }))
+
+  server.registerResource('txodds-job', new ResourceTemplate('txodds://jobs/{id}', {
+    list: async () => ({
+      resources: mcpVisibleJobs(auth).map((job) => ({
+        uri: `txodds://jobs/${job.id}`,
+        name: job.id,
+        title: job.title,
+        mimeType: 'application/json',
+      })),
+    }),
+  }), {
+    title: 'TxOdds Job',
+    mimeType: 'application/json',
+  }, async (uri, variables) => {
+    const job = requireMcpJob(auth, variables.id)
+    return mcpResource(uri.toString(), { job: mcpAgentJob(job) })
+  })
+
+  server.registerPrompt('txodds_worker_brief', {
+    title: 'TxOdds Worker Brief',
+    description: 'Instructions for an AI worker agent using the TxOdds marketplace MCP tools.',
+  }, async (): Promise<GetPromptResult> => ({
+    messages: [{
+      role: 'user',
+      content: {
+        type: 'text',
+        text: [
+          `You are ${auth.agent.name}, a connected worker agent on the TxOdds freelance escrow platform.`,
+          'Use txodds_list_jobs to inspect open work, then txodds_get_job before bidding.',
+          'Bid only when the scope, acceptance criteria, budget, and payout wallet are clear.',
+          'After award/funding, build the requested artifact and call txodds_submit_delivery with a preview URL, repo, or detailed notes.',
+          'Do not claim to have completed work until delivery evidence is available.',
+        ].join('\n'),
+      },
+    }],
+  }))
+
+  return server
+}
+
+async function handleMcpRequest(req: http.IncomingMessage, res: http.ServerResponse, options: HandlerOptions): Promise<void> {
+  requireMcpOrigin(req, res)
+  if (req.method !== 'POST') {
+    res.statusCode = 405
+    res.setHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32000, message: 'Method not allowed.' }, id: null }))
+    return
+  }
+  const auth = requireMcpAgentAuth(req)
+  await saveAgents()
+  const server = createTxoddsMcpServer(auth, options)
+  const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined })
+  res.on('close', () => {
+    void transport.close()
+    void server.close()
+  })
+  try {
+    await server.connect(transport)
+    await transport.handleRequest(req, res)
+  } catch (e) {
+    if (!res.headersSent) {
+      res.statusCode = (e as { status?: number }).status || 500
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({
+        jsonrpc: '2.0',
+        error: { code: -32603, message: (e as Error).message || 'Internal server error' },
+        id: null,
+      }))
+    }
+  }
+}
+
 function reviewArtifacts(job: Job): ReviewArtifact[] {
   const run = job.review?.artifactRun
   return run ? [...run.screenshots, ...run.logs] : []
@@ -1796,6 +2197,7 @@ async function state() {
 
 export function resetJobsForTest(): void {
   resetDemoRun()
+  resetMcpDemoSession()
   jobs.clear()
   connectedAgents.clear()
 }
@@ -1815,11 +2217,15 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
   return async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-    if (req.method === 'OPTIONS') return send(res, 204, {})
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id, MCP-Protocol-Version')
+    res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id')
 
     try {
       const url = new URL(req.url || '/', `http://localhost:${PORT}`)
+      if (req.method === 'OPTIONS') {
+        if (url.pathname === '/mcp') requireMcpOrigin(req, res)
+        return send(res, 204, {})
+      }
       const demoRunner = options.demoRunner || localDemoRunner
       const agentRoute = url.pathname.match(/^\/api\/agent\/jobs(?:\/([^/]+)\/(bids|award|delivery|settle))?$/)
       const agentsRoute = url.pathname.match(/^\/api\/agents(?:\/([^/]+)\/(revoke))?$/)
@@ -1827,6 +2233,15 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       const disputeReviewRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/dispute\/review$/)
       const milestoneRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/milestones\/([^/]+)\/complete$/)
       const artifactRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/artifacts\/([^/]+)$/)
+
+      if (url.pathname === '/mcp') return await handleMcpRequest(req, res, options)
+
+      if (url.pathname === '/api/demo/mcp-session') {
+        requireLocalRequest(req)
+        if (req.method === 'GET') return send(res, 200, mcpDemoStatus(false))
+        if (req.method === 'POST') return send(res, 200, await startMcpDemoSession(await readJson(req)))
+        return send(res, 404, { error: 'not found' })
+      }
 
       if (url.pathname === '/api/demo/agent-run') {
         requireLocalRequest(req)

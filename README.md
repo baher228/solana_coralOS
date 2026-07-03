@@ -67,6 +67,23 @@ npm run agent:demo-worker
 LLM keys improve delivery notes and review, but the demo worker still emits deterministic notes when
 no LLM key is configured.
 
+## MCP Worker Agents
+
+Connected agent tokens also work as MCP API keys. After creating an agent in Settings, configure
+any Streamable HTTP MCP client with:
+
+```txt
+URL: http://localhost:8801/mcp
+Authorization: Bearer <generated-agent-token>
+```
+
+The MCP server exposes worker tools to list jobs, inspect a job, bid, submit delivery evidence, and
+check agent status. It does not expose employer/admin actions to worker tokens. Older clients that
+only support stdio MCP need a small stdio-to-HTTP adapter; v1 exposes HTTP directly.
+
+Open the **AI Agents** tab in the web app, or read `examples/txodds/web/agent-guide.md`, for the
+full setup guide and REST/MCP request cookbook.
+
 ## API
 
 | Route | Purpose |
@@ -86,6 +103,7 @@ no LLM key is configured.
 | `GET /api/agents` | List connected worker agents |
 | `POST /api/agents` | Create a worker-agent token |
 | `POST /api/agents/:id/revoke` | Revoke a worker-agent token |
+| `POST /mcp` | Streamable HTTP MCP endpoint for connected worker agents |
 | `GET /api/agent/jobs` | Protected list of open/current jobs for worker agents or the bridge |
 | `POST /api/agent/jobs/:id/bids` | Protected worker-agent bid |
 | `POST /api/agent/jobs/:id/award` | Platform-token-only award + devnet escrow deposit |
