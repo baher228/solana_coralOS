@@ -1336,14 +1336,21 @@ input:focus, textarea:focus, select:focus {
   border: 1px solid transparent;
   padding: 9px 12px;
   font-weight: 800;
+  text-decoration: none;
+  outline: none;
 }
-.escrow-new,
-.escrow-primary {
+.escrow-app button:focus-visible,
+.escrow-login button:focus-visible {
+  outline: 2px solid #91d6b3;
+  outline-offset: 2px;
+}
+button.escrow-new,
+button.escrow-primary {
   background: #245c9e;
   color: white;
 }
-.escrow-new:hover,
-.escrow-primary:hover:not(:disabled) {
+button.escrow-new:hover,
+button.escrow-primary:hover:not(:disabled) {
   background: #1c4b83;
   color: white;
 }
@@ -1353,7 +1360,7 @@ input:focus, textarea:focus, select:focus {
   background: #ffffff;
   color: #253244;
 }
-.escrow-ghost:hover:not(:disabled) {
+button.escrow-ghost:hover:not(:disabled) {
   border-color: #245c9e;
   color: #245c9e;
 }
@@ -1444,8 +1451,8 @@ input:focus, textarea:focus, select:focus {
 }
 .escrow-view {
   display: grid;
-  gap: 16px;
-  padding: 22px;
+  gap: 14px;
+  padding: 18px;
 }
 .escrow-stats {
   display: grid;
@@ -1548,8 +1555,8 @@ input:focus, textarea:focus, select:focus {
   min-width: 0;
   display: grid;
   align-content: start;
-  gap: 14px;
-  padding: 16px;
+  gap: 12px;
+  padding: 14px;
 }
 .escrow-detail {
   overflow: hidden;
@@ -1562,12 +1569,13 @@ input:focus, textarea:focus, select:focus {
   min-width: 0;
 }
 .escrow-section-head h2 {
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
 .escrow-section-head h3 {
   font-size: 15px;
+  line-height: 1.25;
 }
 .escrow-section-head > div {
   min-width: 0;
@@ -1591,37 +1599,55 @@ input:focus, textarea:focus, select:focus {
 .escrow-section-stack,
 .escrow-list-section {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 .escrow-table-head,
 .escrow-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.4fr) minmax(180px, 1fr) 110px 130px minmax(130px, .9fr);
-  gap: 12px;
+  grid-template-columns: minmax(220px, 1.55fr) minmax(180px, 1fr) minmax(100px, .45fr) minmax(140px, .55fr);
+  gap: 10px;
   align-items: center;
 }
 .escrow-table-head {
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: #f7f9fb;
   color: #697586;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 850;
   text-transform: uppercase;
 }
 .escrow-row {
   width: 100%;
-  min-height: 68px;
+  min-height: 58px;
   border: 0;
   border-top: 1px solid #edf1f5;
   border-radius: 0;
   background: #ffffff;
   color: #17202a;
+  padding: 10px 12px;
   text-align: left;
 }
-.escrow-row:hover,
-.escrow-row.on {
+button.escrow-row:hover:not(:disabled),
+button.escrow-row.on,
+button.escrow-row.on:hover:not(:disabled) {
   background: #eef5fc;
   color: #17202a;
+}
+.escrow-row.on {
+  box-shadow: inset 3px 0 0 #176f4d;
+}
+.escrow-row:focus {
+  outline: 0;
+}
+.escrow-row.on:focus {
+  box-shadow: inset 3px 0 0 #176f4d;
+}
+.escrow-row:focus-visible {
+  outline: 0;
+  box-shadow: inset 0 0 0 1px #176f4d;
+}
+.escrow-row.on:focus-visible {
+  box-shadow: inset 3px 0 0 #176f4d, inset 0 0 0 1px #176f4d;
 }
 .escrow-row span {
   min-width: 0;
@@ -1630,6 +1656,16 @@ input:focus, textarea:focus, select:focus {
 .escrow-row b,
 .escrow-row small {
   display: block;
+}
+.escrow-row b {
+  font-size: 15px;
+  line-height: 1.25;
+  font-weight: 780;
+}
+.escrow-row small {
+  margin-top: 3px;
+  font-size: 12px;
+  font-weight: 650;
 }
 .escrow-badge {
   width: fit-content;
@@ -1642,6 +1678,8 @@ input:focus, textarea:focus, select:focus {
   font-weight: 850;
   text-transform: uppercase;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .escrow-detail > .escrow-section-head > .escrow-badge {
   justify-self: end;
@@ -1706,6 +1744,16 @@ input:focus, textarea:focus, select:focus {
   gap: 9px;
   padding-top: 12px;
   border-top: 1px solid #edf1f5;
+}
+.escrow-task-action {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #edf1f5;
+}
+.escrow-task-action .escrow-artifact-grid,
+.escrow-task-action .escrow-screenshots {
+  grid-template-columns: 1fr;
 }
 .escrow-terms p,
 .escrow-mini-list span {
@@ -1817,6 +1865,34 @@ input:focus, textarea:focus, select:focus {
   overflow-wrap: anywhere;
   color: #245c9e;
   font-weight: 800;
+}
+.escrow-dispute-panel,
+.escrow-dispute-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #f1c6a2;
+  border-radius: 8px;
+  background: #fff8ee;
+}
+.escrow-dispute-panel div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.escrow-dispute-panel span,
+.escrow-dispute-panel strong {
+  color: #8a4f13;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.escrow-dispute-panel p,
+.escrow-dispute-panel small {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: #3f4650;
 }
 .escrow-review-result {
   display: grid;
@@ -2035,6 +2111,9 @@ input:focus, textarea:focus, select:focus {
   color: #17211b;
   background: #f5f7f4;
 }
+.escrow-view {
+  padding: 18px clamp(16px, 3vw, 34px);
+}
 .escrow-login-copy {
   background: #10261d;
 }
@@ -2053,15 +2132,19 @@ input:focus, textarea:focus, select:focus {
   background: #ffffff;
   box-shadow: none;
 }
+.escrow-workspace-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
+}
 .escrow-mark,
-.escrow-new,
-.escrow-primary {
+button.escrow-new,
+button.escrow-primary {
   background: #176f4d;
   color: #ffffff;
 }
-.escrow-new:hover,
-.escrow-primary:hover:not(:disabled) {
+button.escrow-new:hover,
+button.escrow-primary:hover:not(:disabled) {
   background: #11563c;
+  color: #ffffff;
 }
 .escrow-ghost,
 .escrow-app button.escrow-ghost,
@@ -2078,7 +2161,7 @@ input:focus, textarea:focus, select:focus {
   background: #fbfcfb;
   color: #17211b;
 }
-.escrow-ghost:hover:not(:disabled) {
+button.escrow-ghost:hover:not(:disabled) {
   border-color: #176f4d;
   color: #176f4d;
   background: #e7eee9;
@@ -2143,6 +2226,7 @@ input:focus, textarea:focus, select:focus {
 }
 .escrow-table {
   border-color: #dde5df;
+  border-radius: 7px;
 }
 .escrow-table-head,
 .escrow-definition div,
@@ -2157,14 +2241,44 @@ input:focus, textarea:focus, select:focus {
   background: #ffffff;
   color: #17211b;
 }
-.escrow-row:hover,
-.escrow-row.on {
-  background: #edf8f2;
+button.escrow-row:hover:not(:disabled),
+button.escrow-row.on,
+button.escrow-row.on:hover:not(:disabled) {
+  background: #f0f8f4;
   color: #17211b;
+}
+.escrow-row.on {
+  box-shadow: inset 3px 0 0 #176f4d;
+}
+.escrow-list-section > .escrow-section-head {
+  align-items: end;
+  padding: 0 2px;
+}
+.escrow-list-section > .escrow-section-head h3 {
+  font-size: 16px;
+}
+.escrow-list-section > .escrow-section-head span {
+  font-size: 13px;
+}
+.escrow-list-section > .escrow-section-head > span {
+  min-width: 28px;
+  color: #173a2c;
+  text-align: right;
+}
+.escrow-row .escrow-badge {
+  max-width: 154px;
+}
+.escrow-list-section .escrow-empty {
+  min-height: 74px;
+  padding: 14px 16px;
+}
+.escrow-empty b {
+  font-size: 15px;
 }
 .escrow-badge {
   background: #e8eee9;
   color: #31473b;
+  font-weight: 780;
 }
 .escrow-badge.open {
   background: #e7f6ef;
@@ -2268,17 +2382,21 @@ input:focus, textarea:focus, select:focus {
 .escrow-page-head {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: center;
   gap: 18px;
-  padding: 18px;
-  border: 1px solid #dde5df;
+  padding: 16px 18px;
+  border: 0;
   border-radius: 8px;
-  background: #ffffff;
+  background: #10261d;
+  color: #ffffff;
 }
 .escrow-page-head h1 {
   margin: 3px 0 0;
-  font-size: 30px;
+  font-size: 25px;
   line-height: 1.08;
+}
+.escrow-page-head .escrow-kicker {
+  color: #9fd4bd;
 }
 .escrow-page-metrics {
   display: flex;
@@ -2287,20 +2405,20 @@ input:focus, textarea:focus, select:focus {
   justify-content: flex-end;
 }
 .escrow-page-metrics span {
-  min-width: 88px;
+  min-width: 74px;
   display: grid;
   gap: 2px;
   padding: 9px 11px;
-  border: 1px solid #dde5df;
+  border: 1px solid rgba(255,255,255,.18);
   border-radius: 6px;
-  background: #f6f8f6;
-  color: #68756c;
+  background: rgba(255,255,255,.08);
+  color: #9fd4bd;
   font-size: 12px;
   font-weight: 850;
   text-transform: uppercase;
 }
 .escrow-page-metrics b {
-  color: #17211b;
+  color: #ffffff;
   font-size: 18px;
 }
 .escrow-artifact-report {
@@ -2483,41 +2601,6 @@ input:focus, textarea:focus, select:focus {
   background: #e7eee9;
   color: #17211b;
 }
-.escrow-row:hover:not(:disabled),
-.escrow-row.on,
-.escrow-row.on:hover:not(:disabled) {
-  color: #17211b;
-}
-.escrow-nav button:hover:not(:disabled),
-.escrow-nav button.on:hover:not(:disabled) {
-  color: #ffffff;
-}
-.escrow-primary:hover:not(:disabled),
-.escrow-new:hover:not(:disabled) {
-  color: #ffffff;
-}
-.escrow-app button:focus,
-.escrow-app button:active,
-.escrow-app button:focus-visible {
-  color: inherit;
-}
-.escrow-app .escrow-primary:focus,
-.escrow-app .escrow-primary:active,
-.escrow-app .escrow-primary:focus-visible,
-.escrow-app .escrow-new:focus,
-.escrow-app .escrow-new:active,
-.escrow-app .escrow-new:focus-visible,
-.escrow-nav button.on:focus,
-.escrow-nav button.on:active,
-.escrow-nav button.on:focus-visible {
-  color: #ffffff;
-}
-.escrow-app .escrow-ghost:focus,
-.escrow-app .escrow-ghost:active,
-.escrow-app .escrow-ghost:focus-visible {
-  color: #17211b;
-}
-
 @media (max-width: 1180px) {
   .escrow-sidebar {
     border-right: 0;
@@ -2546,5 +2629,916 @@ input:focus, textarea:focus, select:focus {
 @media (max-width: 520px) {
   .escrow-account-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Current platform redesign. Legacy demo selectors are intentionally untouched. */
+.escrow-login,
+.escrow-app {
+  --desk-bg: #f4f1ec;
+  --desk-panel: #fffdfa;
+  --desk-ink: #292622;
+  --desk-muted: #746f68;
+  --desk-line: #e2dacf;
+  --desk-line-strong: #cbbfaf;
+  --desk-green: #8a967d;
+  --desk-green-soft: #eef2e9;
+  --desk-blue: #7c8fa3;
+  --desk-blue-soft: #edf2f5;
+  --desk-amber: #a9825d;
+  --desk-amber-soft: #f1e8dc;
+  --desk-red: #a66a61;
+  --desk-red-soft: #f1e3de;
+  color: var(--desk-ink);
+  background:
+    linear-gradient(180deg, #f7f3ec 0, rgba(247, 243, 236, 0) 260px),
+    var(--desk-bg);
+}
+
+.escrow-app {
+  grid-template-columns: 268px minmax(0, 1fr);
+}
+
+.escrow-sidebar {
+  position: sticky;
+  top: 0;
+  min-height: 100vh;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 18px;
+  padding: 18px;
+  border-right: 1px solid #252a23;
+  background: #2b3028;
+  color: #f8f4ec;
+}
+
+.escrow-brand {
+  min-width: 0;
+}
+
+.escrow-brand .escrow-mark,
+.escrow-mark {
+  border-radius: 7px;
+  background: #7d8b73;
+  color: #ffffff;
+}
+
+.escrow-brand b {
+  color: #ffffff;
+}
+
+.escrow-brand span,
+.escrow-side-note span,
+.escrow-side-note small {
+  color: #d7d7c9;
+}
+
+button.escrow-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-color: rgba(255,255,255,.12);
+  background: #f6efe5;
+  color: #2a261f;
+}
+
+button.escrow-new:hover:not(:disabled) {
+  border-color: #f6efe5;
+  background: #fffdfa;
+  color: #2a261f;
+}
+
+.escrow-nav {
+  align-content: start;
+  gap: 6px;
+}
+
+.escrow-nav button,
+.escrow-side-tools button,
+.escrow-side-tools a {
+  min-width: 0;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: #e3dfd3;
+  text-decoration: none;
+}
+
+.escrow-nav button span,
+.escrow-side-tools button span {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.escrow-nav button:hover:not(:disabled),
+.escrow-side-tools button:hover:not(:disabled),
+.escrow-side-tools a:hover {
+  border-color: rgba(255,255,255,.12);
+  background: rgba(255,255,255,.08);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.escrow-nav button.on,
+.escrow-side-tools button.on {
+  border-color: rgba(238,242,233,.24);
+  background: rgba(238,242,233,.12);
+  color: #ffffff;
+}
+
+.escrow-nav b {
+  background: #d9d6c7;
+  color: #292622;
+}
+
+.escrow-side-note {
+  padding: 13px;
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 8px;
+  background: rgba(255,255,255,.05);
+}
+
+.escrow-side-note b {
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.escrow-side-tools {
+  display: grid;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+
+.escrow-side-tools a {
+  justify-content: center;
+  color: #d7d7c9;
+  font-weight: 800;
+}
+
+.escrow-content {
+  min-height: 100vh;
+}
+
+.escrow-topbar {
+  min-height: 70px;
+  padding: 14px clamp(18px, 3vw, 34px);
+  border-bottom: 1px solid var(--desk-line);
+  background: rgba(255,253,250,.88);
+  backdrop-filter: blur(18px);
+}
+
+.escrow-search {
+  max-width: 620px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  background: #fbf7f1;
+  color: var(--desk-muted);
+}
+
+.escrow-search input {
+  min-height: 40px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.escrow-search input:focus {
+  box-shadow: none;
+}
+
+.escrow-account {
+  min-width: 0;
+}
+
+.escrow-account > div {
+  min-width: 0;
+}
+
+.escrow-account b,
+.escrow-account span {
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.escrow-avatar {
+  flex: 0 0 auto;
+  background: #6f7a66;
+  color: #ffffff;
+}
+
+.escrow-view {
+  display: grid;
+  gap: 16px;
+  padding: 20px clamp(18px, 3vw, 34px) 34px;
+}
+
+.escrow-page-head {
+  padding: 18px;
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(138,150,125,.18), transparent 55%),
+    #f2eee6;
+  color: var(--desk-ink);
+}
+
+.escrow-page-head h1 {
+  font-size: 28px;
+  line-height: 1.05;
+}
+
+.escrow-page-head .escrow-kicker {
+  color: #7d886f;
+}
+
+.escrow-page-metrics span {
+  border-color: var(--desk-line);
+  background: rgba(255,253,250,.72);
+  color: var(--desk-muted);
+}
+
+.escrow-page-metrics b {
+  color: var(--desk-ink);
+}
+
+.escrow-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.escrow-stat,
+.escrow-create-closed,
+.escrow-create,
+.escrow-main-panel,
+.escrow-detail,
+.escrow-empty,
+.escrow-artifact-report {
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  background: var(--desk-panel);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
+
+.escrow-stat {
+  padding: 14px;
+}
+
+.escrow-stat b {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.escrow-stat span,
+.escrow-section-head span,
+.escrow-table-head,
+.escrow-field span,
+.escrow-definition dt,
+.escrow-muted {
+  color: var(--desk-muted);
+}
+
+.escrow-workspace-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+  gap: 14px;
+}
+
+.escrow-main-panel,
+.escrow-detail {
+  padding: 16px;
+}
+
+.escrow-section-head {
+  align-items: center;
+}
+
+.escrow-section-head h2,
+.escrow-section-head h3 {
+  color: var(--desk-ink);
+}
+
+.escrow-create-closed,
+.escrow-create {
+  padding: 16px;
+}
+
+.escrow-role-picker {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.escrow-tabs {
+  display: grid;
+  gap: 13px;
+}
+
+.escrow-tab-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px;
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  background: #f6f4ee;
+}
+
+.escrow-tab-trigger {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--desk-muted);
+}
+
+.escrow-tab-trigger[data-state="active"] {
+  background: var(--desk-panel);
+  color: var(--desk-ink);
+  box-shadow: 0 1px 2px rgba(16,24,40,.08);
+}
+
+.escrow-tab-trigger b,
+.escrow-chat-filters b {
+  min-width: 22px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e3e2d9;
+  color: #4d5849;
+  font-size: 12px;
+}
+
+.escrow-table {
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.escrow-table-head {
+  background: #f6f4ee;
+}
+
+.escrow-row {
+  border-top-color: #ebe8de;
+  background: var(--desk-panel);
+}
+
+button.escrow-row:hover:not(:disabled),
+button.escrow-row.on,
+button.escrow-row.on:hover:not(:disabled) {
+  background: var(--desk-green-soft);
+  color: var(--desk-ink);
+}
+
+.escrow-row.on {
+  box-shadow: inset 3px 0 0 var(--desk-green);
+}
+
+.escrow-badge {
+  border: 1px solid transparent;
+  background: #e8e6dd;
+  color: #4d5849;
+  letter-spacing: 0;
+}
+
+.escrow-badge.open {
+  border-color: #c9d1bf;
+  background: var(--desk-green-soft);
+  color: #4c5c46;
+}
+
+.escrow-badge.funded,
+.escrow-badge.submitted {
+  border-color: #c8d0d8;
+  background: var(--desk-blue-soft);
+  color: #405367;
+}
+
+.escrow-badge.released {
+  border-color: #c9d1bf;
+  background: #e1e8dc;
+  color: #4c5c46;
+}
+
+.escrow-badge.revision_requested,
+.escrow-badge.disputed {
+  border-color: #d6c5a7;
+  background: var(--desk-amber-soft);
+  color: #6d5532;
+}
+
+.escrow-badge.refunded,
+.escrow-badge.cancelled {
+  border-color: #d7bcb8;
+  background: var(--desk-red-soft);
+  color: var(--desk-red);
+}
+
+.escrow-definition div,
+.escrow-evidence div,
+.escrow-thread,
+.escrow-mini-list p {
+  background: #f6f4ee;
+}
+
+.escrow-chat-shell {
+  min-height: calc(100vh - 178px);
+  display: grid;
+  grid-template-columns: minmax(300px, 390px) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.escrow-chat-list,
+.escrow-chat-pane {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  background: var(--desk-panel);
+  padding: 14px;
+}
+
+.escrow-chat-pane {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.escrow-chat-filters {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.escrow-chat-filters button {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  border: 1px solid var(--desk-line);
+  background: #f6f4ee;
+  color: #535a51;
+}
+
+.escrow-chat-filters button.on {
+  border-color: var(--desk-green);
+  background: var(--desk-green-soft);
+  color: #46523f;
+}
+
+.escrow-conversation-list {
+  display: grid;
+  gap: 7px;
+  overflow: auto;
+}
+
+.escrow-conversation {
+  width: 100%;
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--desk-panel);
+  color: var(--desk-ink);
+  text-align: left;
+}
+
+.escrow-conversation:hover:not(:disabled),
+.escrow-conversation.on {
+  border-color: var(--desk-line-strong);
+  background: #f6f4ee;
+  color: var(--desk-ink);
+}
+
+.escrow-conversation span,
+.escrow-conversation i {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.escrow-conversation b,
+.escrow-conversation em,
+.escrow-conversation small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.escrow-conversation em {
+  color: var(--desk-muted);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.escrow-conversation i {
+  justify-items: end;
+  font-style: normal;
+}
+
+.escrow-conversation strong {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--desk-blue-soft);
+  color: var(--desk-blue);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.escrow-chat-head {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--desk-line);
+}
+
+.escrow-chat-head h2,
+.escrow-chat-head span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.escrow-chat-head span {
+  color: var(--desk-muted);
+}
+
+.escrow-chat-back {
+  display: none;
+}
+
+.escrow-thread.large {
+  max-height: none;
+  min-height: 0;
+  align-content: end;
+  padding: 16px;
+  border: 1px solid var(--desk-line);
+}
+
+.escrow-thread p {
+  border-color: var(--desk-line);
+  box-shadow: 0 1px 1px rgba(16,24,40,.03);
+}
+
+.escrow-thread p.worker {
+  background: var(--desk-blue-soft);
+  border-color: #c8d0d8;
+}
+
+.escrow-thread p.agent {
+  background: var(--desk-green-soft);
+  border-color: #c9d1bf;
+}
+
+.escrow-compose.large {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.escrow-compose.large button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.escrow-transactions {
+  display: grid;
+  gap: 8px;
+}
+
+.escrow-transaction {
+  border: 1px solid var(--desk-line);
+  border-radius: 8px;
+  background: var(--desk-panel);
+  overflow: hidden;
+}
+
+.escrow-transaction.on {
+  border-color: var(--desk-green);
+}
+
+.escrow-transaction-trigger {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  background: var(--desk-panel);
+  color: var(--desk-ink);
+  text-align: left;
+}
+
+.escrow-transaction-trigger:hover:not(:disabled) {
+  background: #f6f4ee;
+  color: var(--desk-ink);
+}
+
+.escrow-transaction-trigger:focus {
+  outline: 0;
+}
+
+.escrow-transaction-trigger:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--desk-green);
+}
+
+.escrow-transaction-trigger span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.escrow-transaction-trigger small {
+  max-width: 440px;
+  overflow: hidden;
+  color: var(--desk-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.escrow-transaction-breakdown {
+  padding: 0 12px 12px;
+}
+
+.escrow-transaction-breakdown dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--desk-line);
+}
+
+.escrow-transaction-breakdown div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 9px;
+  border-radius: 6px;
+  background: #f6f4ee;
+}
+
+.escrow-transaction-breakdown dt {
+  color: var(--desk-muted);
+  font-size: 11px;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.escrow-transaction-breakdown dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-weight: 750;
+}
+
+.escrow-action-bar.wallet {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--desk-line);
+}
+
+.escrow-create.compact {
+  box-shadow: none;
+  border: 0;
+  padding: 0;
+}
+
+.escrow-token-box {
+  margin-top: 16px;
+  padding: 14px;
+  border: 1px solid var(--desk-line);
+  background: var(--desk-panel-soft);
+}
+
+.escrow-token-box pre {
+  margin: 8px 0 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.escrow-agent-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.escrow-agent-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--desk-line);
+  background: var(--desk-panel-soft);
+}
+
+.escrow-agent-row span {
+  min-width: 0;
+}
+
+.escrow-agent-row small {
+  display: block;
+  color: var(--desk-muted);
+}
+
+.escrow-app button.escrow-primary,
+button.escrow-primary {
+  border-color: var(--desk-green);
+  background: var(--desk-green);
+  color: #ffffff;
+}
+
+.escrow-app button.escrow-primary:hover:not(:disabled),
+button.escrow-primary:hover:not(:disabled) {
+  background: #4f5d49;
+  color: #ffffff;
+}
+
+.escrow-ghost,
+.escrow-app button.escrow-ghost {
+  border-color: var(--desk-line-strong);
+  background: var(--desk-panel);
+  color: #2c302a;
+}
+
+.escrow-ghost.iconed {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+button.escrow-ghost:hover:not(:disabled) {
+  border-color: var(--desk-green);
+  background: var(--desk-green-soft);
+  color: #46523f;
+}
+
+.escrow-field input,
+.escrow-field textarea,
+.escrow-compose input,
+.escrow-submit input,
+.escrow-submit textarea,
+.escrow-main-panel textarea,
+.escrow-login-form input {
+  border-color: var(--desk-line-strong);
+  background: #fbfaf7;
+}
+
+.escrow-field input:focus,
+.escrow-field textarea:focus,
+.escrow-compose input:focus,
+.escrow-login-form input:focus,
+.escrow-main-panel textarea:focus {
+  border-color: var(--desk-green);
+  box-shadow: 0 0 0 3px rgba(95,111,88,.18);
+}
+
+.escrow-login-copy {
+  background:
+    linear-gradient(135deg, rgba(86,106,127,.2), transparent 45%),
+    #121612;
+}
+
+.escrow-login-copy .escrow-kicker {
+  color: #c4cabb;
+}
+
+.escrow-login-form,
+.escrow-test-accounts {
+  border-color: var(--desk-line);
+}
+
+.escrow-account-card:hover:not(:disabled),
+.escrow-account-card.on,
+.escrow-account-card.on:hover:not(:disabled) {
+  border-color: var(--desk-green);
+  background: var(--desk-green-soft);
+  color: var(--desk-ink);
+}
+
+@media (max-width: 1320px) {
+  .escrow-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+  .escrow-detail {
+    order: -1;
+  }
+}
+
+@media (max-width: 1060px) {
+  .escrow-app {
+    grid-template-columns: 1fr;
+  }
+  .escrow-sidebar {
+    position: static;
+    min-height: auto;
+    grid-template-columns: auto minmax(180px, 1fr);
+    grid-template-rows: none;
+  }
+  .escrow-nav,
+  .escrow-side-note,
+  .escrow-side-tools {
+    grid-column: 1 / -1;
+  }
+  .escrow-nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .escrow-side-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .escrow-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .escrow-sidebar,
+  .escrow-topbar,
+  .escrow-account,
+  .escrow-page-head,
+  .escrow-create-closed,
+  .escrow-section-head {
+    display: grid;
+    align-items: start;
+  }
+  .escrow-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .escrow-view {
+    padding: 14px;
+  }
+  .escrow-search {
+    max-width: none;
+  }
+  .escrow-account b,
+  .escrow-account span {
+    max-width: 100%;
+  }
+  .escrow-page-metrics {
+    justify-content: stretch;
+  }
+  .escrow-page-metrics span {
+    min-width: 0;
+    flex: 1;
+  }
+  .escrow-stats,
+  .escrow-transaction-breakdown dl {
+    grid-template-columns: 1fr;
+  }
+  .escrow-chat-shell {
+    min-height: calc(100vh - 190px);
+    grid-template-columns: 1fr;
+  }
+  .escrow-chat-shell:not(.open) .escrow-chat-pane {
+    display: none;
+  }
+  .escrow-chat-shell.open .escrow-chat-list {
+    display: none;
+  }
+  .escrow-chat-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+  }
+  .escrow-chat-head {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+  .escrow-chat-head .escrow-avatar {
+    display: none;
+  }
+  .escrow-compose.large,
+  .escrow-transaction-trigger {
+    grid-template-columns: 1fr;
+  }
+  .escrow-transaction-trigger svg {
+    display: none;
   }
 }

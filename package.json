@@ -6,6 +6,8 @@
   "type": "module",
   "engines": { "node": ">=20" },
   "scripts": {
-    "dev": "node scripts/txodds.js"
+    "dev": "node scripts/txodds.js",
+    "agent:demo-worker": "npm --prefix agents/demo-worker run dev",
+    "agent:demo-worker:test": "npm --prefix agents/demo-worker run self-test"
   }
 }

@@ -57,7 +57,7 @@ describe('market round e2e - the full settlement sequence over the real protocol
 
     // each seller parses the WANT and bids (from the sample data, clamped to budget)
     for (const [name, s] of Object.entries(SELLERS)) {
-      thread.push(formatBid({ round, priceSol: Math.min(s.bid, want.budgetSol), by: name, note: 'available' }))
+      thread.push(formatBid({ round, priceSol: Math.min(s.bid, want.budgetSol), by: name, wallet: s.wallet, note: 'available' }))
     }
 
     // buyer collects the bids, picks the cheapest, and awards
@@ -115,8 +115,8 @@ describe('market round e2e - the full settlement sequence over the real protocol
 
   it('selection ignores bids from other rounds', () => {
     const bids: Bid[] = [
-      { round: 1, priceSol: 0.0002, by: 'a' },
-      { round: 2, priceSol: 0.0001, by: 'b' }, // cheaper but wrong round
+      { round: 1, priceSol: 0.0002, by: 'a', wallet: 'Awa11et' },
+      { round: 2, priceSol: 0.0001, by: 'b', wallet: 'Bwa11et' }, // cheaper but wrong round
     ]
     expect(pickCheapest(selectBids(bids, 1))!.by).toBe('a')
   })

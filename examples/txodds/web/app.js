@@ -1,6 +1,21 @@
-import React, { useEffect, useMemo, useState } from 'https://esm.sh/react@18.3.1'
-import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client'
-import htm from 'https://esm.sh/htm@3.1.1'
+import React, { useEffect, useMemo, useState } from 'react'
+import { createRoot } from 'react-dom/client'
+import htm from 'htm'
+import {
+  ArrowLeft,
+  BriefcaseBusiness,
+  ChevronDown,
+  LayoutDashboard,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  Search,
+  Send,
+  Settings as SettingsIcon,
+  Wallet as WalletIcon,
+} from 'lucide-react'
+import * as Tabs from '@radix-ui/react-tabs'
+import * as Collapsible from '@radix-ui/react-collapsible'
 
 const html = htm.bind(React.createElement)
 const API = window.FREELANCE_API ?? window.FREELANCE_ESCROW_API ?? 'http://localhost:8801'
@@ -13,14 +28,19 @@ const DEFAULT_ACCOUNTS = [
   { id: 'rivet-worker', role: 'worker', name: 'Mina Cole', email: 'mina@rivetworks.test', organization: 'Rivet Works' },
 ]
 const nav = [
-  ['marketplace', 'Marketplace'],
-  ['dashboard', 'Dashboard'],
-  ['messages', 'Messages'],
-  ['delivery', 'Delivery'],
-  ['review', 'Review'],
-  ['payments', 'Payments'],
-  ['settings', 'Settings'],
+  ['dashboard', 'Dashboard', LayoutDashboard],
+  ['jobs', 'Your Jobs', BriefcaseBusiness],
+  ['chats', 'Chats', MessageCircle],
+  ['wallet', 'Wallet', WalletIcon],
+  ['settings', 'Admin tools', SettingsIcon],
 ]
+const chatFilterLabels = {
+  all: 'All',
+  active: 'Active',
+  needsReply: 'Needs reply',
+  review: 'In review',
+  completed: 'Completed',
+}
 
 async function api(path, body) {
   const res = await fetch(`${API}${path}`, {
@@ -67,8 +87,16 @@ function money(value) {
   return `${Number(value || 0).toFixed(3)} SOL`
 }
 
+function moneyMaybe(value) {
+  return value == null ? '--' : money(value)
+}
+
 function short(value) {
   return value ? `${String(value).slice(0, 6)}...${String(value).slice(-4)}` : '--'
+}
+
+function formatTime(value) {
+  return value ? new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '--'
 }
 
 function party(value) {
@@ -106,29 +134,130 @@ function canWork(job) {
   return job && !isOpen(job) && !isTerminal(job) && job.status !== 'disputed'
 }
 
+function canSubmitWork(job, session) {
+  return canWork(job) && session?.role === 'worker' && job.worker === session.organization
+}
+
+function canReviewWork(job, session) {
+  return canWork(job) && session?.role === 'employer' && job.employer === session.organization && Boolean(job.submission)
+}
+
+function isJobParty(job, session) {
+  return Boolean(job && session && (job.employer === session.organization || job.worker === session.organization))
+}
+
+function activeDispute(job) {
+  return (job?.disputes || []).find((dispute) => dispute.status === 'open')
+}
+
+function counterparty(job, session) {
+  if (!job || !session) return 'Counterparty'
+  return session.role === 'worker' ? party(job.employer) : party(job.worker || 'Unassigned worker')
+}
+
+function isReviewStatus(job) {
+  return ['submitted', 'revision_requested', 'disputed'].includes(job?.status)
+}
+
+function lastItem(items) {
+  return items?.length ? items[items.length - 1] : null
+}
+
+function jobSections(jobs, session) {
+  const org = session?.organization
+  const partyJobs = jobs.filter((job) => isJobParty(job, session))
+  const openTasks = jobs.filter(isOpen)
+  const review = partyJobs.filter(isReviewStatus)
+  const completed = partyJobs.filter(isTerminal)
+  return session?.role === 'worker'
+    ? [
+      ['working', 'Working on', 'Claimed jobs assigned to you', partyJobs.filter((job) => job.worker === org && !isOpen(job) && !isTerminal(job))],
+      ['available', 'Available', 'Open jobs ready to claim', openTasks],
+      ['review', 'In review', 'Submitted, disputed, or revision work', review],
+      ['completed', 'Completed', 'Released, refunded, or cancelled jobs', completed],
+    ]
+    : [
+      ['posted', 'Posted', 'Jobs posted by your organization', jobs.filter((job) => job.employer === org)],
+      ['available', 'Open market', 'Open jobs from other teams', openTasks.filter((job) => job.employer !== org)],
+      ['review', 'In review', 'Submitted, disputed, or revision work', review],
+      ['completed', 'Completed', 'Released, refunded, or cancelled jobs', completed],
+    ]
+}
+
+function chatConversations(jobs, session) {
+  const replyAuthor = session?.role === 'worker' ? 'employer' : 'worker'
+  return jobs
+    .filter((job) => !isOpen(job) && isJobParty(job, session))
+    .map((job) => {
+      const last = lastItem(job.messages)
+      return {
+        job,
+        last,
+        counterparty: counterparty(job, session),
+        needsReply: last?.author === replyAuthor,
+        active: !isTerminal(job),
+        review: isReviewStatus(job),
+        completed: isTerminal(job),
+        at: last?.at || job.submission?.at || job.createdAt,
+      }
+    })
+    .sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')))
+}
+
+function conversationFilters(conversations) {
+  return [
+    ['all', conversations],
+    ['active', conversations.filter((item) => item.active)],
+    ['needsReply', conversations.filter((item) => item.needsReply)],
+    ['review', conversations.filter((item) => item.review)],
+    ['completed', conversations.filter((item) => item.completed)],
+  ]
+}
+
+function userBalance(data, session) {
+  const role = session?.role === 'worker' ? 'worker' : 'employer'
+  const wallets = data.setup?.wallets || {}
+  return {
+    role,
+    address: wallets[role],
+    balance: wallets.balances?.[`${role}Sol`],
+  }
+}
+
+function transactionImpact(job, event, session) {
+  const amount = money(job.amountSol)
+  if (event.type === 'released') return session?.role === 'worker' ? `+${amount}` : `-${amount}`
+  if (event.type === 'refunded') return session?.role === 'employer' ? `+${amount}` : `-${amount}`
+  if (event.type === 'funded') return session?.role === 'employer' ? `-${amount}` : `${amount} locked`
+  return amount
+}
+
+function walletTransactions(jobs, session) {
+  return jobs
+    .filter((job) => isJobParty(job, session))
+    .flatMap((job) => (job.settlement?.events || []).map((event, index) => ({
+      id: `${job.id}-${event.type}-${event.at}-${index}`,
+      job,
+      event,
+      impact: transactionImpact(job, event, session),
+    })))
+    .sort((a, b) => String(b.event.at || '').localeCompare(String(a.event.at || '')))
+}
+
 function preferredJobId(jobs, session) {
   const org = session?.organization
   const preferred = session?.role === 'worker'
-    ? jobs.find((job) => job.status === 'open') || jobs.find((job) => job.worker === org)
+    ? jobs.find((job) => job.worker === org && !isOpen(job)) || jobs.find((job) => job.status === 'open')
     : jobs.find((job) => job.employer === org) || jobs.find((job) => job.status === 'open')
   return preferred?.id || jobs[0]?.id || ''
 }
 
-function nextAction(job) {
-  if (!job) return 'Select task'
-  if (job.status === 'open') return 'Waiting for worker'
-  if (job.status === 'funded') return job.submission ? 'Review evidence' : 'Await delivery'
-  if (job.status === 'submitted') return 'Review and settle'
-  if (job.status === 'revision_requested') return 'Needs revision'
-  if (job.status === 'disputed') return 'Resolve dispute'
-  if (job.status === 'released') return 'Paid out'
-  if (job.status === 'refunded') return 'Refunded'
-  if (job.status === 'cancelled') return 'Cancelled'
-  return 'Monitor'
-}
-
 function Badge({ status }) {
   return html`<span class=${`escrow-badge ${status || ''}`}>${statusText(status)}</span>`
+}
+
+function Icon({ icon: Glyph, size = 17 }) {
+  return html`<${Glyph} size=${size} strokeWidth=${2} aria-hidden="true" />`
 }
 
 function Avatar({ name }) {
@@ -227,17 +356,28 @@ function Stat({ label, value, sub }) {
 
 function Sidebar({ view, setView, data, session }) {
   const counts = data.summary || {}
+  const conversations = chatConversations(data.jobs || [], session)
+  const transactions = walletTransactions(data.jobs || [], session)
+  const badgeFor = (id) => id === 'jobs'
+    ? counts.activeJobs
+    : id === 'chats'
+      ? conversations.filter((item) => item.needsReply).length
+      : id === 'wallet'
+        ? transactions.length
+        : null
   return html`<aside class="escrow-sidebar">
     <div class="escrow-brand">
       <div class="escrow-mark">FE</div>
-      <div><b>Escrow Platform</b><span>Local demo</span></div>
+      <div><b>Escrow Desk</b><span>Local settlement workspace</span></div>
     </div>
-    <button class="escrow-new" onClick=${() => setView('marketplace')}>${session.role === 'worker' ? 'Find work' : 'Post task'}</button>
+    <button class="escrow-new" onClick=${() => setView('jobs')}>
+      <${Icon} icon=${Plus} />
+      <span>${session.role === 'worker' ? 'Find work' : 'Post job'}</span>
+    </button>
     <nav class="escrow-nav">
-      ${nav.map(([id, label]) => html`<button key=${id} class=${view === id ? 'on' : ''} onClick=${() => setView(id)}>
-        <span>${label}</span>
-        ${id === 'review' && counts.inReview ? html`<b>${counts.inReview}</b>` : null}
-        ${id === 'marketplace' && counts.openJobs ? html`<b>${counts.openJobs}</b>` : null}
+      ${nav.map(([id, label, Glyph]) => html`<button key=${id} class=${view === id ? 'on' : ''} onClick=${() => setView(id)}>
+        <span><${Icon} icon=${Glyph} />${label}</span>
+        ${badgeFor(id) ? html`<b>${badgeFor(id)}</b>` : null}
       </button>`)}
     </nav>
     <div class="escrow-side-note">
@@ -245,15 +385,17 @@ function Sidebar({ view, setView, data, session }) {
       <b>${session.organization}</b>
       <small>${session.role}</small>
     </div>
+    <div class="escrow-side-tools">
+      <a href="./legacy.html">Legacy demo</a>
+    </div>
   </aside>`
 }
 
 function Topbar({ session, refresh, busy, onLogout }) {
   return html`<header class="escrow-topbar">
-    <div class="escrow-search"><input placeholder="Search tasks, clients, references" /></div>
+    <div class="escrow-search"><${Icon} icon=${Search} /><input placeholder="Search jobs, clients, references" /></div>
     <div class="escrow-account">
-      <a href="./legacy.html">Legacy demo</a>
-      <button class="escrow-ghost" disabled=${busy} onClick=${refresh}>Refresh</button>
+      <button class="escrow-ghost iconed" disabled=${busy} onClick=${refresh}><${Icon} icon=${RefreshCw} /><span>Refresh</span></button>
       <${Avatar} name=${session.name} />
       <div><b>${session.name}</b><span>${session.email}</span></div>
       <button class="escrow-ghost" onClick=${onLogout}>Switch account</button>
@@ -270,7 +412,7 @@ function TaskTable({ jobs, selectedId, setSelectedId, emptyTitle = 'No tasks yet
   }
   return html`<section class="escrow-table">
     <div class="escrow-table-head">
-      <span>Task</span><span>Client / worker</span><span>Budget</span><span>Status</span><span>Next step</span>
+      <span>Task</span><span>Client / worker</span><span>Budget</span><span>Status</span>
     </div>
     ${jobs.map((job) => html`<button
       key=${job.id}
@@ -281,7 +423,6 @@ function TaskTable({ jobs, selectedId, setSelectedId, emptyTitle = 'No tasks yet
       <span>${party(job.employer)}<small>${job.status === 'open' ? 'Waiting for worker' : party(job.worker)}</small></span>
       <span><b>${money(job.amountSol)}</b><small>${job.settlement.mode}</small></span>
       <span><${Badge} status=${job.status} /></span>
-      <span>${nextAction(job)}</span>
     </button>`)}
   </section>`
 }
@@ -299,7 +440,7 @@ function PostTask({ session, createTask }) {
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
   if (!open) {
     return html`<section class="escrow-create-closed">
-      <div><b>Post an open task</b><span>Set scope, milestones, and budget. Workers claim it from the marketplace.</span></div>
+      <div><b>Post an open job</b><span>Set scope, milestones, and budget. Workers claim it from the job board.</span></div>
       <button class="escrow-primary" onClick=${() => setOpen(true)}>Post task</button>
     </section>`
   }
@@ -321,6 +462,103 @@ function PostTask({ session, createTask }) {
   </form>`
 }
 
+function SubmissionEvidence({ job }) {
+  if (!job?.submission) return null
+  return html`<section class="escrow-evidence">
+    <div><span>Preview</span>${job.submission.url ? html`<a href=${job.submission.url} target="_blank">${job.submission.url}</a>` : html`<b>Missing</b>`}</div>
+    <div><span>Repository</span>${job.submission.repo ? html`<a href=${job.submission.repo} target="_blank">${job.submission.repo}</a>` : html`<b>Missing</b>`}</div>
+    <p>${job.submission.notes || 'No worker notes were submitted.'}</p>
+  </section>`
+}
+
+function MarketplaceStatus({ job }) {
+  const market = job?.marketplace
+  const devnet = job?.settlement?.devnet
+  if (!market && !devnet) return null
+  const awarded = market?.awardedBid
+  return html`<section class="escrow-mini-list">
+    <div class="escrow-section-head"><h3>Agent marketplace</h3><span>${market?.status || job.settlement.mode}</span></div>
+    ${market ? html`<p><span>Posted budget</span><b>${money(market.budgetSol)}</b></p>` : null}
+    ${market ? html`<p><span>Bids</span><b>${market.bids?.length || 0}</b></p>` : null}
+    ${awarded ? html`<p><span>Awarded agent</span><b>${awarded.by}</b></p>` : null}
+    ${awarded ? html`<p><span>Winning bid</span><b>${money(awarded.priceSol)}</b></p>` : null}
+    ${devnet ? html`<p><span>Worker wallet</span><b title=${devnet.seller}>${short(devnet.seller)}</b></p>` : null}
+    ${devnet?.deposit ? html`<p><span>Deposit sig</span><b title=${devnet.deposit}>${short(devnet.deposit)}</b></p>` : null}
+    ${devnet?.release ? html`<p><span>Release sig</span><b title=${devnet.release}>${short(devnet.release)}</b></p>` : null}
+    ${devnet?.refund ? html`<p><span>Refund sig</span><b title=${devnet.refund}>${short(devnet.refund)}</b></p>` : null}
+  </section>`
+}
+
+function DisputePanel({ dispute }) {
+  return html`<section class="escrow-dispute-panel">
+    <div>
+      <span>${dispute.status === 'open' ? 'Active dispute' : 'Resolved dispute'}</span>
+      <b>${dispute.by === 'worker' ? 'Worker' : 'Employer'}</b>
+    </div>
+    <p>${dispute.note}</p>
+    ${dispute.summary ? html`<small>${dispute.summary}</small>` : null}
+    ${dispute.outcome ? html`<strong>${statusText(dispute.outcome)}</strong>` : null}
+  </section>`
+}
+
+function DeliveryActions({ job, session, act }) {
+  const [submission, setSubmission] = useState({ url: '', repo: '', notes: '' })
+  useEffect(() => {
+    setSubmission({
+      url: job?.submission?.url || '',
+      repo: job?.submission?.repo || '',
+      notes: job?.submission?.notes || '',
+    })
+  }, [job?.id])
+  if (!canSubmitWork(job, session)) return null
+  const set = (key) => (e) => setSubmission({ ...submission, [key]: e.target.value })
+  return html`<section class="escrow-task-action">
+    <div class="escrow-section-head"><h3>${job.submission ? 'Resubmit work' : 'Submit work'}</h3><span>${statusText(job.status)}</span></div>
+    <form class="escrow-submit" onSubmit=${(e) => {
+      e.preventDefault()
+      act(() => api(`/api/jobs/${job.id}/submission`, submission))
+    }}>
+      <${Field} label="Preview URL"><input value=${submission.url} onInput=${set('url')} /></${Field}>
+      <${Field} label="Repository"><input value=${submission.repo} onInput=${set('repo')} /></${Field}>
+      <${Field} label="Delivery notes"><textarea value=${submission.notes} onInput=${set('notes')} /></${Field}>
+      <button class="escrow-primary">${job.submission ? 'Resubmit work' : 'Submit work'}</button>
+    </form>
+  </section>`
+}
+
+function ReviewActions({ job, session, act }) {
+  const [disputeNote, setDisputeNote] = useState('')
+  useEffect(() => setDisputeNote(''), [job?.id])
+  if (!job?.submission && !job?.review) return null
+  const employerCanReview = canReviewWork(job, session)
+  const dispute = activeDispute(job)
+  const releaseEligible = Boolean(job.review?.releaseEligible)
+  const canRunDisputeReview = job.status === 'disputed' && dispute && isJobParty(job, session)
+  const canRelease = employerCanReview && releaseEligible && !dispute
+  const canOpenDispute = canRelease
+  const revisionNote = job.review?.revisionInstructions || (job.review?.missing || []).join('; ') || 'Please address the AI review notes and resubmit evidence.'
+  const title = session?.role === 'worker' ? 'Review feedback' : 'Review and settlement'
+  return html`<section class="escrow-task-action">
+    <div class="escrow-section-head"><h3>${title}</h3><span>${releaseEligible ? 'release eligible' : statusText(job.status)}</span></div>
+    <${SubmissionEvidence} job=${job} />
+    ${dispute && html`<${DisputePanel} dispute=${dispute} />`}
+    ${job.review?.artifactRun && html`<${ArtifactReport} job=${job} run=${job.review.artifactRun} />`}
+    ${job.review && html`<${ReviewReport} review=${job.review} />`}
+    ${employerCanReview ? html`<div class="escrow-action-bar">
+      <button class="escrow-primary" onClick=${() => act(() => api(`/api/jobs/${job.id}/review`, { action: 'assess' }))}>Run AI review</button>
+      <button class="escrow-primary" disabled=${!canRelease} onClick=${() => act(() => api(`/api/jobs/${job.id}/review`, { action: 'approve' }))}>Approve and release</button>
+      <button class="escrow-ghost" disabled=${!job.review} onClick=${() => act(() => api(`/api/jobs/${job.id}/review`, { action: 'request_revision', note: revisionNote }))}>Request revision</button>
+    </div>` : null}
+    ${canOpenDispute ? html`<div class="escrow-dispute-form">
+      <${Field} label="Dispute reason"><textarea value=${disputeNote} onInput=${(e) => setDisputeNote(e.target.value)} placeholder="Name the acceptance item and what evidence is missing." /></${Field}>
+      <button class="escrow-ghost" disabled=${disputeNote.trim().length < 20} onClick=${() => act(() => api(`/api/jobs/${job.id}/dispute`, { by: 'employer', note: disputeNote }))}>Open dispute</button>
+    </div>` : null}
+    ${canRunDisputeReview ? html`<div class="escrow-action-bar">
+      <button class="escrow-primary" onClick=${() => act(() => api(`/api/jobs/${job.id}/dispute/review`, {}))}>Run dispute review</button>
+    </div>` : null}
+  </section>`
+}
+
 function DetailPanel({ job, session, act }) {
   if (!job) {
     return html`<${Empty} title="Select a task" body="Task details, terms, evidence, and escrow state show here." />`
@@ -339,12 +577,15 @@ function DetailPanel({ job, session, act }) {
       <div><dt>Amount</dt><dd>${money(job.amountSol)}</dd></div>
       <div><dt>Milestones</dt><dd>${done}/${job.milestones.length}</dd></div>
     </dl>
+    <${MarketplaceStatus} job=${job} />
     <section class="escrow-terms">
       <b>Scope</b>
       <p>${job.scope || job.requirements}</p>
       <b>Acceptance</b>
       <p>${job.acceptanceCriteria}</p>
     </section>
+    ${act && html`<${DeliveryActions} job=${job} session=${session} act=${act} />`}
+    ${act && html`<${ReviewActions} job=${job} session=${session} act=${act} />`}
     <section class="escrow-mini-list">
       <div class="escrow-section-head"><h3>Milestones</h3><span>${done}/${job.milestones.length}</span></div>
       ${job.milestones.map((m) => html`<p key=${m.id} class=${m.status}>
@@ -355,116 +596,141 @@ function DetailPanel({ job, session, act }) {
   </aside>`
 }
 
-function taskSections(jobs, session) {
-  const org = session?.organization
-  const openTasks = jobs.filter((job) => job.status === 'open')
-  const externalOpenTasks = openTasks.filter((job) => job.employer !== org)
-  const posted = jobs.filter((job) => job.employer === org)
-  const claimed = jobs.filter((job) => job.worker === org && job.status !== 'open' && !terminal.has(job.status))
-  const review = jobs.filter((job) => job.status === 'submitted' || job.status === 'revision_requested')
-  const completed = jobs.filter((job) => terminal.has(job.status))
-  return session?.role === 'worker'
-    ? [
-      ['Open tasks', 'Available work workers can claim', openTasks],
-      ['My claimed work', 'Active tasks assigned to you', claimed],
-      ['In review', 'Submitted or revision-requested work', review],
-      ['Completed', 'Released, refunded, or cancelled tasks', completed],
-    ]
-    : [
-      ['My posted tasks', 'Tasks posted by your organization', posted],
-      ['Open tasks', 'Marketplace tasks waiting for workers', externalOpenTasks],
-      ['In review', 'Submitted or revision-requested work', review],
-      ['Completed', 'Released, refunded, or cancelled tasks', completed],
-    ]
-}
-
-function TaskSections({ jobs, selectedId, setSelectedId, session }) {
-  return html`<div class="escrow-section-stack">
-    ${taskSections(jobs, session).map(([title, subtitle, sectionJobs]) => html`<section class="escrow-list-section" key=${title}>
-      <div class="escrow-section-head"><div><h3>${title}</h3><span>${subtitle}</span></div><span>${sectionJobs.length}</span></div>
-      <${TaskTable} jobs=${sectionJobs} selectedId=${selectedId} setSelectedId=${setSelectedId} emptyTitle=${`No ${title.toLowerCase()}`} emptyBody="Nothing matches this section yet." />
-    </section>`)}
-  </div>`
+function JobTabs({ jobs, selectedId, setSelectedId, session }) {
+  const sections = jobSections(jobs, session)
+  const defaultValue = sections[0]?.[0]
+  return html`<${Tabs.Root} class="escrow-tabs" defaultValue=${defaultValue}>
+    <${Tabs.List} class="escrow-tab-list" aria-label="Job sections">
+      ${sections.map(([id, title, , sectionJobs]) => html`<${Tabs.Trigger} key=${id} value=${id} class="escrow-tab-trigger">
+        <span>${title}</span>
+        <b>${sectionJobs.length}</b>
+      </${Tabs.Trigger}>`)}
+    </${Tabs.List}>
+    ${sections.map(([id, title, subtitle, sectionJobs]) => html`<${Tabs.Content} key=${id} value=${id} class="escrow-tab-panel">
+      <section class="escrow-list-section">
+        <div class="escrow-section-head"><div><h3>${title}</h3><span>${subtitle}</span></div><span>${sectionJobs.length}</span></div>
+        <${TaskTable} jobs=${sectionJobs} selectedId=${selectedId} setSelectedId=${setSelectedId} emptyTitle=${`No ${title.toLowerCase()}`} emptyBody="Nothing matches this section yet." />
+      </section>
+    </${Tabs.Content}>`)}
+  </${Tabs.Root}>`
 }
 
 function Dashboard({ data, selected, selectedId, setSelectedId, session, act }) {
   const jobs = data.jobs || []
   const summary = data.summary || {}
-  const balances = data.setup?.wallets?.balances || {}
+  const balance = userBalance(data, session)
+  const sections = jobSections(jobs, session)
+  const queue = sections[0]?.[3] || []
   return html`<div class="escrow-view">
+    <section class="escrow-page-head">
+      <div>
+        <p class="escrow-kicker">${session.role} command center</p>
+        <h1>Dashboard</h1>
+      </div>
+      <div class="escrow-page-metrics">
+        <span><b>${summary.activeJobs ?? 0}</b> active</span>
+        <span><b>${summary.lockedSol ?? 0}</b> locked SOL</span>
+        <span><b>${summary.disputedJobs ?? 0}</b> disputes</span>
+      </div>
+    </section>
     <section class="escrow-stats">
       <${Stat} label="Open tasks" value=${summary.openJobs ?? 0} sub=${`${summary.totalJobs ?? jobs.length} total`} />
       <${Stat} label="Active contracts" value=${summary.claimedJobs ?? 0} sub="claimed work" />
       <${Stat} label="Needs review" value=${summary.inReview ?? 0} sub="submitted evidence" />
-      <${Stat} label="Employer balance" value=${money(balances.employerSol)} sub=${short(data.setup?.wallets?.employer)} />
+      <${Stat} label=${`${balance.role} balance`} value=${moneyMaybe(balance.balance)} sub=${short(balance.address)} />
     </section>
     <div class="escrow-workspace-grid">
       <section class="escrow-main-panel">
-        <div class="escrow-section-head"><h2>Marketplace overview</h2><span>${jobs.length} records</span></div>
-        <${TaskSections} jobs=${jobs} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} />
+        <div class="escrow-section-head"><h2>Priority queue</h2><span>${queue.length} records</span></div>
+        <${TaskTable} jobs=${queue} selectedId=${selectedId} setSelectedId=${setSelectedId} emptyTitle="No priority jobs" emptyBody="Your role-specific work queue is clear." />
       </section>
       <${DetailPanel} job=${selected} session=${session} act=${act} />
     </div>
   </div>`
 }
 
-function Messages({ job, act, session }) {
+function Chats({ jobs, selectedId, setSelectedId, act, session }) {
+  const [filter, setFilter] = useState('all')
   const [text, setText] = useState('')
-  if (!job) return html`<${Empty} title="No task selected" body="Select a claimed task before sending messages." />`
-  if (isOpen(job)) return html`<div class="escrow-workspace-grid">
-    <${Empty} title="Task not claimed yet" body="Messages open after a worker claims the task." />
-    <${DetailPanel} job=${job} session=${session} act=${act} />
-  </div>`
+  const [threadOpen, setThreadOpen] = useState(false)
+  const conversations = chatConversations(jobs, session)
+  const filters = conversationFilters(conversations)
+  const visible = filters.find(([id]) => id === filter)?.[1] || conversations
+  const selectedConversation = conversations.find((item) => item.job.id === selectedId) || visible[0] || conversations[0]
+  const job = selectedConversation?.job
   const author = session.role === 'worker' ? 'worker' : 'employer'
-  return html`<div class="escrow-workspace-grid">
-    <section class="escrow-main-panel">
-      <div class="escrow-section-head"><h2>Messages</h2><span>${job.messages.length}</span></div>
-      <div class="escrow-thread">
-        ${job.messages.map((msg, i) => html`<p key=${i} class=${msg.author}><b>${msg.author}</b><span>${msg.text}</span><small>${new Date(msg.at).toLocaleString()}</small></p>`)}
-        ${!job.messages.length && html`<p class="escrow-muted">No messages yet.</p>`}
+  const openThread = (id) => {
+    setSelectedId(id)
+    setThreadOpen(true)
+    setText('')
+  }
+  return html`<div class="escrow-view">
+    <section class="escrow-page-head">
+      <div>
+        <p class="escrow-kicker">job conversations</p>
+        <h1>Chats</h1>
       </div>
-      <div class="escrow-compose">
-        <input value=${text} onInput=${(e) => setText(e.target.value)} placeholder=${`Message as ${author}`} />
-        <button class="escrow-primary" disabled=${!text.trim()} onClick=${() => act(async () => {
-          await api(`/api/jobs/${job.id}/messages`, { author, text })
-          setText('')
-        })}>Send</button>
+      <div class="escrow-page-metrics">
+        <span><b>${conversations.length}</b> threads</span>
+        <span><b>${conversations.filter((item) => item.needsReply).length}</b> replies</span>
+        <span><b>${conversations.filter((item) => item.review).length}</b> review</span>
       </div>
     </section>
-    <${DetailPanel} job=${job} session=${session} act=${act} />
-  </div>`
-}
-
-function Delivery({ job, act }) {
-  const [submission, setSubmission] = useState({ url: '', repo: '', notes: '' })
-  const set = (key) => (e) => setSubmission({ ...submission, [key]: e.target.value })
-  if (!job) return html`<${Empty} title="No delivery selected" body="Select claimed work to submit evidence." />`
-  if (isOpen(job)) return html`<div class="escrow-workspace-grid">
-    <${Empty} title="No worker yet" body="A worker must claim this task before delivery can begin." />
-    <${DetailPanel} job=${job} />
-  </div>`
-  return html`<div class="escrow-workspace-grid">
-    <section class="escrow-main-panel">
-      <div class="escrow-section-head"><h2>Delivery room</h2><${Badge} status=${job.status} /></div>
-      <div class="escrow-milestone-board">
-        ${job.milestones.map((m) => html`<div key=${m.id} class=${`escrow-milestone-card ${m.status}`}>
-          <div><b>${m.title}</b><span>${money(m.amountSol)}</span></div>
-          <button class="escrow-ghost" disabled=${!canWork(job) || m.status === 'complete'} onClick=${() => act(() => api(`/api/jobs/${job.id}/milestones/${m.id}/complete`, { actor: 'worker' }))}>
-            ${m.status === 'complete' ? 'Done' : 'Mark done'}
-          </button>
-        </div>`)}
-      </div>
-      <form class="escrow-submit" onSubmit=${(e) => {
-        e.preventDefault()
-        act(() => api(`/api/jobs/${job.id}/submission`, submission))
-      }}>
-        <${Field} label="Preview URL"><input value=${submission.url} onInput=${set('url')} /></${Field}>
-        <${Field} label="Repository"><input value=${submission.repo} onInput=${set('repo')} /></${Field}>
-        <${Field} label="Delivery notes"><textarea value=${submission.notes} onInput=${set('notes')} /></${Field}>
-        <button class="escrow-primary" disabled=${!canWork(job)}>Submit evidence</button>
-      </form>
-    </section>
-    <${DetailPanel} job=${job} />
+    <div class=${`escrow-chat-shell ${threadOpen ? 'open' : ''}`}>
+      <section class="escrow-chat-list">
+        <div class="escrow-section-head"><div><h2>Inbox</h2><span>Claimed job threads only</span></div><span>${visible.length}</span></div>
+        <div class="escrow-chat-filters">
+          ${filters.map(([id, items]) => html`<button key=${id} class=${filter === id ? 'on' : ''} onClick=${() => setFilter(id)}>
+            ${chatFilterLabels[id]} <b>${items.length}</b>
+          </button>`)}
+        </div>
+        <div class="escrow-conversation-list">
+          ${visible.map(({ job: item, last, counterparty: who, needsReply }) => html`<button
+            key=${item.id}
+            class=${`escrow-conversation ${job?.id === item.id ? 'on' : ''}`}
+            onClick=${() => openThread(item.id)}
+          >
+            <${Avatar} name=${who} />
+            <span>
+              <b>${item.title}</b>
+              <small>${who}</small>
+              <em>${last?.text || 'No messages yet.'}</em>
+            </span>
+            <i>
+              ${needsReply ? html`<strong>reply</strong>` : null}
+              <small>${formatTime(last?.at || item.createdAt)}</small>
+              <${Badge} status=${item.status} />
+            </i>
+          </button>`)}
+          ${!visible.length && html`<${Empty} title="No conversations" body="Claimed jobs with messages will appear here." />`}
+        </div>
+      </section>
+      <section class="escrow-chat-pane">
+        ${job ? html`
+          <header class="escrow-chat-head">
+            <button class="escrow-ghost escrow-chat-back" onClick=${() => setThreadOpen(false)}><${Icon} icon=${ArrowLeft} />Back</button>
+            <${Avatar} name=${selectedConversation.counterparty} />
+            <div><h2>${job.title}</h2><span>${selectedConversation.counterparty}</span></div>
+            <${Badge} status=${job.status} />
+          </header>
+          <div class="escrow-thread large">
+            ${job.messages.map((msg, i) => html`<p key=${i} class=${msg.author}><b>${msg.author}</b><span>${msg.text}</span><small>${formatTime(msg.at)}</small></p>`)}
+            ${!job.messages.length && html`<p class="escrow-muted">No messages yet.</p>`}
+          </div>
+          <form class="escrow-compose large" onSubmit=${(e) => {
+            e.preventDefault()
+            if (!text.trim()) return
+            act(async () => {
+              await api(`/api/jobs/${job.id}/messages`, { author, text })
+              setText('')
+            })
+          }}>
+            <input value=${text} onInput=${(e) => setText(e.target.value)} placeholder=${`Message ${selectedConversation.counterparty}`} />
+            <button class="escrow-primary" disabled=${!text.trim()}><${Icon} icon=${Send} />Send</button>
+          </form>
+        ` : html`<${Empty} title="Select a conversation" body="Choose a claimed job thread from the inbox." />`}
+      </section>
+    </div>
   </div>`
 }
 
@@ -524,6 +790,7 @@ function ReviewReport({ review }) {
       <strong class=${`escrow-review-pill ${review.releaseEligible ? 'approve' : recommendation}`}>${review.releaseEligible ? 'release eligible' : statusText(recommendation)}</strong>
     </div>
     <p>${review.summary}</p>
+    ${review.autoReleaseAt && review.releaseEligible ? html`<div class="escrow-review-list"><b>Auto-release</b><p>${new Date(review.autoReleaseAt).toLocaleString()}</p></div>` : null}
     ${typeof review.confidence === 'number' ? html`<div class="escrow-review-list"><b>Confidence</b><p>${review.confidence}/100</p></div>` : null}
     ${checks.length ? html`<div class="escrow-review-checks">
       ${checks.map((check, i) => html`<div class=${`escrow-review-check ${check.status}`} key=${i}>
@@ -539,65 +806,72 @@ function ReviewReport({ review }) {
   </section>`
 }
 
-function Review({ job, act }) {
-  if (!job) return html`<${Empty} title="No review selected" body="Select submitted work to review delivery evidence." />`
-  if (isOpen(job)) return html`<div class="escrow-workspace-grid">
-    <${Empty} title="No submission yet" body="Open tasks cannot be reviewed until a worker claims and submits work." />
-    <${DetailPanel} job=${job} />
-  </div>`
-  const canReview = Boolean(job.submission) && !isTerminal(job) && job.status !== 'disputed'
-  const canRelease = canReview && job.review?.releaseEligible
-  const revisionNote = job.review?.revisionInstructions || (job.review?.missing || []).join('; ') || 'Please address the AI review notes and resubmit evidence.'
-  return html`<div class="escrow-workspace-grid">
-    <section class="escrow-main-panel">
-      <div class="escrow-section-head"><h2>Review desk</h2><${Badge} status=${job.status} /></div>
-      <div class="escrow-evidence">
-        <div><span>Preview</span>${job.submission?.url ? html`<a href=${job.submission.url} target="_blank">${job.submission.url}</a>` : html`<b>Missing</b>`}</div>
-        <div><span>Repository</span>${job.submission?.repo ? html`<a href=${job.submission.repo} target="_blank">${job.submission.repo}</a>` : html`<b>Missing</b>`}</div>
-        <p>${job.submission?.notes || 'No worker evidence has been submitted yet.'}</p>
-      </div>
-      ${job.review?.artifactRun && html`<${ArtifactReport} job=${job} run=${job.review.artifactRun} />`}
-      ${job.review && html`<${ReviewReport} review=${job.review} />`}
-      <div class="escrow-action-bar">
-        <button class="escrow-primary" disabled=${!canReview} onClick=${() => act(() => api(`/api/jobs/${job.id}/review`, { action: 'assess' }))}>Run AI review</button>
-        <button class="escrow-primary" disabled=${!canRelease} onClick=${() => act(() => api(`/api/jobs/${job.id}/review`, { action: 'approve' }))}>Approve and release</button>
-        <button class="escrow-ghost" disabled=${!canReview || !job.review} onClick=${() => act(() => api(`/api/jobs/${job.id}/review`, { action: 'request_revision', note: revisionNote }))}>Request revision</button>
-        <button class="escrow-ghost" disabled=${isTerminal(job) || isOpen(job)} onClick=${() => act(() => api(`/api/jobs/${job.id}/dispute`, { by: 'employer', note: 'Needs manual review before settlement.' }))}>Open dispute</button>
-      </div>
-    </section>
-    <${DetailPanel} job=${job} />
-  </div>`
+function TransactionRow({ tx, selectedId, setSelectedId }) {
+  const { job, event, impact } = tx
+  return html`<${Collapsible.Root} class=${`escrow-transaction ${selectedId === job.id ? 'on' : ''}`}>
+    <${Collapsible.Trigger} asChild=${true}>
+      <button class="escrow-transaction-trigger" onClick=${() => setSelectedId(job.id)}>
+        <span><b>${statusText(event.type)}</b><small>${job.title}</small></span>
+        <span><b>${impact}</b><small>${formatTime(event.at)}</small></span>
+        <${Icon} icon=${ChevronDown} />
+      </button>
+    </${Collapsible.Trigger}>
+    <${Collapsible.Content} class="escrow-transaction-breakdown">
+      <dl>
+        <div><dt>Summary</dt><dd>${event.summary}</dd></div>
+        <div><dt>Escrow</dt><dd>${job.settlement.escrow}</dd></div>
+        <div><dt>Reference</dt><dd>${job.reference}</dd></div>
+        <div><dt>Mode</dt><dd>${job.settlement.mode}</dd></div>
+        <div><dt>Worker wallet</dt><dd>${job.settlement.devnet?.seller || '--'}</dd></div>
+        <div><dt>Deposit</dt><dd>${job.settlement.devnet?.deposit || '--'}</dd></div>
+        <div><dt>Release</dt><dd>${job.settlement.release || '--'}</dd></div>
+        <div><dt>Refund</dt><dd>${job.settlement.refund || '--'}</dd></div>
+        <div><dt>Status</dt><dd>${statusText(job.status)}</dd></div>
+      </dl>
+    </${Collapsible.Content}>
+  </${Collapsible.Root}>`
 }
 
-function Payments({ job, data, act }) {
-  const ledger = job?.settlement?.events || []
-  return html`<div class="escrow-workspace-grid">
-    <section class="escrow-main-panel">
-      <div class="escrow-section-head"><h2>Payments</h2><span>${data.setup?.mode}</span></div>
-      ${job ? html`
-        <dl class="escrow-definition wide">
-          <div><dt>Status</dt><dd>${statusText(job.status)}</dd></div>
-          <div><dt>Escrow account</dt><dd>${job.settlement.escrow}</dd></div>
-          <div><dt>Release</dt><dd>${job.settlement.release || '--'}</dd></div>
-          <div><dt>Refund</dt><dd>${job.settlement.refund || '--'}</dd></div>
-        </dl>
-        <div class="escrow-action-bar">
-          <button class="escrow-ghost" disabled=${isTerminal(job) || isOpen(job)} onClick=${() => act(() => api(`/api/jobs/${job.id}/refund`, {}))}>Refund</button>
-          <button class="escrow-ghost" disabled=${isTerminal(job) || job.submission} onClick=${() => act(() => api(`/api/jobs/${job.id}/cancel`, {}))}>Cancel</button>
-        </div>
-        <div class="escrow-ledger">
-          ${ledger.map((event, i) => html`<p key=${i}><b>${event.type}</b><span>${event.summary}</span><small>${new Date(event.at).toLocaleString()}</small></p>`)}
-          ${!ledger.length && html`<p class="escrow-muted">No settlement events yet.</p>`}
-        </div>
-      ` : html`<${Empty} title="No payment selected" body="Select a task to inspect escrow movement." />`}
+function WalletView({ data, selected, selectedId, setSelectedId, session, act }) {
+  const account = userBalance(data, session)
+  const transactions = walletTransactions(data.jobs || [], session)
+  const selectedJob = isJobParty(selected, session) ? selected : transactions[0]?.job
+  return html`<div class="escrow-view">
+    <section class="escrow-page-head">
+      <div>
+        <p class="escrow-kicker">${data.setup?.mode || 'local-demo'}</p>
+        <h1>Wallet</h1>
+      </div>
+      <div class="escrow-page-metrics">
+        <span><b>${moneyMaybe(account.balance)}</b> balance</span>
+        <span><b>${money(data.summary?.lockedSol)}</b> locked</span>
+        <span><b>${transactions.length}</b> txns</span>
+      </div>
     </section>
-    <${DetailPanel} job=${job} />
+    <div class="escrow-workspace-grid">
+      <section class="escrow-main-panel">
+        <div class="escrow-section-head"><div><h2>Transactions</h2><span>Click any row for the settlement breakdown</span></div><span>${transactions.length}</span></div>
+        <div class="escrow-transactions">
+          ${transactions.map((tx) => html`<${TransactionRow} key=${tx.id} tx=${tx} selectedId=${selectedId} setSelectedId=${setSelectedId} />`)}
+          ${!transactions.length && html`<${Empty} title="No wallet activity" body="Settlement events appear here after jobs are funded, reviewed, released, refunded, or cancelled." />`}
+        </div>
+        ${selectedJob ? html`<div class="escrow-action-bar wallet">
+          <button class="escrow-ghost" disabled=${isTerminal(selectedJob) || isOpen(selectedJob)} onClick=${() => act(() => api(`/api/jobs/${selectedJob.id}/refund`, {}))}>Refund selected escrow</button>
+          <button class="escrow-ghost" disabled=${isTerminal(selectedJob) || selectedJob.submission} onClick=${() => act(() => api(`/api/jobs/${selectedJob.id}/cancel`, {}))}>Cancel selected escrow</button>
+        </div>` : null}
+      </section>
+      <${DetailPanel} job=${selectedJob} session=${session} act=${act} />
+    </div>
   </div>`
 }
 
 function Settings({ data, act, refresh }) {
   const [diagnostics, setDiagnostics] = useState(null)
   const [importText, setImportText] = useState('')
+  const [agentForm, setAgentForm] = useState({ name: 'demo-worker', wallet: '' })
+  const [createdAgent, setCreatedAgent] = useState(null)
+  const setAgent = (key) => (e) => setAgentForm({ ...agentForm, [key]: e.target.value })
+  const agents = data.agents || []
   return html`<div class="escrow-workspace-grid">
     <section class="escrow-main-panel">
       <div class="escrow-section-head"><h2>Workspace settings</h2><span>${data.setup?.mode}</span></div>
@@ -609,6 +883,36 @@ function Settings({ data, act, refresh }) {
         <button class="escrow-ghost" onClick=${async () => setDiagnostics(await api('/api/health'))}>Diagnostics</button>
       </div>
       ${diagnostics && html`<pre>${JSON.stringify(diagnostics, null, 2)}</pre>`}
+    </section>
+    <section class="escrow-main-panel">
+      <div class="escrow-section-head"><h2>Connect agent</h2><span>${agents.filter((agent) => agent.status === 'active').length} active</span></div>
+      <form class="escrow-create compact" onSubmit=${(e) => {
+        e.preventDefault()
+        act(async () => {
+          const created = await api('/api/agents', {
+            name: agentForm.name,
+            wallet: agentForm.wallet,
+          })
+          setCreatedAgent(created)
+        })
+      }}>
+        <div class="escrow-form-grid">
+          <${Field} label="Agent name"><input value=${agentForm.name} onInput=${setAgent('name')} /></${Field}>
+          <${Field} label="Payout wallet"><input value=${agentForm.wallet} onInput=${setAgent('wallet')} placeholder="optional if agent sends wallet" /></${Field}>
+        </div>
+        <button class="escrow-primary">Create token</button>
+      </form>
+      ${createdAgent && html`<div class="escrow-token-box">
+        <div class="escrow-section-head"><h3>${createdAgent.agent.name}</h3><button class="escrow-ghost" onClick=${() => navigator.clipboard?.writeText(createdAgent.env)}>Copy env</button></div>
+        <pre>${createdAgent.env}</pre>
+      </div>`}
+      <div class="escrow-agent-list">
+        ${agents.length ? agents.map((agent) => html`<div class="escrow-agent-row" key=${agent.id}>
+          <span><b>${agent.name}</b><small>${agent.status} · ${agent.lastSeenAt ? formatTime(agent.lastSeenAt) : 'never seen'}</small></span>
+          <code>${agent.wallet ? short(agent.wallet) : 'wallet optional'}</code>
+          ${agent.status === 'active' ? html`<button class="escrow-ghost" onClick=${() => act(() => api(`/api/agents/${agent.id}/revoke`, {}))}>Revoke</button>` : html`<b>Revoked</b>`}
+        </div>`) : html`<${Empty} title="No connected agents" body="Create an agent token to let a worker poll jobs, bid, and deliver." />`}
+      </div>
     </section>
     <section class="escrow-main-panel">
       <div class="escrow-section-head"><h2>Import / export</h2></div>
@@ -630,9 +934,9 @@ function Settings({ data, act, refresh }) {
   </div>`
 }
 
-function Marketplace({ data, selected, selectedId, setSelectedId, session, createTask, act }) {
+function YourJobs({ data, selected, selectedId, setSelectedId, session, createTask, act }) {
   const summary = data.summary || {}
-  const heading = session.role === 'worker' ? 'Find work' : 'Task marketplace'
+  const heading = session.role === 'worker' ? 'Your work' : 'Your posted jobs'
   return html`<div class="escrow-view">
     <section class="escrow-page-head">
       <div>
@@ -648,8 +952,8 @@ function Marketplace({ data, selected, selectedId, setSelectedId, session, creat
     ${session.role === 'employer' ? html`<${PostTask} session=${session} createTask=${createTask} />` : null}
     <div class="escrow-workspace-grid">
       <section class="escrow-main-panel">
-        <div class="escrow-section-head"><h2>${heading}</h2><span>${data.jobs.length} records</span></div>
-        <${TaskSections} jobs=${data.jobs} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} />
+        <div class="escrow-section-head"><h2>Job board</h2><span>${data.jobs.length} records</span></div>
+        <${JobTabs} jobs=${data.jobs} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} />
       </section>
       <${DetailPanel} job=${selected} session=${session} act=${act} />
     </div>
@@ -671,7 +975,7 @@ function App() {
   const [session, setSession] = useState(loadSession)
   const [data, setData] = useState({ jobs: [], summary: {}, setup: { wallets: {}, note: '' } })
   const [selectedId, setSelectedId] = useState('')
-  const [view, setView] = useState('marketplace')
+  const [view, setView] = useState('dashboard')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -701,7 +1005,7 @@ function App() {
       const next = await api('/api/jobs', payload)
       setData(next)
       setSelectedId(next.jobs[0]?.id || '')
-      setView('marketplace')
+      setView('jobs')
     } catch (e) {
       setError(e.message || String(e))
     } finally {
@@ -713,6 +1017,11 @@ function App() {
     if (session) refresh().catch((e) => setError(e.message || String(e)))
   }, [session])
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 })
+    document.querySelector('.escrow-content')?.scrollTo({ top: 0, left: 0 })
+  }, [view])
+
   const selected = useMemo(
     () => data.jobs.find((job) => job.id === selectedId) || data.jobs[0],
     [data.jobs, selectedId],
@@ -720,7 +1029,7 @@ function App() {
 
   const login = (nextSession) => {
     setSession(nextSession)
-    setView('marketplace')
+    setView('dashboard')
   }
 
   if (!session) return html`<${Login} onLogin=${login} />`
@@ -730,11 +1039,9 @@ function App() {
     setSession(null)
   }
 
-  const content = view === 'marketplace' ? html`<${Marketplace} data=${data} selected=${selected} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} createTask=${createTask} act=${act} />`
-    : view === 'messages' ? html`<${Messages} job=${selected} act=${act} session=${session} />`
-    : view === 'delivery' ? html`<${Delivery} job=${selected} act=${act} />`
-    : view === 'review' ? html`<${Review} job=${selected} act=${act} />`
-    : view === 'payments' ? html`<${Payments} job=${selected} data=${data} act=${act} />`
+  const content = view === 'jobs' ? html`<${YourJobs} data=${data} selected=${selected} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} createTask=${createTask} act=${act} />`
+    : view === 'chats' ? html`<${Chats} jobs=${data.jobs} selectedId=${selectedId} setSelectedId=${setSelectedId} act=${act} session=${session} />`
+    : view === 'wallet' ? html`<${WalletView} data=${data} selected=${selected} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} act=${act} />`
     : view === 'settings' ? html`<${Settings} data=${data} act=${act} refresh=${refresh} />`
     : html`<${Dashboard} data=${data} selected=${selected} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} act=${act} />`
 

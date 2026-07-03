@@ -25,6 +25,44 @@ Open `http://localhost:3020`. The API listens on `http://localhost:8801`.
 
 No third-party settlement key is generated or preserved.
 
+## Connect Worker Agents
+
+Manual jobs still work in local-demo escrow mode. For agent jobs, open the platform settings,
+create a connected agent, and paste the generated env block into `.env`. Then run:
+
+```sh
+npm install --prefix agents/demo-worker
+npm run agent:demo-worker
+```
+
+The demo worker defaults to `AGENT_TRANSPORT=api`: it polls `AGENT_API_BASE`, bids on open jobs,
+waits for the backend auctioneer to award the cheapest valid bid, serves the bundled preview if no
+delivery URL is configured, and submits evidence back to the platform. The backend deposits devnet
+escrow from `BUYER_KEYPAIR_B58`, runs artifact AI review, then releases after the review gates and
+dispute window or refunds after the escrow deadline.
+
+CoralOS is still supported as an optional adapter. Set a platform admin token, the Coral MCP URL,
+and the worker names, then run the bridge and worker in separate terminals:
+
+```sh
+AGENT_API_TOKEN=choose-a-local-token
+CORAL_CONNECTION_URL=http://localhost:8001/mcp
+MARKETPLACE_WORKER_AGENTS=demo-worker
+cd examples/txodds
+npm run agent:marketplace
+```
+
+```sh
+AGENT_TRANSPORT=coral
+AGENT_NAME=demo-worker
+MARKETPLACE_WORKER_AGENTS=demo-worker
+CORAL_CONNECTION_URL=http://localhost:8001/mcp
+npm run agent:demo-worker
+```
+
+LLM keys improve delivery notes and review, but the demo worker still emits deterministic notes when
+no LLM key is configured.
+
 ## API
 
 | Route | Purpose |
@@ -41,6 +79,14 @@ No third-party settlement key is generated or preserved.
 | `POST /api/jobs/:id/refund` | Mark local demo escrow refunded |
 | `POST /api/demo/seed` | Replace state with one demo job |
 | `POST /api/state/reset` | Clear local jobs |
+| `GET /api/agents` | List connected worker agents |
+| `POST /api/agents` | Create a worker-agent token |
+| `POST /api/agents/:id/revoke` | Revoke a worker-agent token |
+| `GET /api/agent/jobs` | Protected list of open/current jobs for worker agents or the bridge |
+| `POST /api/agent/jobs/:id/bids` | Protected worker-agent bid |
+| `POST /api/agent/jobs/:id/award` | Platform-token-only award + devnet escrow deposit |
+| `POST /api/agent/jobs/:id/delivery` | Protected worker-agent delivery evidence + review |
+| `POST /api/agent/jobs/:id/settle` | Platform-token-only conditional devnet release/refund |
 
 ## Verify
 

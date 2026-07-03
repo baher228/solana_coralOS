@@ -9,6 +9,11 @@ const { AnchorProvider, BN } = anchor
 
 export const PROGRAM_ID = new PublicKey('R5NWNg9eRLWWQU81Xbzz5Du1k7jTDeeT92Ty6qCeXet')
 
+function assertDevnet(rpcUrl: string) {
+  if (process.env.ALLOW_MAINNET === '1') return
+  if (/mainnet/i.test(rpcUrl)) throw new Error(`Refusing mainnet RPC "${rpcUrl}"`)
+}
+
 export function escrowPda(buyer: PublicKey, reference: PublicKey): PublicKey {
   return PublicKey.findProgramAddressSync(
     [Buffer.from('escrow'), buyer.toBuffer(), reference.toBuffer()],
@@ -17,6 +22,7 @@ export function escrowPda(buyer: PublicKey, reference: PublicKey): PublicKey {
 }
 
 export async function makeProgram(buyer: Keypair, rpcUrl: string): Promise<Program> {
+  assertDevnet(rpcUrl)
   const provider = new AnchorProvider(new Connection(rpcUrl, 'confirmed'), new anchor.Wallet(buyer), { commitment: 'confirmed' })
   const idl = await anchor.Program.fetchIdl(PROGRAM_ID, provider)
   if (!idl) throw new Error('escrow IDL not found on-chain')
@@ -38,5 +44,12 @@ export async function release(program: Program, buyer: Keypair, seller: PublicKe
   return (program.methods as any)
     .release()
     .accounts({ buyer: buyer.publicKey, seller, escrow: escrowPda(buyer.publicKey, reference) })
+    .signers([buyer]).rpc()
+}
+
+export async function refund(program: Program, buyer: Keypair, reference: PublicKey): Promise<string> {
+  return (program.methods as any)
+    .refund()
+    .accounts({ buyer: buyer.publicKey, escrow: escrowPda(buyer.publicKey, reference) })
     .signers([buyer]).rpc()
 }

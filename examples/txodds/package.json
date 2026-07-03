@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "proxy": "tsx server/proxy.ts",
+    "agent:marketplace": "tsx agent/marketplace.ts",
     "web": "npx --yes serve web -l 3020"
   },
   "dependencies": {

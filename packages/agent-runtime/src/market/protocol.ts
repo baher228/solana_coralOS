@@ -13,6 +13,7 @@ export interface Bid {
   round: number
   priceSol: number
   by: string
+  wallet: string
   note?: string
 }
 
@@ -28,6 +29,19 @@ export interface Deposited {
   round: number
   reference: string
   buyer: string
+  sig: string
+}
+
+export interface Delivered {
+  round: number
+  url?: string
+  repo?: string
+  notes?: string
+}
+
+export interface Settled {
+  round: number
+  reference: string
   sig: string
 }
 
@@ -65,7 +79,7 @@ export function parseWant(text: string): Want | null {
 }
 
 export function formatBid(b: Bid): string {
-  const base = `BID round=${b.round} price=${b.priceSol} by=${b.by}`
+  const base = `BID round=${b.round} price=${b.priceSol} by=${b.by} wallet=${b.wallet}`
   return b.note ? `${base} note=${b.note}` : base
 }
 
@@ -74,9 +88,10 @@ export function parseBid(text: string): Bid | null {
   const round = num(text, 'round')
   const priceSol = num(text, 'price')
   const by = tok(text, 'by')
-  if (round == null || priceSol == null || !by) return null
+  const wallet = tok(text, 'wallet')
+  if (round == null || priceSol == null || !by || !wallet) return null
   const note = text.match(/note=(.+)$/)?.[1]?.trim()
-  return { round, priceSol, by, ...(note ? { note } : {}) }
+  return { round, priceSol, by, wallet, ...(note ? { note } : {}) }
 }
 
 export function formatAward(round: number, to: string, reason?: string): string {
@@ -120,6 +135,60 @@ export function parseDeposited(text: string): Deposited | null {
   const sig = tok(text, 'sig')
   if (round == null || !reference || !buyer || !sig) return null
   return { round, reference, buyer, sig }
+}
+
+export function formatDelivered(d: Delivered): string {
+  const payload = JSON.stringify({
+    ...(d.url ? { url: d.url } : {}),
+    ...(d.repo ? { repo: d.repo } : {}),
+    ...(d.notes ? { notes: d.notes } : {}),
+  })
+  return `DELIVERED round=${d.round} ${payload}`
+}
+
+export function parseDelivered(text: string): Delivered | null {
+  if (verb(text) !== 'DELIVERED') return null
+  const round = num(text, 'round')
+  const start = text.indexOf('{')
+  if (round == null || start < 0) return null
+  try {
+    const data = JSON.parse(text.slice(start)) as Record<string, unknown>
+    const delivered: Delivered = {
+      round,
+      ...(data.url ? { url: String(data.url) } : {}),
+      ...(data.repo ? { repo: String(data.repo) } : {}),
+      ...(data.notes ? { notes: String(data.notes) } : {}),
+    }
+    return delivered.url || delivered.repo || delivered.notes ? delivered : null
+  } catch {
+    return null
+  }
+}
+
+export function formatReleased(s: Settled): string {
+  return `RELEASED round=${s.round} reference=${s.reference} sig=${s.sig}`
+}
+
+export function parseReleased(text: string): Settled | null {
+  if (verb(text) !== 'RELEASED') return null
+  return parseSettled(text)
+}
+
+export function formatRefunded(s: Settled): string {
+  return `REFUNDED round=${s.round} reference=${s.reference} sig=${s.sig}`
+}
+
+export function parseRefunded(text: string): Settled | null {
+  if (verb(text) !== 'REFUNDED') return null
+  return parseSettled(text)
+}
+
+function parseSettled(text: string): Settled | null {
+  const round = num(text, 'round')
+  const reference = tok(text, 'reference')
+  const sig = tok(text, 'sig')
+  if (round == null || !reference || !sig) return null
+  return { round, reference, sig }
 }
 
 export function selectBids(bids: Bid[], round: number): Bid[] {

@@ -13,7 +13,7 @@
  * CORAL_CONNECTION_URL is injected by CoralOS at container start.
  */
 
-import { CoralMcpAgent, CoralMention } from './mcp.js'
+import { CoralMcpAgent, type CoralMention } from './mcp.js'
 
 export { CoralMention }
 

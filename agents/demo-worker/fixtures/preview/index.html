@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Demo Worker Delivery</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: #20251f;
+      background: #f5f1ea;
+    }
+    main {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 32px;
+    }
+    section {
+      width: min(720px, 100%);
+      border: 1px solid #ddd3c5;
+      border-radius: 8px;
+      background: #fffdf8;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(25, 20, 15, .08);
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(30px, 6vw, 58px);
+      line-height: 1;
+    }
+    p {
+      margin: 0;
+      max-width: 58ch;
+      color: #5f665c;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <h1>Delivery ready</h1>
+      <p>This bundled preview is served by the demo worker agent when no public delivery URL is configured.</p>
+    </section>
+  </main>
+</body>
+</html>
