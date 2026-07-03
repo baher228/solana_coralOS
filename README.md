@@ -17,6 +17,10 @@ npm run dev
 
 Open `http://localhost:3020`. The API listens on `http://localhost:8801`.
 
+For a standalone presentation of the agent marketplace flow, open
+`http://localhost:3020/system.html`. This page is a scripted demo canvas, not part of the
+employer/worker workspace.
+
 `node scripts/setup.js` creates fresh local devnet keys in `.env`:
 
 - `BUYER_KEYPAIR_B58` - employer wallet
