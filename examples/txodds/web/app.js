@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import htm from 'htm'
 import {
   ArrowLeft,
+  Bot,
   BriefcaseBusiness,
   ChevronDown,
   LayoutDashboard,
@@ -31,6 +32,7 @@ const nav = [
   ['dashboard', 'Dashboard', LayoutDashboard],
   ['jobs', 'Your Jobs', BriefcaseBusiness],
   ['chats', 'Chats', MessageCircle],
+  ['agents', 'AI Agents', Bot],
   ['wallet', 'Wallet', WalletIcon],
   ['settings', 'Admin tools', SettingsIcon],
 ]
@@ -865,6 +867,44 @@ function WalletView({ data, selected, selectedId, setSelectedId, session, act })
   </div>`
 }
 
+function AgentGuide() {
+  const [guide, setGuide] = useState('Loading agent guide...')
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    fetch('./agent-guide.md', { cache: 'no-store' })
+      .then((res) => {
+        if (!res.ok) throw new Error('agent guide unavailable')
+        return res.text()
+      })
+      .then(setGuide)
+      .catch((e) => setGuide(`# AI Agent Platform Guide\n\n${e.message || String(e)}`))
+  }, [])
+
+  const copyGuide = async () => {
+    await navigator.clipboard?.writeText(guide)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1600)
+  }
+
+  return html`<div class="escrow-view">
+    <section class="escrow-page-head">
+      <div><p class="escrow-kicker">Worker connectors</p><h1>AI Agents</h1></div>
+      <div class="escrow-page-metrics"><span><b>MCP</b> preferred</span><span><b>REST</b> supported</span></div>
+    </section>
+    <section class="escrow-main-panel agent-guide">
+      <div class="escrow-section-head">
+        <h2>agent-guide.md</h2>
+        <div class="guide-actions">
+          <a class="doc-link" href="./agent-guide.md" target="_blank" rel="noreferrer">Raw</a>
+          <button class="escrow-ghost" onClick=${copyGuide}>${copied ? 'Copied' : 'Copy Markdown'}</button>
+        </div>
+      </div>
+      <pre>${guide}</pre>
+    </section>
+  </div>`
+}
+
 function Settings({ data, act, refresh }) {
   const [diagnostics, setDiagnostics] = useState(null)
   const [importText, setImportText] = useState('')
@@ -872,6 +912,13 @@ function Settings({ data, act, refresh }) {
   const [createdAgent, setCreatedAgent] = useState(null)
   const setAgent = (key) => (e) => setAgentForm({ ...agentForm, [key]: e.target.value })
   const agents = data.agents || []
+  const mcpSetup = createdAgent ? [
+    `MCP_URL=${API}/mcp`,
+    `MCP_AUTH_HEADER=Authorization: Bearer ${createdAgent.token}`,
+    '',
+    '# REST demo-worker env',
+    createdAgent.env,
+  ].join('\n') : ''
   return html`<div class="escrow-workspace-grid">
     <section class="escrow-main-panel">
       <div class="escrow-section-head"><h2>Workspace settings</h2><span>${data.setup?.mode}</span></div>
@@ -903,8 +950,8 @@ function Settings({ data, act, refresh }) {
         <button class="escrow-primary">Create token</button>
       </form>
       ${createdAgent && html`<div class="escrow-token-box">
-        <div class="escrow-section-head"><h3>${createdAgent.agent.name}</h3><button class="escrow-ghost" onClick=${() => navigator.clipboard?.writeText(createdAgent.env)}>Copy env</button></div>
-        <pre>${createdAgent.env}</pre>
+        <div class="escrow-section-head"><h3>MCP API key: ${createdAgent.agent.name}</h3><button class="escrow-ghost" onClick=${() => navigator.clipboard?.writeText(mcpSetup)}>Copy setup</button></div>
+        <pre>${mcpSetup}</pre>
       </div>`}
       <div class="escrow-agent-list">
         ${agents.length ? agents.map((agent) => html`<div class="escrow-agent-row" key=${agent.id}>
@@ -1041,6 +1088,7 @@ function App() {
 
   const content = view === 'jobs' ? html`<${YourJobs} data=${data} selected=${selected} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} createTask=${createTask} act=${act} />`
     : view === 'chats' ? html`<${Chats} jobs=${data.jobs} selectedId=${selectedId} setSelectedId=${setSelectedId} act=${act} session=${session} />`
+    : view === 'agents' ? html`<${AgentGuide} />`
     : view === 'wallet' ? html`<${WalletView} data=${data} selected=${selected} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} act=${act} />`
     : view === 'settings' ? html`<${Settings} data=${data} act=${act} refresh=${refresh} />`
     : html`<${Dashboard} data=${data} selected=${selected} selectedId=${selectedId} setSelectedId=${setSelectedId} session=${session} act=${act} />`
