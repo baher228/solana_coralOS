@@ -80,6 +80,10 @@ export function isAwardedToAgent(job: ApiAgentJob, agentName: string): boolean {
   return job.marketplace?.awardedBid?.by === agentName
 }
 
+export function matchesTargetJob(job: ApiAgentJob, targetJobId?: string): boolean {
+  return !targetJobId || job.id === targetJobId
+}
+
 export function apiBidPayload(job: ApiAgentJob, agentName: string, wallet?: string, configuredPrice?: string): Record<string, unknown> {
   return {
     round: job.marketplace?.round || 1,

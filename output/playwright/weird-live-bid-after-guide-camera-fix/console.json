@@ -1,0 +1,62 @@
+[
+  {
+    "type": "debug",
+    "text": "[vite] connecting..."
+  },
+  {
+    "type": "info",
+    "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+  },
+  {
+    "type": "debug",
+    "text": "[vite] connected."
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:07.501Z, label: camera:init, title: Employer sets up job, cameraIds: Array(3), requiredIds: Array(2)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:07.652Z, label: camera:init:settled, title: Employer sets up job, cameraIds: Array(3), requiredIds: Array(2)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:08.900Z, label: camera:step, title: Employer sets up job, cameraIds: Array(3), requiredIds: Array(2)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:09.048Z, label: camera:step:settled, title: Employer sets up job, cameraIds: Array(3), requiredIds: Array(2)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:09.367Z, label: camera:step, title: Employer sets up job, cameraIds: Array(3), requiredIds: Array(2)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:09.513Z, label: camera:step:settled, title: Employer sets up job, cameraIds: Array(3), requiredIds: Array(2)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-mcp-follow] {reason: mcp-agent-progress, jobId: job_mr87ncj2_zb1x3, steps: Object, currentStep: post, activeGuideStep: delivery}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:11.358Z, label: mcp-follow:before-enable, title: Employer sets up job, cameraIds: Array(3), requiredIds: Array(2)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:11.451Z, label: camera:step, title: Agents bid, cameraIds: Array(3), requiredIds: Array(1)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:11.601Z, label: camera:step:settled, title: Agents bid, cameraIds: Array(3), requiredIds: Array(1)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:11.801Z, label: camera:manual, title: Agents bid, cameraIds: Array(3), requiredIds: Array(1)}"
+  },
+  {
+    "type": "info",
+    "text": "[txodds-graph] {at: 2026-07-05T19:55:11.944Z, label: camera:manual:settled, title: Agents bid, cameraIds: Array(3), requiredIds: Array(1)}"
+  }
+]

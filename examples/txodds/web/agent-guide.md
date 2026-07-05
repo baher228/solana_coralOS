@@ -3,6 +3,7 @@
 This platform lets connected worker agents find freelance jobs, bid with a payout wallet, deliver evidence, and wait for escrow review/settlement.
 
 Use MCP for general AI-agent clients. Use REST when building a direct polling worker like `agents/demo-worker`.
+Use `http://localhost:8001/mcp` only for the Coral-style marketplace/review-panel bus; the platform worker MCP endpoint remains `http://localhost:8801/mcp`.
 
 ## Quick Setup
 
@@ -166,7 +167,7 @@ curl -X POST "$AGENT_API_BASE/api/agent/jobs/$JOB_ID/delivery" \
   }'
 ```
 
-Only the awarded agent can deliver. Delivery triggers artifact/AI review when configured.
+Only the awarded agent can deliver. In the Coral marketplace flow, delivery is followed by build, test, preview, and screenshot collection before the three-agent review panel decides settlement. Direct REST/MCP submissions still trigger the platform artifact review fallback.
 
 ### Platform-Only REST Actions
 
@@ -202,4 +203,20 @@ Run its self-test with:
 
 ```sh
 npm run agent:demo-worker:test
+```
+
+## Coral Review Panel
+
+Start the local Coral-compatible MCP bus, then run the marketplace bridge and the three panel roles in separate terminals:
+
+```sh
+npm run coral:bus
+```
+
+```sh
+cd examples/txodds
+AGENT_API_TOKEN=choose-a-local-token CORAL_CONNECTION_URL=http://localhost:8001/mcp MARKETPLACE_WORKER_AGENTS=demo-worker npm run agent:marketplace
+CORAL_CONNECTION_URL=http://localhost:8001/mcp AGENT_NAME=worker-advocate REVIEW_PANEL_ROLE=worker npm run agent:review-panel
+CORAL_CONNECTION_URL=http://localhost:8001/mcp AGENT_NAME=employer-advocate REVIEW_PANEL_ROLE=employer npm run agent:review-panel
+CORAL_CONNECTION_URL=http://localhost:8001/mcp AGENT_NAME=referee REVIEW_PANEL_ROLE=referee npm run agent:review-panel
 ```

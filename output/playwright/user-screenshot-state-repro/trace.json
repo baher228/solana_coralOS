@@ -1,0 +1,1120 @@
+{
+  "states": [
+    {
+      "label": "01-loaded",
+      "title": "Employer sets up job",
+      "guideTitle": "Start clean demo",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 553,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 197
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "02-started",
+      "title": "Employer sets up job",
+      "guideTitle": "Fill job brief",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 120,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 630
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "03-brief",
+      "title": "Employer sets up job",
+      "guideTitle": "Post real backend job",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 408,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 342
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "04-posted",
+      "title": "Employer sets up job",
+      "guideTitle": "Choose AI agent path",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 409,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 341
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "05-mcp-setup",
+      "title": "Employer sets up job",
+      "guideTitle": "AI agent MCP setup",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 139,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 611
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "hidden",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "hidden",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "hidden",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "hidden",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "hidden",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "hidden",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "05-mcp-setup-2s",
+      "title": "Employer sets up job",
+      "guideTitle": "AI agent MCP setup",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 139,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 611
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "05-mcp-setup-5s",
+      "title": "Employer sets up job",
+      "guideTitle": "AI agent MCP setup",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 139,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 611
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "05-mcp-setup-10s",
+      "title": "Employer sets up job",
+      "guideTitle": "AI agent MCP setup",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 139,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 611
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "05-mcp-setup-20s",
+      "title": "Employer sets up job",
+      "guideTitle": "AI agent MCP setup",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 139,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 611
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    },
+    {
+      "label": "05-mcp-setup-30s",
+      "title": "Employer sets up job",
+      "guideTitle": "AI agent MCP setup",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 207.441)",
+      "nodeCount": 14,
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 768,
+        "width": 1756,
+        "height": 610
+      },
+      "guide": {
+        "left": 18,
+        "top": 139,
+        "right": 408,
+        "bottom": 750,
+        "width": 390,
+        "height": 611
+      },
+      "nodesLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 1510,
+        "height": 525
+      },
+      "edgeLayer": {
+        "left": 543,
+        "top": 365,
+        "width": 0,
+        "height": 0
+      },
+      "firstRects": [
+        {
+          "id": "employer",
+          "left": 543,
+          "top": 382,
+          "right": 705,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "job",
+          "left": 767,
+          "top": 382,
+          "right": 929,
+          "bottom": 502,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "feed",
+          "left": 990,
+          "top": 382,
+          "right": 1152,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "bid",
+          "left": 1214,
+          "top": 382,
+          "right": 1376,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1438,
+          "top": 382,
+          "right": 1599,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        },
+        {
+          "id": "escrow",
+          "left": 1661,
+          "top": 382,
+          "right": 1823,
+          "bottom": 487,
+          "display": "block",
+          "visibility": "visible",
+          "opacity": "1"
+        }
+      ]
+    }
+  ],
+  "consoleLines": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:15.848Z, label: camera:init, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:16.000Z, label: camera:init:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:18.010Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:18.154Z, label: camera:step:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:18.748Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:18.899Z, label: camera:step:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:19.599Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:42:19.751Z, label: camera:step:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    }
+  ]
+}

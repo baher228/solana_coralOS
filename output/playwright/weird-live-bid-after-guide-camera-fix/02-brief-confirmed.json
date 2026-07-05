@@ -1,0 +1,409 @@
+{
+  "label": "02-brief-confirmed",
+  "heading": "Employer sets up job",
+  "guide": "Post real backend job",
+  "guideDetail": "Create an open marketplace task.",
+  "stepLine": "Step 1 of 11",
+  "transform": "matrix(0.86, 0, 0, 0.86, 592.446, 207.441)",
+  "dump": {
+    "at": "2026-07-05T19:55:09.174Z",
+    "label": "manual",
+    "title": "Employer sets up job",
+    "cameraIds": [],
+    "requiredIds": [
+      "employer",
+      "job"
+    ],
+    "activeIds": [
+      "employer",
+      "job"
+    ],
+    "stage": {
+      "left": 0,
+      "right": 1756,
+      "top": 158,
+      "bottom": 768,
+      "width": 1756,
+      "height": 610
+    },
+    "guide": {
+      "left": 18,
+      "right": 408,
+      "top": 408,
+      "bottom": 750,
+      "width": 390,
+      "height": 342
+    },
+    "side": {
+      "left": 1756,
+      "right": 2048,
+      "top": 158,
+      "bottom": 768,
+      "width": 292,
+      "height": 610
+    },
+    "panel": {
+      "left": 15,
+      "right": 479,
+      "top": 173,
+      "bottom": 223,
+      "width": 464,
+      "height": 50
+    },
+    "transform": "matrix(0.86, 0, 0, 0.86, 592.446, 207.441)",
+    "visible": [
+      "employer",
+      "job",
+      "feed",
+      "bid",
+      "auctioneer",
+      "human"
+    ],
+    "requiredVisible": [
+      "employer",
+      "job"
+    ],
+    "missingRequired": [],
+    "nodes": [
+      {
+        "id": "employer",
+        "rect": {
+          "left": 592,
+          "right": 754,
+          "top": 382,
+          "bottom": 487,
+          "width": 162,
+          "height": 105
+        },
+        "required": true,
+        "visible": true
+      },
+      {
+        "id": "job",
+        "rect": {
+          "left": 816,
+          "right": 978,
+          "top": 382,
+          "bottom": 502,
+          "width": 162,
+          "height": 120
+        },
+        "required": true,
+        "visible": true
+      },
+      {
+        "id": "feed",
+        "rect": {
+          "left": 1040,
+          "right": 1201,
+          "top": 382,
+          "bottom": 487,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": true
+      },
+      {
+        "id": "bid",
+        "rect": {
+          "left": 1263,
+          "right": 1425,
+          "top": 382,
+          "bottom": 487,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": true
+      },
+      {
+        "id": "auctioneer",
+        "rect": {
+          "left": 1487,
+          "right": 1649,
+          "top": 382,
+          "bottom": 487,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": true
+      },
+      {
+        "id": "escrow",
+        "rect": {
+          "left": 1710,
+          "right": 1872,
+          "top": 382,
+          "bottom": 487,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "delivery",
+        "rect": {
+          "left": 1934,
+          "right": 2096,
+          "top": 382,
+          "bottom": 500,
+          "width": 162,
+          "height": 117
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "artifacts",
+        "rect": {
+          "left": 2158,
+          "right": 2319,
+          "top": 382,
+          "bottom": 500,
+          "width": 162,
+          "height": 117
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "coral",
+        "rect": {
+          "left": 2381,
+          "right": 2543,
+          "top": 382,
+          "bottom": 502,
+          "width": 162,
+          "height": 120
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "workerAdvocate",
+        "rect": {
+          "left": 2605,
+          "right": 2767,
+          "top": 288,
+          "bottom": 405,
+          "width": 162,
+          "height": 117
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "employerAdvocate",
+        "rect": {
+          "left": 2605,
+          "right": 2767,
+          "top": 477,
+          "bottom": 582,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "referee",
+        "rect": {
+          "left": 2828,
+          "right": 2990,
+          "top": 382,
+          "bottom": 487,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "settlement",
+        "rect": {
+          "left": 3052,
+          "right": 3214,
+          "top": 382,
+          "bottom": 487,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": false
+      },
+      {
+        "id": "human",
+        "rect": {
+          "left": 1040,
+          "right": 1201,
+          "top": 589,
+          "bottom": 694,
+          "width": 162,
+          "height": 105
+        },
+        "required": false,
+        "visible": true
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "employer",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 592,
+        "y": 382,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "job",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 816,
+        "y": 382,
+        "width": 162,
+        "height": 120
+      }
+    },
+    {
+      "id": "feed",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 1040,
+        "y": 382,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "bid",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 1263,
+        "y": 382,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "auctioneer",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 1487,
+        "y": 382,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "escrow",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 1710,
+        "y": 382,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "delivery",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 1934,
+        "y": 382,
+        "width": 162,
+        "height": 117
+      }
+    },
+    {
+      "id": "artifacts",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 2158,
+        "y": 382,
+        "width": 162,
+        "height": 117
+      }
+    },
+    {
+      "id": "coral",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 2381,
+        "y": 382,
+        "width": 162,
+        "height": 120
+      }
+    },
+    {
+      "id": "workerAdvocate",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 2605,
+        "y": 288,
+        "width": 162,
+        "height": 117
+      }
+    },
+    {
+      "id": "employerAdvocate",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 2605,
+        "y": 477,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "referee",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 2828,
+        "y": 382,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "settlement",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 3052,
+        "y": 382,
+        "width": 162,
+        "height": 105
+      }
+    },
+    {
+      "id": "human",
+      "visibility": "visible",
+      "display": "block",
+      "rect": {
+        "x": 1040,
+        "y": 589,
+        "width": 162,
+        "height": 105
+      }
+    }
+  ],
+  "hiddenNodes": []
+}

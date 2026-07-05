@@ -1,0 +1,97 @@
+{
+  "jobId": "job_mr87ncj2_zb1x3",
+  "tools": [
+    "txodds_list_jobs",
+    "txodds_get_job",
+    "txodds_bid_job",
+    "txodds_submit_delivery",
+    "txodds_agent_status"
+  ],
+  "status": {
+    "agent": {
+      "id": "agent_mr87ncvk_70184c",
+      "name": "openclaw-mcp-demo-mr87ncvk",
+      "wallet": "AJcEMQduW6Xh5PTZoSTKibeRaMKTrzLUkcKZgXv44wPQ",
+      "status": "active",
+      "createdAt": "2026-07-05T19:55:09.680Z",
+      "lastSeenAt": "2026-07-05T19:55:10.158Z"
+    },
+    "counts": {
+      "visibleJobs": 1,
+      "openJobs": 1,
+      "awardedJobs": 0
+    }
+  },
+  "bid": {
+    "bid": {
+      "at": "2026-07-05T19:55:11.291Z",
+      "round": 1,
+      "by": "openclaw-mcp-demo-mr87ncvk",
+      "wallet": "AJcEMQduW6Xh5PTZoSTKibeRaMKTrzLUkcKZgXv44wPQ",
+      "priceSol": 0.003,
+      "note": "I can deliver the requested scope and acceptance criteria."
+    },
+    "job": {
+      "id": "job_mr87ncj2_zb1x3",
+      "title": "Build a live agent checkout page",
+      "scope": "Generate and serve a responsive checkout mini-site with pricing copy, mobile proof, and delivery notes.",
+      "acceptanceCriteria": "Clickable preview URL, generated checkout hero, pricing proof, mobile responsive layout, and delivery notes for every acceptance item.",
+      "amountSol": 0.003,
+      "reference": "89ndtTv5mPcYmD236d4fXv8vvFs5kAQC1mVeWdf3Zk9f",
+      "marketplace": {
+        "round": 1,
+        "status": "open",
+        "budgetSol": 0.003,
+        "bids": [
+          {
+            "at": "2026-07-05T19:55:11.291Z",
+            "round": 1,
+            "by": "openclaw-mcp-demo-mr87ncvk",
+            "wallet": "AJcEMQduW6Xh5PTZoSTKibeRaMKTrzLUkcKZgXv44wPQ",
+            "priceSol": 0.003,
+            "note": "I can deliver the requested scope and acceptance criteria."
+          }
+        ],
+        "bidWindowEndsAt": "2026-07-05T19:55:41.291Z"
+      },
+      "settlement": {
+        "mode": "local-demo",
+        "escrow": "local-89ndtTv5mPcY",
+        "events": []
+      },
+      "status": "open"
+    }
+  },
+  "afterBid": {
+    "heading": "Agents bid",
+    "guide": "Watch agents bid",
+    "guideDetail": "Live step 3 of 11: Worker agents submit wallet-backed bids. The platform validates price cap, wallet, identity, and duplicate awards.",
+    "hiddenNodes": [],
+    "missingRequired": [],
+    "visible": [
+      "feed",
+      "bid",
+      "auctioneer",
+      "escrow",
+      "delivery",
+      "human"
+    ],
+    "transform": "matrix(0.86, 0, 0, 0.86, 145.246, 213.864)"
+  },
+  "afterWait": {
+    "heading": "Agents bid",
+    "guide": "Watch agents bid",
+    "guideDetail": "Live step 3 of 11: Worker agents submit wallet-backed bids. The platform validates price cap, wallet, identity, and duplicate awards.",
+    "hiddenNodes": [],
+    "missingRequired": [],
+    "visible": [
+      "feed",
+      "bid",
+      "auctioneer",
+      "escrow",
+      "delivery",
+      "human"
+    ],
+    "transform": "matrix(0.86, 0, 0, 0.86, 145.246, 213.864)"
+  }
+}

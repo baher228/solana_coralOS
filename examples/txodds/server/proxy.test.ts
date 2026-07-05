@@ -12,16 +12,19 @@ import {
   autoReleaseExpiredJobs,
   cancelJob,
   claimJob,
+  collectPanelReviewArtifacts,
   completeMilestone,
   createHandler,
   createJob,
   disputeJob,
   refundJob,
   recordAgentBid,
+  recordPanelOpinions,
   requestRevisionJob,
   resetJobsForTest,
   reviewJob,
   runAgentMarketTick,
+  assessJobWithPanel,
   settleAgentEscrow,
   submitAgentDelivery,
   submitJob,
@@ -181,6 +184,7 @@ function artifactRun(overrides: Record<string, unknown> = {}) {
     at: new Date().toISOString(),
     repo: { status: 'pass', summary: 'Repository cloned and scanned', url: 'https://github.com/example/repo', commit: 'abc123', packageManager: 'npm', scripts: { build: 'vite build' }, files: [] },
     build: { status: 'pass', summary: 'Build completed', command: 'npm run build', outputDir: 'dist' },
+    tests: { status: 'skipped', summary: 'No package test script found' },
     preview: { status: 'pass', summary: 'Preview URL loaded', url: 'https://example.test/preview', httpStatus: 200 },
     screenshots: [
       { id: 'shot_desktop', kind: 'screenshot', label: 'preview desktop', file: 'job/review/desktop.png', mime: 'image/png' },
@@ -211,6 +215,31 @@ function aiApprove(extra: Record<string, unknown> = {}) {
     revisionInstructions: '',
     ...extra,
   })
+}
+
+function panelApprove(extra: Record<string, unknown> = {}) {
+  return {
+    threadId: 'review-thread',
+    opinions: [
+      { role: 'worker', agent: 'worker-advocate', summary: 'Artifacts support release.', recommendation: 'approve', concerns: [], evidence: ['preview', 'screenshots'] },
+      { role: 'employer', agent: 'employer-advocate', summary: 'No material acceptance gap found.', recommendation: 'approve', concerns: [], evidence: ['build', 'screenshots'] },
+    ],
+    verdict: {
+      score: 91,
+      recommendation: 'approve',
+      confidence: 86,
+      summary: 'Coral panel finds the work release eligible.',
+      criteriaResults: [
+        { label: 'Preview URL', status: 'pass', reason: 'Preview loaded.', evidence: 'preview screenshot' },
+        { label: 'Mobile proof', status: 'pass', reason: 'Mobile screenshot shows responsive work.', evidence: 'mobile screenshot' },
+      ],
+      missing: [],
+      risks: [],
+      criticalRisks: [],
+      revisionInstructions: '',
+      ...extra,
+    },
+  }
 }
 
 describe('freelance escrow platform flow', () => {
@@ -423,17 +452,65 @@ describe('freelance escrow platform flow', () => {
     }
   })
 
+  it('lets an awarded MCP agent queue delivery for Coral panel review', async () => {
+    const restoreBuyer = withBuyerKey()
+    const oldToken = process.env.AGENT_API_TOKEN
+    try {
+      process.env.AGENT_API_TOKEN = 'platform-secret'
+      const wallet = Keypair.generate().publicKey.toBase58()
+      const job = openTask()
+      const handler = createHandler({ escrowAdapter: fakeEscrow(), reviewer: aiApprove(), collectArtifacts: collectArtifacts() })
+      const created = await request(handler, '/api/agents', json({ name: 'mcp-worker', wallet }))
+      recordAgentBid(job, { by: 'mcp-worker', wallet, priceSol: 0.001 })
+      await awardAgentBid(job, { by: 'mcp-worker' }, fakeEscrow())
+
+      await withMcpClient(handler, created.body.token, async (client) => {
+        const result = await client.callTool({
+          name: 'txodds_submit_delivery',
+          arguments: {
+            jobId: job.id,
+            url: 'https://example.test/preview',
+            notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
+            reviewMode: 'coral-panel',
+          },
+        })
+        expect(job.submission?.url).toBe('https://example.test/preview')
+        expect(job.review).toBeUndefined()
+        expect(JSON.stringify(result.structuredContent)).not.toContain('releaseEligible')
+      })
+
+      const platform = await request(handler, '/api/agent/jobs', { headers: { Authorization: 'Bearer platform-secret' } })
+      expect(platform.body.reviews.map((item: { id: string }) => item.id)).toContain(job.id)
+    } finally {
+      if (oldToken == null) delete process.env.AGENT_API_TOKEN
+      else process.env.AGENT_API_TOKEN = oldToken
+      restoreBuyer()
+    }
+  })
+
   it('starts an MCP demo session and tracks real MCP activity safely', async () => {
     const wallet = Keypair.generate().publicKey.toBase58()
     const handler = createHandler()
 
-    const started = await request(handler, '/api/demo/mcp-session', json({ wallet }))
+    const started = await request(handler, '/api/demo/mcp-session', json({
+      wallet,
+      title: 'Custom agent checkout',
+      employer: 'OpenClaw Studio',
+      scope: 'Build a checkout page from the custom demo form and submit delivery evidence.',
+      acceptanceCriteria: 'Includes preview URL, responsive layout proof, repo link, and notes for every acceptance item.',
+      amountSol: 0.002,
+    }))
     expect(started.status).toBe(200)
     expect(started.body.token).toMatch(/^agt_/)
     expect(started.body.setup).toContain('/mcp')
     expect(started.body.jobId).toMatch(/^job_/)
     expect(started.body.steps.registered).toBe(true)
     expect(started.body.steps.jobPosted).toBe(true)
+    const platform = await request(handler, '/api/platform')
+    const job = platform.body.jobs.find((item: { id: string }) => item.id === started.body.jobId)
+    expect(job.title).toBe('Custom agent checkout')
+    expect(job.employer).toBe('OpenClaw Studio')
+    expect(job.marketplace.budgetSol).toBe(0.002)
 
     const safeStatus = await request(handler, '/api/demo/mcp-session')
     expect(safeStatus.status).toBe(200)
@@ -451,6 +528,21 @@ describe('freelance escrow platform flow', () => {
     expect(afterMcp.body.steps.connected).toBe(true)
     expect(afterMcp.body.steps.bidPlaced).toBe(true)
     expect(afterMcp.body.lastSeenAt).toBeTruthy()
+  })
+
+  it('cleans demo jobs and revokes demo MCP sessions', async () => {
+    const wallet = Keypair.generate().publicKey.toBase58()
+    const handler = createHandler()
+    openTask()
+    const started = await request(handler, '/api/demo/mcp-session', json({ wallet }))
+    expect(started.body.token).toMatch(/^agt_/)
+
+    const reset = await request(handler, '/api/demo/reset', json({}))
+    expect(reset.status).toBe(200)
+    expect(reset.body.jobs).toHaveLength(0)
+    expect(reset.body.mcp.active).toBe(false)
+    expect(JSON.stringify(reset.body)).not.toContain(started.body.token)
+    expect((await request(handler, '/api/agent/jobs', { headers: { Authorization: `Bearer ${started.body.token}` } })).status).toBe(401)
   })
 
   it('starts the local demo runner without exposing agent secrets', async () => {
@@ -644,6 +736,99 @@ describe('freelance escrow platform flow', () => {
     } finally {
       restoreBuyer()
     }
+  })
+
+  it('stores Coral panel approval and enables devnet settlement', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'panel-worker', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'panel-worker',
+        url: 'https://example.test/preview',
+        repo: 'https://example.test/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
+      })
+      await collectPanelReviewArtifacts(job, { threadId: 'thread-panel' }, collectArtifacts())
+
+      const review = assessJobWithPanel(job, panelApprove())
+      review.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
+
+      expect(review.source).toBe('coral-panel')
+      expect(review.panel?.opinions).toHaveLength(2)
+      expect(review.releaseEligible).toBe(true)
+      expect(await settleAgentEscrow(job, fakeEscrow(), new Date())).toBe('released')
+      expect(job.settlement.devnet?.release).toBe('sig-release')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('stores Coral advocate opinions before referee verdict', async () => {
+    const job = submittedTask()
+    await collectPanelReviewArtifacts(job, { threadId: 'thread-panel' }, collectArtifacts())
+
+    const review = recordPanelOpinions(job, {
+      threadId: 'thread-panel',
+      opinions: [
+        { role: 'worker', agent: 'worker-advocate', summary: 'Preview, build, and screenshots support release.', recommendation: 'approve', evidence: ['preview', 'screenshots'] },
+      ],
+    })
+
+    expect(review.source).toBe('coral-panel')
+    expect(review.panel?.opinions).toHaveLength(1)
+    expect(review.panel?.opinions[0].summary).toMatch(/support release/)
+    expect(review.releaseEligible).toBe(false)
+    expect(review.missing).toContain('Coral referee verdict')
+  })
+
+  it('blocks Coral panel release when submitted project tests fail', async () => {
+    const job = submittedTask()
+    await collectPanelReviewArtifacts(job, {}, collectArtifacts(artifactRun({
+      tests: { status: 'fail', summary: 'Tests failed', command: 'npm test -- --run', log: 'failing spec' },
+    })))
+
+    const review = assessJobWithPanel(job, panelApprove())
+
+    expect(review.releaseEligible).toBe(false)
+    expect(review.source).toBe('coral-panel')
+    expect(review.missing.join(' ')).toMatch(/tests/i)
+    expect(() => approveReviewedJob(job)).toThrow(/review gates/)
+  })
+
+  it('blocks Coral panel release when submitted project build fails', async () => {
+    const job = submittedTask()
+    await collectPanelReviewArtifacts(job, {}, collectArtifacts(artifactRun({
+      build: { status: 'fail', summary: 'Build failed', command: 'npm run build', log: 'missing import' },
+    })))
+
+    const review = assessJobWithPanel(job, panelApprove())
+
+    expect(review.releaseEligible).toBe(false)
+    expect(review.missing.join(' ')).toMatch(/build/i)
+  })
+
+  it('blocks Coral panel release when visual work has no screenshots', async () => {
+    const job = submittedTask()
+    await collectPanelReviewArtifacts(job, {}, collectArtifacts(artifactRun({ screenshots: [] })))
+
+    const review = assessJobWithPanel(job, panelApprove())
+
+    expect(review.releaseEligible).toBe(false)
+    expect(review.missing.join(' ')).toMatch(/screenshots/i)
+  })
+
+  it('fails closed when Coral panel verdict times out or is missing', async () => {
+    const job = submittedTask()
+    await collectPanelReviewArtifacts(job, { threadId: 'thread-panel' }, collectArtifacts())
+
+    const review = assessJobWithPanel(job, { threadId: 'thread-panel', timedOut: true })
+
+    expect(review.source).toBe('coral-panel')
+    expect(review.releaseEligible).toBe(false)
+    expect(review.panel?.timedOut).toBe(true)
+    expect(() => approveReviewedJob(job)).toThrow(/review gates/)
   })
 
   it('accepts direct delivery only from the awarded agent and runs review', async () => {

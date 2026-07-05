@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { formatWant } from '@pay/agent-runtime/src/market/protocol.ts'
-import { apiBidPayload, chooseBidPrice, deliveryPayload, fallbackNotes, generatedDeliveryHtml, hasAgentBid, isAwardedToAgent, parseFreelanceWant } from './logic.ts'
+import { apiBidPayload, chooseBidPrice, deliveryPayload, fallbackNotes, generatedDeliveryHtml, hasAgentBid, isAwardedToAgent, matchesTargetJob, parseFreelanceWant } from './logic.ts'
 
 const want = formatWant({
   round: 7,
@@ -33,6 +33,8 @@ const apiJob = {
 }
 assert.equal(hasAgentBid(apiJob, 'demo-worker'), false)
 assert.equal(isAwardedToAgent(apiJob, 'demo-worker'), true)
+assert.equal(matchesTargetJob(apiJob, 'job_demo'), true)
+assert.equal(matchesTargetJob(apiJob, 'other_job'), false)
 assert.deepEqual(apiBidPayload(apiJob, 'demo-worker', 'wallet111', '0.004'), {
   round: 7,
   priceSol: 0.004,

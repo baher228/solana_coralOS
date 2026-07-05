@@ -1,0 +1,515 @@
+{
+  "jobId": "job_mr6bwmve_a5uar",
+  "dump": {
+    "title": "Employer sets up job",
+    "step": "Step 1 of 111/11",
+    "guideTitle": "AI agent MCP setup",
+    "nodeCount": 14,
+    "systemNodeCount": 14,
+    "active": [
+      "employer",
+      "job"
+    ],
+    "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 302.888)",
+    "graphDump": {
+      "at": "2026-07-04T12:18:59.427Z",
+      "label": "manual",
+      "title": "Employer sets up job",
+      "cameraIds": [],
+      "requiredIds": [
+        "employer",
+        "job"
+      ],
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1756,
+        "top": 158,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 320,
+        "bottom": 931,
+        "width": 390,
+        "height": 611
+      },
+      "side": {
+        "left": 1756,
+        "right": 2048,
+        "top": 158,
+        "bottom": 949,
+        "width": 292,
+        "height": 791
+      },
+      "panel": {
+        "left": 15,
+        "right": 479,
+        "top": 173,
+        "bottom": 223,
+        "width": 464,
+        "height": 50
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 302.888)",
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "requiredVisible": [
+        "employer",
+        "job"
+      ],
+      "nodes": [
+        {
+          "id": "employer",
+          "rect": {
+            "left": 680,
+            "right": 841,
+            "top": 478,
+            "bottom": 583,
+            "width": 162,
+            "height": 105
+          },
+          "required": true,
+          "visible": true
+        },
+        {
+          "id": "job",
+          "rect": {
+            "left": 903,
+            "right": 1065,
+            "top": 478,
+            "bottom": 598,
+            "width": 162,
+            "height": 120
+          },
+          "required": true,
+          "visible": true
+        },
+        {
+          "id": "feed",
+          "rect": {
+            "left": 1127,
+            "right": 1289,
+            "top": 478,
+            "bottom": 583,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": true
+        },
+        {
+          "id": "bid",
+          "rect": {
+            "left": 1351,
+            "right": 1512,
+            "top": 478,
+            "bottom": 583,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": true
+        },
+        {
+          "id": "auctioneer",
+          "rect": {
+            "left": 1574,
+            "right": 1736,
+            "top": 478,
+            "bottom": 583,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": true
+        },
+        {
+          "id": "escrow",
+          "rect": {
+            "left": 1798,
+            "right": 1959,
+            "top": 478,
+            "bottom": 583,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "delivery",
+          "rect": {
+            "left": 2021,
+            "right": 2183,
+            "top": 478,
+            "bottom": 595,
+            "width": 162,
+            "height": 117
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "artifacts",
+          "rect": {
+            "left": 2245,
+            "right": 2407,
+            "top": 478,
+            "bottom": 595,
+            "width": 162,
+            "height": 117
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "coral",
+          "rect": {
+            "left": 2469,
+            "right": 2630,
+            "top": 478,
+            "bottom": 598,
+            "width": 162,
+            "height": 120
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "workerAdvocate",
+          "rect": {
+            "left": 2692,
+            "right": 2854,
+            "top": 383,
+            "bottom": 501,
+            "width": 162,
+            "height": 117
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "employerAdvocate",
+          "rect": {
+            "left": 2692,
+            "right": 2854,
+            "top": 572,
+            "bottom": 677,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "referee",
+          "rect": {
+            "left": 2916,
+            "right": 3077,
+            "top": 478,
+            "bottom": 583,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "settlement",
+          "rect": {
+            "left": 3139,
+            "right": 3301,
+            "top": 478,
+            "bottom": 583,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": false
+        },
+        {
+          "id": "human",
+          "rect": {
+            "left": 1127,
+            "right": 1289,
+            "top": 684,
+            "bottom": 789,
+            "width": 162,
+            "height": 105
+          },
+          "required": false,
+          "visible": true
+        }
+      ]
+    },
+    "debug": [
+      {
+        "at": "2026-07-04T12:18:46.737Z",
+        "label": "focusCamera:set",
+        "title": "Employer sets up job",
+        "cameraIds": [
+          "employer",
+          "job",
+          "feed",
+          "bid"
+        ],
+        "requiredIds": [
+          "employer",
+          "job"
+        ],
+        "activeIds": [
+          "employer",
+          "job"
+        ],
+        "stage": {
+          "left": 0,
+          "right": 1756,
+          "top": 158,
+          "bottom": 949,
+          "width": 1756,
+          "height": 791
+        },
+        "guide": {
+          "left": 18,
+          "right": 408,
+          "top": 734,
+          "bottom": 931,
+          "width": 390,
+          "height": 197
+        },
+        "side": {
+          "left": 1756,
+          "right": 2048,
+          "top": 158,
+          "bottom": 949,
+          "width": 292,
+          "height": 791
+        },
+        "panel": {
+          "left": 15,
+          "right": 479,
+          "top": 173,
+          "bottom": 223,
+          "width": 464,
+          "height": 50
+        },
+        "transform": "matrix(1, 0, 0, 1, 70, 180)",
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "human"
+        ],
+        "requiredVisible": [
+          "employer",
+          "job"
+        ],
+        "nodes": [
+          {
+            "id": "employer",
+            "rect": {
+              "left": 70,
+              "right": 258,
+              "top": 358,
+              "bottom": 480,
+              "width": 188,
+              "height": 122
+            },
+            "required": true,
+            "visible": true
+          },
+          {
+            "id": "job",
+            "rect": {
+              "left": 330,
+              "right": 518,
+              "top": 358,
+              "bottom": 497,
+              "width": 188,
+              "height": 139
+            },
+            "required": true,
+            "visible": true
+          },
+          {
+            "id": "feed",
+            "rect": {
+              "left": 590,
+              "right": 778,
+              "top": 358,
+              "bottom": 480,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": true
+          },
+          {
+            "id": "bid",
+            "rect": {
+              "left": 850,
+              "right": 1038,
+              "top": 358,
+              "bottom": 480,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": true
+          },
+          {
+            "id": "auctioneer",
+            "rect": {
+              "left": 1110,
+              "right": 1298,
+              "top": 358,
+              "bottom": 480,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": true
+          },
+          {
+            "id": "escrow",
+            "rect": {
+              "left": 1370,
+              "right": 1558,
+              "top": 358,
+              "bottom": 480,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": true
+          },
+          {
+            "id": "delivery",
+            "rect": {
+              "left": 1630,
+              "right": 1818,
+              "top": 358,
+              "bottom": 494,
+              "width": 188,
+              "height": 137
+            },
+            "required": false,
+            "visible": false
+          },
+          {
+            "id": "artifacts",
+            "rect": {
+              "left": 1890,
+              "right": 2078,
+              "top": 358,
+              "bottom": 494,
+              "width": 188,
+              "height": 137
+            },
+            "required": false,
+            "visible": false
+          },
+          {
+            "id": "coral",
+            "rect": {
+              "left": 2150,
+              "right": 2338,
+              "top": 358,
+              "bottom": 497,
+              "width": 188,
+              "height": 139
+            },
+            "required": false,
+            "visible": false
+          },
+          {
+            "id": "workerAdvocate",
+            "rect": {
+              "left": 2410,
+              "right": 2598,
+              "top": 248,
+              "bottom": 384,
+              "width": 188,
+              "height": 137
+            },
+            "required": false,
+            "visible": false
+          },
+          {
+            "id": "employerAdvocate",
+            "rect": {
+              "left": 2410,
+              "right": 2598,
+              "top": 468,
+              "bottom": 590,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": false
+          },
+          {
+            "id": "referee",
+            "rect": {
+              "left": 2670,
+              "right": 2858,
+              "top": 358,
+              "bottom": 480,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": false
+          },
+          {
+            "id": "settlement",
+            "rect": {
+              "left": 2930,
+              "right": 3118,
+              "top": 358,
+              "bottom": 480,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": false
+          },
+          {
+            "id": "human",
+            "rect": {
+              "left": 590,
+              "right": 778,
+              "top": 598,
+              "bottom": 720,
+              "width": 188,
+              "height": 122
+            },
+            "required": false,
+            "visible": true
+          }
+        ]
+      }
+    ]
+  },
+  "logs": [
+    {
+      "type": "warning",
+      "text": "[txodds-graph] {at: 2026-07-04T12:18:46.737Z, label: focusCamera:set, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    }
+  ]
+}

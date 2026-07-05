@@ -22,6 +22,7 @@ import {
   generatedDeliveryHtml,
   hasAgentBid,
   isAwardedToAgent,
+  matchesTargetJob,
   parseFreelanceWant,
   type ApiAgentJob,
   type DemoJob,
@@ -89,6 +90,8 @@ const transport = (process.env.AGENT_TRANSPORT || 'api').toLowerCase()
 const apiBase = process.env.AGENT_API_BASE || process.env.PLATFORM_API_URL || 'http://localhost:8801'
 const apiToken = process.env.AGENT_API_TOKEN || ''
 const pollMs = Number(process.env.DEMO_AGENT_POLL_MS ?? 3000)
+const targetJobId = process.env.DEMO_TARGET_JOB_ID || ''
+const reviewMode = process.env.DEMO_REVIEW_MODE || ''
 
 let fixtureUrl: string | null = process.env.DEMO_DELIVERY_URL || null
 
@@ -139,6 +142,7 @@ async function deliver(job: DemoJob & { marketplace?: { round?: number } }) {
     round: job.marketplace?.round || 1,
     url,
     ...(deliveryRepo ? { repo: deliveryRepo } : {}),
+    ...(reviewMode ? { reviewMode } : {}),
     notes,
   }
 }
@@ -152,7 +156,7 @@ async function runApiWorker() {
   while (true) {
     try {
       const { jobs = [] } = await api<{ jobs: ApiAgentJob[] }>('/api/agent/jobs')
-      for (const job of jobs) {
+      for (const job of jobs.filter((item) => matchesTargetJob(item, targetJobId))) {
         if (job.status === 'open' && !hasAgentBid(job, agentName)) {
           const bid = apiBidPayload(job, agentName, wallet, process.env.DEMO_BID_PRICE_SOL)
           await api(`/api/agent/jobs/${job.id}/bids`, bid)

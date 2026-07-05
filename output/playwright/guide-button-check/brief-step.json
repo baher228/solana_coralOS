@@ -1,0 +1,57 @@
+{
+  "guideTitle": "Fill job brief",
+  "guide": {
+    "left": 18,
+    "right": 408,
+    "top": 111.609375,
+    "bottom": 702,
+    "width": 390,
+    "height": 590.390625
+  },
+  "button": {
+    "left": 32,
+    "right": 379,
+    "top": 654,
+    "bottom": 688,
+    "width": 347,
+    "height": 34
+  },
+  "buttonVisible": true,
+  "actions": {
+    "left": 19,
+    "right": 392,
+    "top": 643,
+    "bottom": 701,
+    "width": 373,
+    "height": 58
+  },
+  "textareas": [
+    {
+      "rect": {
+        "left": 32,
+        "right": 379,
+        "top": 442.125,
+        "bottom": 512.765625,
+        "width": 347,
+        "height": 70.640625
+      },
+      "overlapsActions": false,
+      "maxHeight": "76px",
+      "fontSize": "13px"
+    },
+    {
+      "rect": {
+        "left": 32,
+        "right": 379,
+        "top": 539.765625,
+        "bottom": 610.40625,
+        "width": 347,
+        "height": 70.640625
+      },
+      "overlapsActions": false,
+      "maxHeight": "76px",
+      "fontSize": "13px"
+    }
+  ],
+  "overlap": false
+}

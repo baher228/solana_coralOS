@@ -1,12 +1,15 @@
-import { startCoralAgent } from '../../../packages/agent-runtime/src/coral/server.ts'
+import { startCoralAgent, type CoralAgentContext } from '../../../packages/agent-runtime/src/coral/server.ts'
 import {
   formatAward,
   formatDeposited,
   formatRefunded,
   formatReleased,
+  formatReviewRequest,
   formatWant,
   parseBid,
   parseDelivered,
+  parseReviewOpinion,
+  parseReviewVerdict,
 } from '../../../packages/agent-runtime/src/market/protocol.ts'
 
 const API = process.env.PLATFORM_API_URL ?? 'http://localhost:8801'
@@ -15,15 +18,18 @@ const BID_WINDOW_MS = Number(process.env.BID_WINDOW_MS ?? 30_000)
 const ESCROW_DEADLINE_SECS = Number(process.env.ESCROW_DEADLINE_SECS ?? 72 * 60 * 60)
 const DELIVERY_WAIT_MS = Number(process.env.DELIVERY_WAIT_MS ?? Math.min(ESCROW_DEADLINE_SECS * 1000, 15 * 60 * 1000))
 const WORKER_AGENTS = (process.env.MARKETPLACE_WORKER_AGENTS ?? '').split(',').map((item) => item.trim()).filter(Boolean)
+const REVIEW_AGENTS = (process.env.MARKETPLACE_REVIEW_AGENTS ?? 'worker-advocate,employer-advocate,referee').split(',').map((item) => item.trim()).filter(Boolean)
+const REVIEW_WAIT_MS = Number(process.env.REVIEW_PANEL_WAIT_MS ?? 120_000)
 
 interface AgentJob {
   id: string
   title: string
+  worker?: string
   scope: string
   acceptanceCriteria: string
   amountSol: number
   reference: string
-  marketplace: { round: number }
+  marketplace: { round: number; awardedBid?: { by: string } }
   settlement: {
     devnet?: {
       buyer: string
@@ -33,6 +39,15 @@ interface AgentJob {
       refund?: string
     }
   }
+}
+
+interface PanelOpinion {
+  role: 'worker' | 'employer'
+  agent?: string
+  summary: string
+  recommendation?: string
+  concerns?: string[]
+  evidence?: string[]
 }
 
 async function api<T = any>(path: string, body?: Record<string, unknown>, agent = true): Promise<T> {
@@ -70,12 +85,60 @@ async function settle(job: AgentJob) {
   return null
 }
 
+async function queuedReview(jobId: string): Promise<AgentJob | undefined> {
+  const { reviews = [] } = await api<{ reviews?: AgentJob[] }>('/api/agent/jobs')
+  return reviews.find((job) => job.id === jobId)
+}
+
+async function runPanelReview(ctx: CoralAgentContext, job: AgentJob, deliveredBy: string, workThreadId?: string) {
+  const round = job.marketplace.round
+  const reviewThreadId = await ctx.createThread(`review:${job.id}`, REVIEW_AGENTS)
+  const artifacts = await api<{ request: Record<string, unknown> }>(`/api/agent/jobs/${job.id}/artifacts`, { threadId: reviewThreadId })
+  await ctx.send(formatReviewRequest({ round, jobId: job.id, payload: artifacts.request }), reviewThreadId, REVIEW_AGENTS)
+
+  const opinions: PanelOpinion[] = []
+  let verdict: Record<string, unknown> | null = null
+  const deadline = Date.now() + REVIEW_WAIT_MS
+  while (Date.now() < deadline && !verdict) {
+    const mention = await ctx.waitForMentionInThread(reviewThreadId, Math.min(30_000, deadline - Date.now()))
+    if (!mention) continue
+    const opinion = parseReviewOpinion(mention.text)
+    if (opinion?.round === round) {
+      const panelOpinion = {
+        role: opinion.role,
+        agent: mention.sender,
+        summary: String(opinion.payload.summary || '').trim() || `${opinion.role} opinion received`,
+        ...(opinion.payload.recommendation ? { recommendation: String(opinion.payload.recommendation) } : {}),
+        ...(Array.isArray(opinion.payload.concerns) ? { concerns: opinion.payload.concerns.map(String) } : {}),
+        ...(Array.isArray(opinion.payload.evidence) ? { evidence: opinion.payload.evidence.map(String) } : {}),
+      }
+      opinions.push(panelOpinion)
+      await api(`/api/agent/jobs/${job.id}/panel-opinions`, { threadId: reviewThreadId, opinions })
+      continue
+    }
+    const parsed = parseReviewVerdict(mention.text)
+    if (parsed?.round === round) verdict = parsed.payload
+  }
+
+  const panel = await api<{ review: { releaseEligible?: boolean; recommendation?: string }; job: AgentJob }>(`/api/agent/jobs/${job.id}/panel-review`, {
+    threadId: reviewThreadId,
+    opinions,
+    ...(verdict ? { verdict } : { timedOut: true }),
+  })
+  const message = verdict
+    ? `PANEL_REVIEWED round=${round} recommendation=${panel.review.recommendation || 'revision'} releaseEligible=${Boolean(panel.review.releaseEligible)}`
+    : `PANEL_REVIEW_TIMEOUT round=${round}`
+  await ctx.send(message, reviewThreadId, REVIEW_AGENTS)
+  if (workThreadId) await ctx.send(message, workThreadId, [deliveredBy])
+  return panel.job
+}
+
 await startCoralAgent({ agentName: process.env.AGENT_NAME ?? 'marketplace-bridge' }, async (ctx) => {
   const active = new Set<string>()
 
   while (true) {
     if (!TOKEN) throw new Error('AGENT_API_TOKEN is required')
-    const { jobs, settlements = [] } = await api<{ jobs: AgentJob[]; settlements?: AgentJob[] }>('/api/agent/jobs')
+    const { jobs, reviews = [], settlements = [] } = await api<{ jobs: AgentJob[]; reviews?: AgentJob[]; settlements?: AgentJob[] }>('/api/agent/jobs')
 
     for (const job of settlements) {
       try {
@@ -83,6 +146,20 @@ await startCoralAgent({ agentName: process.env.AGENT_NAME ?? 'marketplace-bridge
         if (message) console.error(`[marketplace-bridge] settled ${job.id}: ${message}`)
       } catch (e) {
         console.error(`[marketplace-bridge] settle ${job.id}: ${(e as Error).message}`)
+      }
+    }
+
+    for (const job of reviews) {
+      if (active.has(job.id)) continue
+      active.add(job.id)
+      try {
+        const deliveredBy = job.marketplace.awardedBid?.by || job.worker || 'worker'
+        const reviewed = await runPanelReview(ctx, job, deliveredBy)
+        await settle(reviewed)
+      } catch (e) {
+        console.error(`[marketplace-bridge] review ${job.id}: ${(e as Error).message}`)
+      } finally {
+        active.delete(job.id)
       }
     }
 
@@ -118,9 +195,13 @@ await startCoralAgent({ agentName: process.env.AGENT_NAME ?? 'marketplace-bridge
       while (Date.now() < deliveryDeadline) {
         const mention = await ctx.waitForMentionInThread(threadId, Math.min(30_000, deliveryDeadline - Date.now()))
         const delivered = mention ? parseDelivered(mention.text) : null
-        if (!delivered || delivered.round !== job.marketplace.round) continue
-        await api(`/api/agent/jobs/${job.id}/delivery`, { by: awarded.bid.by, ...delivered })
-        const settled = await settle(awarded.job)
+        const queued = await queuedReview(job.id)
+        if (!queued && (!delivered || delivered.round !== job.marketplace.round)) continue
+        if (delivered?.round === job.marketplace.round) {
+          await api(`/api/agent/jobs/${job.id}/delivery`, { by: awarded.bid.by, deferReview: true, ...delivered })
+        }
+        const reviewed = await runPanelReview(ctx, queued || awarded.job, awarded.bid.by, threadId)
+        const settled = await settle(reviewed)
         await ctx.send(settled ?? `SETTLEMENT_PENDING round=${job.marketplace.round}`, threadId, [awarded.bid.by])
         break
       }

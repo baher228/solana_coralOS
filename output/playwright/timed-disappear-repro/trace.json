@@ -1,0 +1,5727 @@
+{
+  "states": [
+    {
+      "label": "idle-00s",
+      "time": "2026-07-05T18:58:03.378Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "idle-05s",
+      "time": "2026-07-05T18:58:08.545Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 5
+    },
+    {
+      "label": "idle-10s",
+      "time": "2026-07-05T18:58:13.672Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 10
+    },
+    {
+      "label": "idle-15s",
+      "time": "2026-07-05T18:58:18.781Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 15
+    },
+    {
+      "label": "idle-20s",
+      "time": "2026-07-05T18:58:23.898Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 20
+    },
+    {
+      "label": "idle-30s",
+      "time": "2026-07-05T18:58:34.028Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 30
+    },
+    {
+      "label": "idle-45s",
+      "time": "2026-07-05T18:58:49.130Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 45
+    },
+    {
+      "label": "idle-60s",
+      "time": "2026-07-05T18:59:04.228Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 60
+    },
+    {
+      "label": "idle-75s",
+      "time": "2026-07-05T18:59:19.323Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 75
+    },
+    {
+      "label": "idle-90s",
+      "time": "2026-07-05T18:59:34.402Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ],
+      "seconds": 90
+    },
+    {
+      "label": "play-00s",
+      "time": "2026-07-05T18:59:34.611Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:init:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-02s",
+      "time": "2026-07-05T18:59:36.702Z",
+      "title": "Agent network sees it",
+      "stepLine": "Step 2 of 112/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "feed"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 532,
+          "right": 1736,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 532,
+          "right": 1959,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 532,
+          "right": 2183,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 532,
+          "right": 2407,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 532,
+          "right": 2630,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 437,
+          "right": 2854,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 626,
+          "right": 2854,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 532,
+          "right": 3077,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 532,
+          "right": 3301,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 738,
+          "right": 1289,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-04s",
+      "time": "2026-07-05T18:59:38.800Z",
+      "title": "Agents bid",
+      "stepLine": "Step 3 of 113/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 567.96, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "bid"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 567.96, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 568,
+          "top": 532,
+          "right": 730,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 792,
+          "top": 532,
+          "right": 953,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1015,
+          "top": 532,
+          "right": 1177,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1239,
+          "top": 532,
+          "right": 1400,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1462,
+          "top": 532,
+          "right": 1624,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1686,
+          "top": 532,
+          "right": 1848,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 1910,
+          "top": 532,
+          "right": 2071,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2133,
+          "top": 532,
+          "right": 2295,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2357,
+          "top": 532,
+          "right": 2518,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2580,
+          "top": 437,
+          "right": 2742,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2580,
+          "top": 626,
+          "right": 2742,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2804,
+          "top": 532,
+          "right": 2966,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3028,
+          "top": 532,
+          "right": 3189,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1015,
+          "top": 738,
+          "right": 1177,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-06s",
+      "time": "2026-07-05T18:59:40.898Z",
+      "title": "Auctioneer awards",
+      "stepLine": "Step 4 of 114/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 344.36, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "auctioneer"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 344.36, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 344,
+          "top": 532,
+          "right": 506,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 568,
+          "top": 532,
+          "right": 730,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 792,
+          "top": 532,
+          "right": 953,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1015,
+          "top": 532,
+          "right": 1177,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1239,
+          "top": 532,
+          "right": 1400,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1462,
+          "top": 532,
+          "right": 1624,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 1686,
+          "top": 532,
+          "right": 1848,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 1910,
+          "top": 532,
+          "right": 2071,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2133,
+          "top": 532,
+          "right": 2295,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2357,
+          "top": 437,
+          "right": 2518,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2357,
+          "top": 626,
+          "right": 2518,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2580,
+          "top": 532,
+          "right": 2742,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 2804,
+          "top": 532,
+          "right": 2966,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 792,
+          "top": 738,
+          "right": 953,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-08s",
+      "time": "2026-07-05T18:59:42.996Z",
+      "title": "Devnet escrow funds",
+      "stepLine": "Step 5 of 115/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 8.96, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "escrow"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 8.96, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 1574,
+          "top": 532,
+          "right": 1736,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 1798,
+          "top": 532,
+          "right": 1959,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2021,
+          "top": 437,
+          "right": 2183,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2021,
+          "top": 626,
+          "right": 2183,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2245,
+          "top": 532,
+          "right": 2407,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 2469,
+          "top": 532,
+          "right": 2630,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 456,
+          "top": 738,
+          "right": 618,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-10s",
+      "time": "2026-07-05T18:59:45.098Z",
+      "title": "Worker agent delivers",
+      "stepLine": "Step 6 of 116/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -214.64, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "delivery"
+      ],
+      "visible": [
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -214.64, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -215,
+          "top": 541,
+          "right": -53,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 9,
+          "top": 541,
+          "right": 171,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 233,
+          "top": 541,
+          "right": 394,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 456,
+          "top": 541,
+          "right": 618,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 1798,
+          "top": 447,
+          "right": 1959,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 1798,
+          "top": 636,
+          "right": 1959,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 233,
+          "top": 748,
+          "right": 394,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-12s",
+      "time": "2026-07-05T18:59:47.209Z",
+      "title": "Coral review thread opens",
+      "stepLine": "Step 8 of 118/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -438.24, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "coral"
+      ],
+      "visible": [
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -438.24, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -438,
+          "top": 532,
+          "right": -277,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -215,
+          "top": 532,
+          "right": -53,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 1574,
+          "top": 437,
+          "right": 1736,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 1574,
+          "top": 626,
+          "right": 1736,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1798,
+          "top": 532,
+          "right": 1959,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 2021,
+          "top": 532,
+          "right": 2183,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 9,
+          "top": 738,
+          "right": 171,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-14s",
+      "time": "2026-07-05T18:59:49.297Z",
+      "title": "Advocates argue both sides",
+      "stepLine": "Step 9 of 119/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -885.44, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate"
+      ],
+      "visible": [
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate",
+          "referee",
+          "settlement"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -885.44, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -885,
+          "top": 532,
+          "right": -724,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -662,
+          "top": 532,
+          "right": -500,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": -438,
+          "top": 532,
+          "right": -277,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": -215,
+          "top": 532,
+          "right": -53,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 1127,
+          "top": 437,
+          "right": 1289,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 1127,
+          "top": 626,
+          "right": 1289,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 1574,
+          "top": 532,
+          "right": 1736,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": -438,
+          "top": 738,
+          "right": -277,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-16s",
+      "time": "2026-07-05T18:59:51.403Z",
+      "title": "Referee returns verdict",
+      "stepLine": "Step 10 of 1110/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -1109.04, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "referee"
+      ],
+      "visible": [
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate",
+          "referee",
+          "settlement"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -1109.04, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -1109,
+          "top": 532,
+          "right": -947,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -885,
+          "top": 532,
+          "right": -724,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": -662,
+          "top": 532,
+          "right": -500,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": -438,
+          "top": 532,
+          "right": -277,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": -215,
+          "top": 532,
+          "right": -53,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 903,
+          "top": 437,
+          "right": 1065,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 903,
+          "top": 626,
+          "right": 1065,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": -662,
+          "top": 738,
+          "right": -500,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-18s",
+      "time": "2026-07-05T18:59:53.493Z",
+      "title": "Funds release",
+      "stepLine": "Step 11 of 1111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -1220.84, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "settlement"
+      ],
+      "visible": [
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate",
+          "referee",
+          "settlement"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -1220.84, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -1221,
+          "top": 532,
+          "right": -1059,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -997,
+          "top": 532,
+          "right": -836,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": -774,
+          "top": 532,
+          "right": -612,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": -550,
+          "top": 532,
+          "right": -388,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": -326,
+          "top": 532,
+          "right": -165,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": -103,
+          "top": 532,
+          "right": 59,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 121,
+          "top": 532,
+          "right": 282,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 344,
+          "top": 532,
+          "right": 506,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 568,
+          "top": 532,
+          "right": 730,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 792,
+          "top": 437,
+          "right": 953,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 792,
+          "top": 626,
+          "right": 953,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1015,
+          "top": 532,
+          "right": 1177,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 1239,
+          "top": 532,
+          "right": 1400,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": -774,
+          "top": 738,
+          "right": -612,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-20s",
+      "time": "2026-07-05T18:59:55.603Z",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 541,
+          "right": 1959,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 541,
+          "right": 2630,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 447,
+          "right": 2854,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 636,
+          "right": 2854,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 541,
+          "right": 3077,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 541,
+          "right": 3301,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 748,
+          "right": 1289,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-22s",
+      "time": "2026-07-05T18:59:57.694Z",
+      "title": "Agent network sees it",
+      "stepLine": "Step 2 of 112/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "feed"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 679.76, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1574,
+          "top": 532,
+          "right": 1736,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1798,
+          "top": 532,
+          "right": 1959,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 2021,
+          "top": 532,
+          "right": 2183,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2245,
+          "top": 532,
+          "right": 2407,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2469,
+          "top": 532,
+          "right": 2630,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2692,
+          "top": 437,
+          "right": 2854,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2692,
+          "top": 626,
+          "right": 2854,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2916,
+          "top": 532,
+          "right": 3077,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3139,
+          "top": 532,
+          "right": 3301,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1127,
+          "top": 738,
+          "right": 1289,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-24s",
+      "time": "2026-07-05T18:59:59.782Z",
+      "title": "Agents bid",
+      "stepLine": "Step 3 of 113/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 567.96, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "bid"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 567.96, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 568,
+          "top": 532,
+          "right": 730,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 792,
+          "top": 532,
+          "right": 953,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 1015,
+          "top": 532,
+          "right": 1177,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 1239,
+          "top": 532,
+          "right": 1400,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 1462,
+          "top": 532,
+          "right": 1624,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1686,
+          "top": 532,
+          "right": 1848,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 1910,
+          "top": 532,
+          "right": 2071,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 2133,
+          "top": 532,
+          "right": 2295,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 2357,
+          "top": 532,
+          "right": 2518,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2580,
+          "top": 437,
+          "right": 2742,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2580,
+          "top": 626,
+          "right": 2742,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2804,
+          "top": 532,
+          "right": 2966,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 3028,
+          "top": 532,
+          "right": 3189,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 1015,
+          "top": 738,
+          "right": 1177,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-26s",
+      "time": "2026-07-05T19:00:01.877Z",
+      "title": "Devnet escrow funds",
+      "stepLine": "Step 5 of 115/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, 8.96, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "escrow"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "human"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "employer",
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "human"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, 8.96, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 1574,
+          "top": 532,
+          "right": 1736,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 1798,
+          "top": 532,
+          "right": 1959,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 2021,
+          "top": 437,
+          "right": 2183,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 2021,
+          "top": 626,
+          "right": 2183,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2245,
+          "top": 532,
+          "right": 2407,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 2469,
+          "top": 532,
+          "right": 2630,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 456,
+          "top": 738,
+          "right": 618,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-28s",
+      "time": "2026-07-05T19:00:03.979Z",
+      "title": "Worker agent delivers",
+      "stepLine": "Step 6 of 116/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -214.64, 366.434)",
+      "stage": {
+        "left": 0,
+        "top": 158,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 791
+      },
+      "flow": {
+        "width": 1756,
+        "height": 791
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "delivery"
+      ],
+      "visible": [
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "job",
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -214.64, 366.434)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -215,
+          "top": 541,
+          "right": -53,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": 9,
+          "top": 541,
+          "right": 171,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 233,
+          "top": 541,
+          "right": 394,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 456,
+          "top": 541,
+          "right": 618,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 680,
+          "top": 541,
+          "right": 841,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 903,
+          "top": 541,
+          "right": 1065,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 1127,
+          "top": 541,
+          "right": 1289,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 1351,
+          "top": 541,
+          "right": 1512,
+          "bottom": 659,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 1574,
+          "top": 541,
+          "right": 1736,
+          "bottom": 661,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 1798,
+          "top": 447,
+          "right": 1959,
+          "bottom": 564,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 1798,
+          "top": 636,
+          "right": 1959,
+          "bottom": 741,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 2021,
+          "top": 541,
+          "right": 2183,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 2245,
+          "top": 541,
+          "right": 2407,
+          "bottom": 646,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 233,
+          "top": 748,
+          "right": 394,
+          "bottom": 853,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-30s",
+      "time": "2026-07-05T19:00:06.078Z",
+      "title": "Artifacts collected",
+      "stepLine": "Step 7 of 117/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -438.24, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "artifacts"
+      ],
+      "visible": [
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "feed",
+          "bid",
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -438.24, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -438,
+          "top": 532,
+          "right": -277,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -215,
+          "top": 532,
+          "right": -53,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 1574,
+          "top": 437,
+          "right": 1736,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 1574,
+          "top": 626,
+          "right": 1736,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1798,
+          "top": 532,
+          "right": 1959,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 2021,
+          "top": 532,
+          "right": 2183,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": 9,
+          "top": 738,
+          "right": 171,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-32s",
+      "time": "2026-07-05T19:00:08.177Z",
+      "title": "Coral review thread opens",
+      "stepLine": "Step 8 of 118/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -661.84, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "coral"
+      ],
+      "visible": [
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "bid",
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate",
+          "referee"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -661.84, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -662,
+          "top": 532,
+          "right": -500,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -438,
+          "top": 532,
+          "right": -277,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": -215,
+          "top": 532,
+          "right": -53,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 1351,
+          "top": 437,
+          "right": 1512,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 1351,
+          "top": 626,
+          "right": 1512,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1574,
+          "top": 532,
+          "right": 1736,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 1798,
+          "top": 532,
+          "right": 1959,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": -215,
+          "top": 738,
+          "right": -53,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-34s",
+      "time": "2026-07-05T19:00:10.278Z",
+      "title": "Advocates argue both sides",
+      "stepLine": "Step 9 of 119/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -885.44, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate"
+      ],
+      "visible": [
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "auctioneer",
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate",
+          "referee",
+          "settlement"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -885.44, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -885,
+          "top": 532,
+          "right": -724,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -662,
+          "top": 532,
+          "right": -500,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": -438,
+          "top": 532,
+          "right": -277,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": -215,
+          "top": 532,
+          "right": -53,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 903,
+          "top": 532,
+          "right": 1065,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 1127,
+          "top": 437,
+          "right": 1289,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 1127,
+          "top": 626,
+          "right": 1289,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 1574,
+          "top": 532,
+          "right": 1736,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": -438,
+          "top": 738,
+          "right": -277,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    },
+    {
+      "label": "play-36s",
+      "time": "2026-07-05T19:00:12.378Z",
+      "title": "Referee returns verdict",
+      "stepLine": "Step 10 of 1110/11",
+      "guideTitle": "Start clean demo",
+      "transform": "matrix(0.86, 0, 0, 0.86, -1109.04, 375.88)",
+      "stage": {
+        "left": 0,
+        "top": 139,
+        "right": 1756,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "flow": {
+        "width": 1756,
+        "height": 810
+      },
+      "nodeCount": 14,
+      "activeIds": [
+        "referee"
+      ],
+      "visible": [
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "last": {
+        "label": "camera:step:settled",
+        "missingRequired": [],
+        "visible": [
+          "escrow",
+          "delivery",
+          "artifacts",
+          "coral",
+          "workerAdvocate",
+          "employerAdvocate",
+          "referee",
+          "settlement"
+        ],
+        "transform": "matrix(0.86, 0, 0, 0.86, -1109.04, 375.88)"
+      },
+      "nodes": [
+        {
+          "id": "employer",
+          "left": -1109,
+          "top": 532,
+          "right": -947,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "job",
+          "left": -885,
+          "top": 532,
+          "right": -724,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "feed",
+          "left": -662,
+          "top": 532,
+          "right": -500,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "bid",
+          "left": -438,
+          "top": 532,
+          "right": -277,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "auctioneer",
+          "left": -215,
+          "top": 532,
+          "right": -53,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "escrow",
+          "left": 9,
+          "top": 532,
+          "right": 171,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "delivery",
+          "left": 233,
+          "top": 532,
+          "right": 394,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "artifacts",
+          "left": 456,
+          "top": 532,
+          "right": 618,
+          "bottom": 649,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "coral",
+          "left": 680,
+          "top": 532,
+          "right": 841,
+          "bottom": 652,
+          "width": 162,
+          "height": 120,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "workerAdvocate",
+          "left": 903,
+          "top": 437,
+          "right": 1065,
+          "bottom": 555,
+          "width": 162,
+          "height": 117,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "employerAdvocate",
+          "left": 903,
+          "top": 626,
+          "right": 1065,
+          "bottom": 732,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "referee",
+          "left": 1127,
+          "top": 532,
+          "right": 1289,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "settlement",
+          "left": 1351,
+          "top": 532,
+          "right": 1512,
+          "bottom": 637,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        },
+        {
+          "id": "human",
+          "left": -662,
+          "top": 738,
+          "right": -500,
+          "bottom": 843,
+          "width": 162,
+          "height": 105,
+          "classes": "react-flow__node react-flow__node-system"
+        }
+      ]
+    }
+  ],
+  "consoleLines": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:58:02.672Z, label: camera:init, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:58:02.816Z, label: camera:init:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:36.501Z, label: camera:step, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:36.642Z, label: camera:step:settled, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:38.317Z, label: camera:step, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:38.467Z, label: camera:step:settled, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:40.101Z, label: camera:step, title: Auctioneer awards, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:40.242Z, label: camera:step:settled, title: Auctioneer awards, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:41.901Z, label: camera:step, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:42.048Z, label: camera:step:settled, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:43.700Z, label: camera:step, title: Worker agent delivers, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:43.850Z, label: camera:step:settled, title: Worker agent delivers, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:45.516Z, label: camera:step, title: Artifacts collected, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:45.658Z, label: camera:step:settled, title: Artifacts collected, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:47.300Z, label: camera:step, title: Coral review thread opens, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:47.450Z, label: camera:step:settled, title: Coral review thread opens, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:49.118Z, label: camera:step, title: Advocates argue both sides, cameraIds: Array(5), requiredIds: Array(3)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:49.265Z, label: camera:step:settled, title: Advocates argue both sides, cameraIds: Array(5), requiredIds: Array(3)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:50.918Z, label: camera:step, title: Referee returns verdict, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:51.059Z, label: camera:step:settled, title: Referee returns verdict, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:52.700Z, label: camera:step, title: Funds release, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:52.849Z, label: camera:step:settled, title: Funds release, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:54.500Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:54.649Z, label: camera:step:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:56.300Z, label: camera:step, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:56.441Z, label: camera:step:settled, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:58.099Z, label: camera:step, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:58.242Z, label: camera:step:settled, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T18:59:59.900Z, label: camera:step, title: Auctioneer awards, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:00.042Z, label: camera:step:settled, title: Auctioneer awards, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:01.716Z, label: camera:step, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:01.860Z, label: camera:step:settled, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:03.500Z, label: camera:step, title: Worker agent delivers, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:03.649Z, label: camera:step:settled, title: Worker agent delivers, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:05.300Z, label: camera:step, title: Artifacts collected, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:05.450Z, label: camera:step:settled, title: Artifacts collected, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:07.099Z, label: camera:step, title: Coral review thread opens, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:07.241Z, label: camera:step:settled, title: Coral review thread opens, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:08.900Z, label: camera:step, title: Advocates argue both sides, cameraIds: Array(5), requiredIds: Array(3)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:09.048Z, label: camera:step:settled, title: Advocates argue both sides, cameraIds: Array(5), requiredIds: Array(3)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:10.700Z, label: camera:step, title: Referee returns verdict, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:00:10.850Z, label: camera:step:settled, title: Referee returns verdict, cameraIds: Array(5), requiredIds: Array(1)}"
+    }
+  ]
+}

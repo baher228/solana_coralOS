@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   formatAward, formatBid, formatDelivered, formatDeposited, formatEscrowRequired,
-  formatRefunded, formatReleased, formatWant,
+  formatRefunded, formatReleased, formatReviewOpinion, formatReviewRequest, formatReviewVerdict, formatWant,
   messageRound, parseAward, parseBid, parseDeposited, parseEscrowRequired, parseWant,
-  parseDelivered, parseRefunded, parseReleased,
+  parseDelivered, parseRefunded, parseReleased, parseReviewOpinion, parseReviewRequest, parseReviewVerdict,
   pickCheapest, selectBids, verb, type Bid,
 } from './protocol.js'
 
@@ -44,5 +44,15 @@ describe('market protocol', () => {
     expect(parseDelivered(formatDelivered(delivered))).toEqual(delivered)
     expect(parseReleased(formatReleased(settled))).toEqual(settled)
     expect(parseRefunded(formatRefunded(settled))).toEqual(settled)
+  })
+
+  it('round-trips Coral panel review messages', () => {
+    const request = { round: 2, jobId: 'job_123', payload: { title: 'Build checkout', artifacts: { build: 'pass' } } }
+    const opinion = { round: 2, role: 'worker' as const, payload: { summary: 'Meets the criteria', evidence: ['preview'] } }
+    const verdict = { round: 2, payload: { recommendation: 'approve', score: 91, summary: 'Release eligible' } }
+
+    expect(parseReviewRequest(formatReviewRequest(request))).toEqual(request)
+    expect(parseReviewOpinion(formatReviewOpinion(opinion))).toEqual(opinion)
+    expect(parseReviewVerdict(formatReviewVerdict(verdict))).toEqual(verdict)
   })
 })

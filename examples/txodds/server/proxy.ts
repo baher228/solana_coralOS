@@ -26,6 +26,7 @@ const REVIEW_TIMEOUT_MS = Number(process.env.REVIEW_TIMEOUT_MS ?? 90000)
 const AUTO_RELEASE_MS = Number(process.env.AUTO_RELEASE_MS ?? 72 * 60 * 60 * 1000)
 const ESCROW_DEADLINE_SECS = Number(process.env.ESCROW_DEADLINE_SECS ?? 72 * 60 * 60)
 const BID_WINDOW_MS = Number(process.env.BID_WINDOW_MS ?? 30_000)
+const CORAL_BUS_API = process.env.CORAL_BUS_API ?? 'http://localhost:8001'
 const MAX_LOG_CHARS = 6000
 const MAX_SNIPPET_CHARS = 2000
 
@@ -33,7 +34,7 @@ type Actor = 'employer' | 'worker' | 'agent' | 'system'
 type Status = 'open' | 'funded' | 'submitted' | 'approved' | 'released' | 'revision_requested' | 'disputed' | 'refunded' | 'cancelled'
 type MilestoneStatus = 'pending' | 'complete'
 type SettlementEventType = 'funded' | 'submitted' | 'reviewed' | 'released' | 'disputed' | 'refunded' | 'cancelled'
-type ReviewSource = 'ai' | 'legacy-heuristic' | 'fallback'
+type ReviewSource = 'ai' | 'coral-panel' | 'legacy-heuristic' | 'fallback'
 type ReviewRecommendation = 'approve' | 'revision' | 'dispute'
 type ReviewCheckStatus = 'pass' | 'fail' | 'unclear'
 type ArtifactStatus = 'pass' | 'fail' | 'skipped'
@@ -53,15 +54,38 @@ interface RepoArtifact extends ArtifactResult {
   files?: Array<{ path: string; snippet: string }>
 }
 interface BuildArtifact extends ArtifactResult { command?: string; outputDir?: string }
+interface TestArtifact extends ArtifactResult { command?: string }
 interface PreviewArtifact extends ArtifactResult { url?: string; httpStatus?: number; title?: string }
 interface ArtifactRun {
   id: string
   at: string
   repo: RepoArtifact
   build: BuildArtifact
+  tests: TestArtifact
   preview: PreviewArtifact
   screenshots: ReviewArtifact[]
   logs: ReviewArtifact[]
+}
+interface ReviewPanelOpinion {
+  role: 'worker' | 'employer'
+  agent?: string
+  summary: string
+  recommendation?: ReviewRecommendation
+  concerns: string[]
+  evidence: string[]
+}
+interface ReviewPanel {
+  threadId?: string
+  opinions: ReviewPanelOpinion[]
+  verdict?: Record<string, unknown>
+  timedOut?: boolean
+  artifactSummary: {
+    repo: ArtifactStatus
+    build: ArtifactStatus
+    tests: ArtifactStatus
+    preview: ArtifactStatus
+    screenshots: number
+  }
 }
 interface Review {
   at: string
@@ -80,6 +104,7 @@ interface Review {
   releaseEligible: boolean
   revisionInstructions: string
   autoReleaseAt?: string
+  panel?: ReviewPanel
 }
 interface Milestone { id: string; title: string; description: string; amountSol: number; status: MilestoneStatus; completedAt?: string }
 interface Dispute {
@@ -179,6 +204,8 @@ interface DemoRunner {
   start(input?: Record<string, unknown>): Promise<DemoRunStatus>
   status(): Promise<DemoRunStatus>
 }
+
+type DeliveryReviewMode = 'artifact-ai' | 'coral-panel'
 
 interface McpDemoStatus {
   active: boolean
@@ -321,6 +348,11 @@ function resetDemoRun(): void {
   if (demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed) {
     demoRunState.child.kill()
   }
+  if (demoRunState.agentName) {
+    for (const agent of connectedAgents.values()) {
+      if (agent.name === demoRunState.agentName && agent.status === 'active') agent.status = 'revoked'
+    }
+  }
   demoRunState.child = undefined
   demoRunState.agentName = undefined
   demoRunState.token = undefined
@@ -331,6 +363,12 @@ function resetDemoRun(): void {
   demoRunState.logs = []
 }
 
+function cleanDemoState(): void {
+  resetDemoRun()
+  resetMcpDemoSession()
+  jobs.clear()
+}
+
 function demoAgentName(): string {
   if (![...connectedAgents.values()].some((agent) => agent.status === 'active' && agent.name === demoAgentBase)) {
     return demoAgentBase
@@ -338,14 +376,25 @@ function demoAgentName(): string {
   return `${demoAgentBase}-${Date.now().toString(36)}`
 }
 
-function createDemoRunJob(): Job {
+function demoJobDetails(input: Record<string, unknown> = {}) {
+  return {
+    title: String(input.title || 'Build a live agent checkout page').trim() || 'Build a live agent checkout page',
+    employer: String(input.employer || 'Northstar Studio').trim() || 'Northstar Studio',
+    scope: String(input.scope || 'Generate and serve a responsive checkout mini-site with pricing copy, mobile proof, and delivery notes.').trim(),
+    acceptanceCriteria: String(input.acceptanceCriteria || 'Includes a clickable preview URL; generated checkout hero; pricing proof; mobile responsive layout; delivery notes for every acceptance item.').trim(),
+    amountSol: Number(input.amountSol || input.budgetSol || 0.003) || 0.003,
+  }
+}
+
+function createDemoRunJob(input: Record<string, unknown> = {}): Job {
+  const details = demoJobDetails(input)
   const job = createJob({
-    title: 'Build a live agent checkout page',
-    employer: 'Northstar Studio',
+    title: details.title,
+    employer: details.employer,
     marketplace: true,
-    scope: 'Generate and serve a responsive checkout mini-site with pricing copy, mobile proof, and delivery notes.',
-    acceptanceCriteria: 'Includes a clickable preview URL; generated checkout hero; pricing proof; mobile responsive layout; delivery notes for every acceptance item.',
-    amountSol: 0.003,
+    scope: details.scope,
+    acceptanceCriteria: details.acceptanceCriteria,
+    amountSol: details.amountSol,
     milestones: [
       'Generate checkout mini-site',
       'Serve local preview',
@@ -362,6 +411,10 @@ function createDemoRunJob(): Job {
 }
 
 async function startLocalDemoRun(input: Record<string, unknown> = {}): Promise<DemoRunStatus> {
+  if (input.stop) {
+    resetDemoRun()
+    return demoStatus()
+  }
   const restart = Boolean(input.restart)
   const running = Boolean(demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed)
   if (running && !restart) return demoStatus()
@@ -371,7 +424,16 @@ async function startLocalDemoRun(input: Record<string, unknown> = {}): Promise<D
   if (!publicKey(workerWallet)) fail('SELLER_KEYPAIR_B58 or WALLET is required before running the live agent demo', 503)
 
   const created = createConnectedAgent({ name: demoAgentName(), wallet: workerWallet })
-  const job = createDemoRunJob()
+  const requestedJobId = String(input.jobId || '').trim()
+  const job = requestedJobId ? jobs.get(requestedJobId) : createDemoRunJob(input)
+  if (!job) fail('job not found', 404)
+  if (!job.marketplace || job.status !== 'open') fail('demo worker job must be an open marketplace task', 409)
+  if (requestedJobId) {
+    const fastBidWindow = Number(process.env.DEMO_RUN_BID_WINDOW_MS ?? 3000)
+    job.marketplace.bidWindowEndsAt = new Date(Date.now() + (Number.isFinite(fastBidWindow) ? fastBidWindow : 3000)).toISOString()
+    job.messages.push({ at: now(), author: 'employer', text: 'Demo run: bundled worker should bid, build, and submit Coral panel delivery evidence.' })
+    addEvent(job, 'system', 'demo_run', 'Bundled worker demo started for existing task')
+  }
   await saveAgents()
   await saveJobs()
 
@@ -397,6 +459,8 @@ async function startLocalDemoRun(input: Record<string, unknown> = {}): Promise<D
     DEMO_DELIVERY_DELAY_MS: String(process.env.DEMO_RUN_DELIVERY_DELAY_MS ?? 300),
     DEMO_AGENT_POLL_MS: String(process.env.DEMO_RUN_POLL_MS ?? 750),
     DEMO_BID_PRICE_SOL: String(process.env.DEMO_RUN_BID_PRICE_SOL ?? 0.001),
+    DEMO_TARGET_JOB_ID: job.id,
+    DEMO_REVIEW_MODE: String(input.reviewMode || 'coral-panel'),
   }
   let child: ReturnType<typeof spawn>
   try {
@@ -508,7 +572,14 @@ function mcpDemoStatus(includeSecret = false): McpDemoStatus {
 }
 
 async function startMcpDemoSession(input: Record<string, unknown> = {}): Promise<McpDemoStatus> {
+  if (input.resetOnly) {
+    resetMcpDemoSession()
+    await saveAgents()
+    return mcpDemoStatus(false)
+  }
   if (input.restart) resetMcpDemoSession()
+  const requestedJobId = String(input.jobId || '').trim()
+  if (requestedJobId && mcpDemoState.jobId !== requestedJobId) resetMcpDemoSession()
   if (mcpDemoState.token && mcpDemoState.jobId && mcpDemoAgent()?.status === 'active') {
     return mcpDemoStatus(true)
   }
@@ -516,7 +587,9 @@ async function startMcpDemoSession(input: Record<string, unknown> = {}): Promise
   const wallet = String(input.wallet || wallets().worker || '').trim()
   if (wallet && !publicKey(wallet)) fail('valid payout wallet is required')
   const created = createConnectedAgent({ name: mcpDemoAgentName(), wallet })
-  const job = createDemoRunJob()
+  const job = requestedJobId ? jobs.get(requestedJobId) : createDemoRunJob(input)
+  if (!job) fail('job not found', 404)
+  if (!job.marketplace || job.status !== 'open') fail('MCP demo job must be an open marketplace task', 409)
   job.messages.push({ at: now(), author: 'employer', text: 'MCP demo: connect OpenClaw to the platform MCP server, bid, build, and submit delivery evidence.' })
   addEvent(job, 'system', 'mcp_demo', 'MCP worker-agent demo session created')
   mcpDemoState.agentId = created.agent.id
@@ -1102,6 +1175,18 @@ export function submitAgentDelivery(job: Job, input: Record<string, unknown>): S
   return submission
 }
 
+function deliveryReviewMode(input: Record<string, unknown>): DeliveryReviewMode {
+  return String(input.reviewMode || '').trim() === 'coral-panel' ? 'coral-panel' : 'artifact-ai'
+}
+
+function pendingPanelReviewJob(job: Job): boolean {
+  return job.status === 'submitted'
+    && job.settlement.mode === 'devnet-escrow'
+    && Boolean(job.submission)
+    && !job.review
+    && !terminal.has(job.status)
+}
+
 function markDevnetReleased(job: Job, sig: string): void {
   const releasedAt = now()
   job.status = 'released'
@@ -1320,15 +1405,23 @@ async function findBuildOutput(repoDir: string): Promise<string | undefined> {
   return undefined
 }
 
+async function installRepoDeps(repoDir: string, run: ArtifactRun, dir: string): Promise<CommandResult & { command: string }> {
+  const npm = npmCommand()
+  const hasLock = await exists(path.join(repoDir, 'package-lock.json'))
+  const installArgs = hasLock ? ['ci', '--ignore-scripts', '--no-audit', '--no-fund'] : ['install', '--ignore-scripts', '--no-audit', '--no-fund']
+  const command = `${npm} ${installArgs.join(' ')}`
+  if (await exists(path.join(repoDir, 'node_modules'))) return { ok: true, code: 0, timedOut: false, output: 'node_modules already present', command }
+  const install = await runCommand(npm, installArgs, repoDir)
+  await addArtifact(run, dir, 'log', 'Install log', 'install.log', install.output || '(no output)', 'text/plain')
+  return { ...install, command }
+}
+
 async function buildRepo(repoDir: string, run: ArtifactRun, dir: string): Promise<BuildArtifact> {
   const pkg = await readJsonFile<{ scripts?: Record<string, string> }>(path.join(repoDir, 'package.json'))
   if (!pkg?.scripts?.build) return { status: 'skipped', summary: 'No package build script found' }
   const npm = npmCommand()
-  const hasLock = await exists(path.join(repoDir, 'package-lock.json'))
-  const installArgs = hasLock ? ['ci', '--ignore-scripts', '--no-audit', '--no-fund'] : ['install', '--ignore-scripts', '--no-audit', '--no-fund']
-  const install = await runCommand(npm, installArgs, repoDir)
-  await addArtifact(run, dir, 'log', 'Install log', 'install.log', install.output || '(no output)', 'text/plain')
-  if (!install.ok) return { status: 'fail', summary: install.timedOut ? 'Install timed out' : 'Install failed', command: `${npm} ${installArgs.join(' ')}`, log: install.output }
+  const install = await installRepoDeps(repoDir, run, dir)
+  if (!install.ok) return { status: 'fail', summary: install.timedOut ? 'Install timed out' : 'Install failed', command: install.command, log: install.output }
   const build = await runCommand(npm, ['run', 'build'], repoDir)
   await addArtifact(run, dir, 'log', 'Build log', 'build.log', build.output || '(no output)', 'text/plain')
   const outputDir = build.ok ? await findBuildOutput(repoDir) : undefined
@@ -1338,6 +1431,22 @@ async function buildRepo(repoDir: string, run: ArtifactRun, dir: string): Promis
     command: `${npm} run build`,
     ...(outputDir ? { outputDir } : {}),
     log: build.output,
+  }
+}
+
+async function testRepo(repoDir: string, run: ArtifactRun, dir: string): Promise<TestArtifact> {
+  const pkg = await readJsonFile<{ scripts?: Record<string, string> }>(path.join(repoDir, 'package.json'))
+  if (!pkg?.scripts?.test) return { status: 'skipped', summary: 'No package test script found' }
+  const npm = npmCommand()
+  const install = await installRepoDeps(repoDir, run, dir)
+  if (!install.ok) return { status: 'fail', summary: install.timedOut ? 'Install timed out' : 'Install failed', command: install.command, log: install.output }
+  const test = await runCommand(npm, ['test', '--', '--run'], repoDir)
+  await addArtifact(run, dir, 'log', 'Test log', 'test.log', test.output || '(no output)', 'text/plain')
+  return {
+    status: test.ok ? 'pass' : 'fail',
+    summary: test.ok ? 'Tests passed' : test.timedOut ? 'Tests timed out' : 'Tests failed',
+    command: `${npm} test -- --run`,
+    log: test.output,
   }
 }
 
@@ -1413,6 +1522,7 @@ export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
     at: now(),
     repo: { status: 'skipped', summary: 'No repository submitted' },
     build: { status: 'skipped', summary: 'No build attempted' },
+    tests: { status: 'skipped', summary: 'No tests attempted' },
     preview: { status: 'skipped', summary: 'No preview URL submitted' },
     screenshots: [],
     logs: [],
@@ -1433,6 +1543,7 @@ export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
         const commit = await runCommand('git', ['-C', repoDir, 'rev-parse', '--short', 'HEAD'], dir, 10000)
         run.repo = { status: 'pass', summary: 'Repository cloned and scanned', url: job.submission.repo, commit: commit.output.trim(), ...(await scanRepo(repoDir)) }
         run.build = await buildRepo(repoDir, run, dir)
+        run.tests = await testRepo(repoDir, run, dir)
         if (run.build.outputDir) {
           const outputDir = run.build.outputDir
           await serveStatic(outputDir, async (url) => {
@@ -1489,6 +1600,7 @@ function artifactGateProblems(job: Job, run?: ArtifactRun): string[] {
   const problems = []
   if (job.submission?.repo && run.repo.status !== 'pass') problems.push('Repository could not be inspected')
   if (run.build.status === 'fail') problems.push('Submitted project did not build cleanly')
+  if (run.tests.status === 'fail') problems.push('Submitted project tests failed')
   if (job.submission?.url && run.preview.status !== 'pass') problems.push('Preview URL could not be inspected')
   if (visualReviewRequired(job) && run.screenshots.length < 2) problems.push('Required visual screenshots were not captured')
   return problems
@@ -1497,7 +1609,7 @@ function artifactGateProblems(job: Job, run?: ArtifactRun): string[] {
 function releaseGateProblems(job: Job, review: Review, options: { ignoreActiveDispute?: boolean } = {}): string[] {
   const criteria = review.criteriaResults.length ? review.criteriaResults : review.checks
   return [
-    ...(review.recommendation !== 'approve' ? ['AI did not recommend release'] : []),
+    ...(review.recommendation !== 'approve' ? ['Review did not recommend release'] : []),
     ...(review.score < 80 ? ['Review score is below 80'] : []),
     ...(!criteria.length ? ['Acceptance criteria were not checked'] : criteria.filter((check) => check.status !== 'pass').map((check) => `${check.label} is ${check.status}`)),
     ...review.missing,
@@ -1541,6 +1653,36 @@ function fallbackReview(summary = 'AI review is unavailable; request clearer evi
   }
 }
 
+function artifactSummary(run: ArtifactRun): ReviewPanel['artifactSummary'] {
+  return {
+    repo: run.repo.status,
+    build: run.build.status,
+    tests: run.tests.status,
+    preview: run.preview.status,
+    screenshots: run.screenshots.length,
+  }
+}
+
+function reviewPanelOpinions(input: unknown): ReviewPanelOpinion[] {
+  if (!Array.isArray(input)) return []
+  return input.map((item) => {
+    const source = item && typeof item === 'object' ? item as Record<string, unknown> : {}
+    const role = source.role === 'worker' || source.role === 'employer' ? source.role : null
+    const summary = String(source.summary || '').trim()
+    if (!role || !summary) return null
+    return {
+      role,
+      ...(source.agent ? { agent: String(source.agent) } : {}),
+      summary,
+      ...(source.recommendation === 'approve' || source.recommendation === 'revision' || source.recommendation === 'dispute'
+        ? { recommendation: source.recommendation }
+        : {}),
+      concerns: textList(source.concerns),
+      evidence: textList(source.evidence),
+    }
+  }).filter((item): item is ReviewPanelOpinion => Boolean(item)).slice(0, 6)
+}
+
 function reviewPrompt(job: Job, artifactRun?: ArtifactRun, mode: 'delivery' | 'dispute' = 'delivery'): string {
   return JSON.stringify({
     mode,
@@ -1570,7 +1712,14 @@ function reviewPrompt(job: Job, artifactRun?: ArtifactRun, mode: 'delivery' | 'd
   }, null, 2)
 }
 
-function normalizeAiReview(job: Job, artifactRun: ArtifactRun, reply: AiReviewReply | null, gateOptions: { ignoreActiveDispute?: boolean } = {}): Review | null {
+function normalizeAiReview(
+  job: Job,
+  artifactRun: ArtifactRun,
+  reply: AiReviewReply | null,
+  gateOptions: { ignoreActiveDispute?: boolean } = {},
+  source: ReviewSource = 'ai',
+  panel?: ReviewPanel,
+): Review | null {
   if (!reply) return null
   const criteriaResults = reviewChecks(reply.criteriaResults || reply.checks)
   const checks = criteriaResults.length ? criteriaResults : reviewChecks(reply.checks)
@@ -1583,9 +1732,9 @@ function normalizeAiReview(job: Job, artifactRun: ArtifactRun, reply: AiReviewRe
     at: now(),
     approved: false,
     score: reviewScore(reply.score),
-    summary: String(reply.summary || '').trim() || 'AI review completed.',
+    summary: String(reply.summary || '').trim() || (source === 'coral-panel' ? 'Coral panel review completed.' : 'AI review completed.'),
     missing: recommendation === 'revision' && !missing.length ? ['Clearer delivery evidence'] : missing,
-    source: 'ai',
+    source,
     recommendation,
     checks,
     risks: textList(reply.risks),
@@ -1595,6 +1744,7 @@ function normalizeAiReview(job: Job, artifactRun: ArtifactRun, reply: AiReviewRe
     criticalRisks: textList(reply.criticalRisks),
     releaseEligible: false,
     revisionInstructions: String(reply.revisionInstructions || '').trim(),
+    ...(panel ? { panel } : {}),
   }
   return finalizeReviewGates(job, review, gateOptions)
 }
@@ -1671,6 +1821,107 @@ export async function assessJobWithAi(job: Job, reviewer: ReviewCompletion = com
   addEvent(job, 'agent', 'ai_reviewed', review.summary)
   addSettlementEvent(job, 'reviewed', review.releaseEligible ? 'Artifact review passed; employer release is enabled' : 'Artifact review requested clearer delivery evidence')
   return review
+}
+
+export async function collectPanelReviewArtifacts(
+  job: Job,
+  input: Record<string, unknown> = {},
+  collectArtifacts: ArtifactCollector = collectReviewArtifacts,
+): Promise<Review> {
+  ensureStatus(job, ['submitted', 'revision_requested'], 'review')
+  if (!job.submission) fail('worker submission is required')
+  const artifactRun = await collectArtifacts(job)
+  const panel: ReviewPanel = {
+    ...(input.threadId ? { threadId: String(input.threadId) } : {}),
+    opinions: [],
+    artifactSummary: artifactSummary(artifactRun),
+  }
+  const review = finalizeReviewGates(job, {
+    at: now(),
+    approved: false,
+    score: 0,
+    summary: 'Coral panel review is waiting for advocate opinions and referee verdict.',
+    missing: ['Coral referee verdict'],
+    source: 'coral-panel',
+    recommendation: 'revision',
+    checks: [],
+    risks: [],
+    criteriaResults: [],
+    artifactRun,
+    confidence: 0,
+    criticalRisks: [],
+    releaseEligible: false,
+    revisionInstructions: 'Wait for the Coral referee verdict before settlement.',
+    panel,
+  })
+  job.review = review
+  addEvent(job, 'agent', 'coral_panel_artifacts', 'Collected build, test, preview, and screenshot evidence for Coral panel review')
+  addSettlementEvent(job, 'reviewed', 'Coral panel review collected artifacts and is waiting for verdict')
+  return review
+}
+
+export function panelReviewRequest(job: Job): Record<string, unknown> {
+  const artifactRun = job.review?.artifactRun
+  return JSON.parse(reviewPrompt(job, artifactRun, 'delivery')) as Record<string, unknown>
+}
+
+function objectRecord(input: unknown): Record<string, unknown> | null {
+  return input && typeof input === 'object' && !Array.isArray(input) ? input as Record<string, unknown> : null
+}
+
+export function assessJobWithPanel(job: Job, input: Record<string, unknown> = {}): Review {
+  ensureStatus(job, ['submitted', 'revision_requested'], 'review')
+  if (!job.submission) fail('worker submission is required')
+  const artifactRun = job.review?.artifactRun
+  if (!artifactRun) fail('review artifacts are required before Coral panel verdict', 409)
+  const verdict = objectRecord(input.verdict) ?? (input.recommendation ? input : null)
+  const panel: ReviewPanel = {
+    ...(input.threadId ? { threadId: String(input.threadId) } : job.review?.panel?.threadId ? { threadId: job.review.panel.threadId } : {}),
+    opinions: reviewPanelOpinions(input.opinions),
+    ...(verdict ? { verdict } : {}),
+    ...(input.timedOut ? { timedOut: true } : {}),
+    artifactSummary: artifactSummary(artifactRun),
+  }
+  const failed = input.timedOut || !verdict
+  const review = failed
+    ? finalizeReviewGates(job, {
+      ...fallbackReview(input.timedOut ? 'Coral panel referee timed out; request clearer evidence or retry panel review.' : 'Coral panel referee returned an unreadable verdict; request clearer evidence or retry panel review.', artifactRun),
+      source: 'coral-panel',
+      panel,
+    })
+    : normalizeAiReview(job, artifactRun, verdict as AiReviewReply, {}, 'coral-panel', panel)
+      ?? finalizeReviewGates(job, { ...fallbackReview('Coral panel referee returned an unreadable verdict; request clearer evidence or retry panel review.', artifactRun), source: 'coral-panel', panel })
+  job.review = review
+  addEvent(job, 'agent', 'coral_panel_reviewed', review.summary)
+  addSettlementEvent(job, 'reviewed', review.releaseEligible ? 'Coral panel review passed; agent settlement can release after the dispute window' : 'Coral panel review requested clearer delivery evidence')
+  return review
+}
+
+export function recordPanelOpinions(job: Job, input: Record<string, unknown> = {}): Review {
+  ensureStatus(job, ['submitted', 'revision_requested'], 'review')
+  const artifactRun = job.review?.artifactRun
+  if (!artifactRun || job.review?.source !== 'coral-panel') fail('Coral panel artifacts are required before advocate opinions', 409)
+  const incoming = reviewPanelOpinions(input.opinions)
+  const byRole = new Map<string, ReviewPanelOpinion>()
+  for (const opinion of job.review.panel?.opinions || []) byRole.set(opinion.role, opinion)
+  for (const opinion of incoming) byRole.set(opinion.role, opinion)
+  const opinions = [...byRole.values()]
+  job.review = {
+    ...job.review,
+    summary: opinions.length
+      ? `Coral panel has ${opinions.length}/2 advocate opinion${opinions.length === 1 ? '' : 's'}; waiting for referee verdict.`
+      : job.review.summary,
+    missing: ['Coral referee verdict'],
+    releaseEligible: false,
+    panel: {
+      ...(job.review.panel || { opinions: [], artifactSummary: artifactSummary(artifactRun) }),
+      ...(input.threadId ? { threadId: String(input.threadId) } : {}),
+      opinions,
+      artifactSummary: artifactSummary(artifactRun),
+    },
+  }
+  if (incoming.length) addEvent(job, 'agent', 'coral_panel_opinion', incoming.map((opinion) => `${opinion.role}: ${opinion.summary}`).join(' | '))
+  return job.review
 }
 
 function releaseReviewedJob(job: Job, actor: Actor, summary: string): Review {
@@ -1865,6 +2116,7 @@ function agentVisibleJobs(auth: AgentAuth) {
   if (auth.kind === 'platform') {
     return {
       jobs: list.filter((job) => job.status === 'open').map(agentJob),
+      reviews: list.filter(pendingPanelReviewJob).map(agentJob),
       settlements: list.filter((job) => job.settlement.mode === 'devnet-escrow' && !terminal.has(job.status)).map(agentJob),
     }
   }
@@ -1873,6 +2125,7 @@ function agentVisibleJobs(auth: AgentAuth) {
     jobs: list
       .filter((job) => job.status === 'open' || job.marketplace?.awardedBid?.by === name)
       .map(agentJob),
+    reviews: [],
     settlements: [],
   }
 }
@@ -1918,6 +2171,7 @@ function mcpAgentJob(job: Job) {
     missing: job.review.missing,
     revisionInstructions: job.review.revisionInstructions,
     autoReleaseAt: job.review.autoReleaseAt || '',
+    ...(job.review.panel ? { panel: job.review.panel } : {}),
   } : undefined
   return {
     ...agentJob(job),
@@ -2020,12 +2274,17 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
       url: z.string().optional(),
       repo: z.string().optional(),
       notes: z.string().optional(),
+      reviewMode: z.enum(['artifact-ai', 'coral-panel']).optional(),
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
-  }, async ({ jobId, url, repo, notes }) => {
+  }, async ({ jobId, url, repo, notes, reviewMode }) => {
     const job = requireMcpJob(auth, jobId)
-    const submission = submitAgentDelivery(job, { by: auth.agent.name, url, repo, notes })
-    await assessJobWithAi(job, options.reviewer, options.collectArtifacts)
+    const submission = submitAgentDelivery(job, { by: auth.agent.name, url, repo, notes, reviewMode })
+    if (deliveryReviewMode({ reviewMode }) === 'coral-panel') {
+      addEvent(job, 'agent', 'coral_panel_requested', 'Delivery queued for Coral panel review')
+    } else {
+      await assessJobWithAi(job, options.reviewer, options.collectArtifacts)
+    }
     await runAgentMarketTick(options.escrowAdapter)
     await saveJobs()
     await saveAgents()
@@ -2104,7 +2363,7 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
           `You are ${auth.agent.name}, a connected worker agent on the TxOdds freelance escrow platform.`,
           'Use txodds_list_jobs to inspect open work, then txodds_get_job before bidding.',
           'Bid only when the scope, acceptance criteria, budget, and payout wallet are clear.',
-          'After award/funding, build the requested artifact and call txodds_submit_delivery with a preview URL, repo, or detailed notes.',
+          'After award/funding, build the requested artifact and call txodds_submit_delivery with a preview URL, repo, detailed notes, and reviewMode: "coral-panel".',
           'Do not claim to have completed work until delivery evidence is available.',
         ].join('\n'),
       },
@@ -2213,6 +2472,18 @@ async function runBackendTicks(options: HandlerOptions): Promise<number> {
   return autoReleaseExpiredJobs() + await runAgentMarketTick(options.escrowAdapter)
 }
 
+async function resetCoralBusForDemo(): Promise<void> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 1500)
+  try {
+    await fetch(`${CORAL_BUS_API}/reset`, { method: 'POST', signal: controller.signal })
+  } catch {
+    // Local demo reset should still work when the optional Coral bus is offline.
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 export function createHandler(options: HandlerOptions = {}): http.RequestListener {
   return async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
@@ -2227,7 +2498,7 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
         return send(res, 204, {})
       }
       const demoRunner = options.demoRunner || localDemoRunner
-      const agentRoute = url.pathname.match(/^\/api\/agent\/jobs(?:\/([^/]+)\/(bids|award|delivery|settle))?$/)
+      const agentRoute = url.pathname.match(/^\/api\/agent\/jobs(?:\/([^/]+)\/(bids|award|delivery|artifacts|panel-opinions|panel-review|settle))?$/)
       const agentsRoute = url.pathname.match(/^\/api\/agents(?:\/([^/]+)\/(revoke))?$/)
       const route = url.pathname.match(/^\/api\/jobs\/([^/]+)\/(claim|messages|submission|review|dispute|refund|cancel)$/)
       const disputeReviewRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/dispute\/review$/)
@@ -2235,6 +2506,18 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       const artifactRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/artifacts\/([^/]+)$/)
 
       if (url.pathname === '/mcp') return await handleMcpRequest(req, res, options)
+
+      if (url.pathname === '/api/demo/reset') {
+        requireLocalRequest(req)
+        if (req.method === 'POST') {
+          cleanDemoState()
+          await resetCoralBusForDemo()
+          await saveJobs()
+          await saveAgents()
+          return send(res, 200, { ...(await state()), demo: demoStatus(), mcp: mcpDemoStatus(false) })
+        }
+        return send(res, 404, { error: 'not found' })
+      }
 
       if (url.pathname === '/api/demo/mcp-session') {
         requireLocalRequest(req)
@@ -2305,11 +2588,34 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
           }
           if (action === 'delivery') {
             const submission = submitAgentDelivery(job, auth.kind === 'agent' ? { ...body, by: auth.agent.name } : body)
-            await assessJobWithAi(job, options.reviewer, options.collectArtifacts)
+            if (deliveryReviewMode(body) === 'coral-panel') {
+              addEvent(job, 'agent', 'coral_panel_requested', 'Delivery queued for Coral panel review')
+            } else if (!(auth.kind === 'platform' && body.deferReview === true)) {
+              await assessJobWithAi(job, options.reviewer, options.collectArtifacts)
+            }
             await runAgentMarketTick(options.escrowAdapter)
             await saveJobs()
             if (auth.kind === 'agent') await saveAgents()
             return send(res, 200, { submission, job: agentJob(job) })
+          }
+          if (action === 'artifacts') {
+            if (auth.kind !== 'platform') fail('only the platform can collect panel review artifacts', 403)
+            const review = await collectPanelReviewArtifacts(job, body, options.collectArtifacts)
+            await saveJobs()
+            return send(res, 200, { review, request: panelReviewRequest(job), job: mcpAgentJob(job) })
+          }
+          if (action === 'panel-review') {
+            if (auth.kind !== 'platform') fail('only the platform can submit panel review verdicts', 403)
+            const review = assessJobWithPanel(job, body)
+            await runAgentMarketTick(options.escrowAdapter)
+            await saveJobs()
+            return send(res, 200, { review, job: mcpAgentJob(job) })
+          }
+          if (action === 'panel-opinions') {
+            if (auth.kind !== 'platform') fail('only the platform can submit panel advocate opinions', 403)
+            const review = recordPanelOpinions(job, body)
+            await saveJobs()
+            return send(res, 200, { review, job: mcpAgentJob(job) })
           }
           if (action === 'settle') {
             if (auth.kind !== 'platform') fail('only the platform can settle escrows', 403)
@@ -2347,9 +2653,9 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
         return send(res, 200, await state())
       }
       if (req.method === 'POST' && url.pathname === '/api/jobs') {
-        createJob(await readJson(req))
+        const createdJob = createJob(await readJson(req))
         await saveJobs()
-        return send(res, 201, await state())
+        return send(res, 201, { ...(await state()), createdJob })
       }
       if (req.method === 'POST' && url.pathname === '/api/demo/seed') {
         jobs.clear()

@@ -21,6 +21,13 @@ For a standalone presentation of the agent marketplace flow, open
 `http://localhost:3020/system.html`. This page is a scripted demo canvas, not part of the
 employer/worker workspace.
 
+For the fully guided interactive demo with the Coral bus, marketplace bridge, and three review
+panel agents running together:
+
+```sh
+npm run dev:demo
+```
+
 `node scripts/setup.js` creates fresh local devnet keys in `.env`:
 
 - `BUYER_KEYPAIR_B58` - employer wallet
@@ -45,13 +52,24 @@ delivery URL is configured, and submits evidence back to the platform. The backe
 escrow from `BUYER_KEYPAIR_B58`, runs artifact AI review, then releases after the review gates and
 dispute window or refunds after the escrow deadline.
 
-CoralOS is still supported as an optional adapter. Set a platform admin token, the Coral MCP URL,
-and the worker names, then run the bridge and worker in separate terminals:
+CoralOS-style agent coordination uses a separate MCP bus from the platform worker MCP endpoint.
+`http://localhost:8801/mcp` is for connected worker tools. `http://localhost:8001/mcp` is the
+local Coral-compatible thread/message bus used by the marketplace bridge and the three review
+panel agents. Start that bus first:
+
+```sh
+npm run coral:bus
+```
+
+Then set a platform admin token, the Coral bus URL, the worker names, and the three review panel
+agents. Run the bridge, worker, and panel agents in separate terminals:
 
 ```sh
 AGENT_API_TOKEN=choose-a-local-token
+CORAL_BUS_PORT=8001
 CORAL_CONNECTION_URL=http://localhost:8001/mcp
 MARKETPLACE_WORKER_AGENTS=demo-worker
+MARKETPLACE_REVIEW_AGENTS=worker-advocate,employer-advocate,referee
 cd examples/txodds
 npm run agent:marketplace
 ```
@@ -64,8 +82,16 @@ CORAL_CONNECTION_URL=http://localhost:8001/mcp
 npm run agent:demo-worker
 ```
 
-LLM keys improve delivery notes and review, but the demo worker still emits deterministic notes when
-no LLM key is configured.
+```sh
+cd examples/txodds
+CORAL_CONNECTION_URL=http://localhost:8001/mcp AGENT_NAME=worker-advocate REVIEW_PANEL_ROLE=worker npm run agent:review-panel
+CORAL_CONNECTION_URL=http://localhost:8001/mcp AGENT_NAME=employer-advocate REVIEW_PANEL_ROLE=employer npm run agent:review-panel
+CORAL_CONNECTION_URL=http://localhost:8001/mcp AGENT_NAME=referee REVIEW_PANEL_ROLE=referee npm run agent:review-panel
+```
+
+After delivery, the bridge collects repository/build/test/preview/screenshot artifacts and sends them
+through the Coral panel. LLM keys improve delivery notes and panel arguments, but the worker and panel
+still emit deterministic fallback notes/verdicts when no LLM key is configured.
 
 ## MCP Worker Agents
 
@@ -107,7 +133,9 @@ full setup guide and REST/MCP request cookbook.
 | `GET /api/agent/jobs` | Protected list of open/current jobs for worker agents or the bridge |
 | `POST /api/agent/jobs/:id/bids` | Protected worker-agent bid |
 | `POST /api/agent/jobs/:id/award` | Platform-token-only award + devnet escrow deposit |
-| `POST /api/agent/jobs/:id/delivery` | Protected worker-agent delivery evidence + review |
+| `POST /api/agent/jobs/:id/delivery` | Protected worker-agent delivery evidence |
+| `POST /api/agent/jobs/:id/artifacts` | Platform-token-only build/test/screenshot collection for Coral panel review |
+| `POST /api/agent/jobs/:id/panel-review` | Platform-token-only Coral panel verdict |
 | `POST /api/agent/jobs/:id/settle` | Platform-token-only conditional devnet release/refund |
 
 ## Verify

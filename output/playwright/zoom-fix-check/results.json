@@ -1,0 +1,68 @@
+[
+  {
+    "width": 1280,
+    "height": 720,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "transform": "matrix(0.35, 0, 0, 0.35, 486.58, 238.633)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "transform": "matrix(0.426694, 0, 0, 0.426694, 162.139, 232.497)"
+    }
+  },
+  {
+    "width": 1100,
+    "height": 700,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "transform": "matrix(0.35, 0, 0, 0.35, 358.78, 228.633)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "transform": "matrix(0.35, 0, 0, 0.35, 131.28, 228.633)"
+    }
+  },
+  {
+    "width": 1640,
+    "height": 760,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "transform": "matrix(0.612378, 0, 0, 0.612378, 516, 237.643)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "transform": "matrix(0.77686, 0, 0, 0.77686, -89.9504, 224.484)"
+    }
+  }
+]

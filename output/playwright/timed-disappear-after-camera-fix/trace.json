@@ -1,0 +1,636 @@
+{
+  "states": [
+    {
+      "label": "idle-00s",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 268.981)",
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "requiredIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "employer",
+        "left": 543,
+        "top": 444,
+        "right": 705,
+        "bottom": 549
+      }
+    },
+    {
+      "label": "idle-05s",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 268.981)",
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "requiredIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "employer",
+        "left": 543,
+        "top": 444,
+        "right": 705,
+        "bottom": 549
+      }
+    },
+    {
+      "label": "idle-15s",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 268.981)",
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "requiredIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "employer",
+        "left": 543,
+        "top": 444,
+        "right": 705,
+        "bottom": 549
+      }
+    },
+    {
+      "label": "idle-30s",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 268.981)",
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "requiredIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "employer",
+        "left": 543,
+        "top": 444,
+        "right": 705,
+        "bottom": 549
+      }
+    },
+    {
+      "label": "play-00s",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 268.981)",
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "requiredIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "employer",
+        "left": 543,
+        "top": 444,
+        "right": 705,
+        "bottom": 549
+      }
+    },
+    {
+      "label": "play-02s",
+      "title": "Agent network sees it",
+      "stepLine": "Step 2 of 112/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 275.404)",
+      "activeIds": [
+        "feed"
+      ],
+      "requiredIds": [
+        "feed"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "feed",
+        "left": 990,
+        "top": 431,
+        "right": 1152,
+        "bottom": 537
+      }
+    },
+    {
+      "label": "play-04s",
+      "title": "Agents bid",
+      "stepLine": "Step 3 of 113/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 494.062, 275.404)",
+      "activeIds": [
+        "bid"
+      ],
+      "requiredIds": [
+        "bid"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "bid",
+        "left": 1165,
+        "top": 431,
+        "right": 1327,
+        "bottom": 537
+      }
+    },
+    {
+      "label": "play-06s",
+      "title": "Auctioneer awards",
+      "stepLine": "Step 4 of 114/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 270.462, 275.404)",
+      "activeIds": [
+        "auctioneer"
+      ],
+      "requiredIds": [
+        "auctioneer"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "auctioneer",
+        "left": 1165,
+        "top": 431,
+        "right": 1327,
+        "bottom": 537
+      }
+    },
+    {
+      "label": "play-08s",
+      "title": "Devnet escrow funds",
+      "stepLine": "Step 5 of 115/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, -127.546, 275.404)",
+      "activeIds": [
+        "escrow"
+      ],
+      "requiredIds": [
+        "escrow"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "escrow",
+        "left": 990,
+        "top": 431,
+        "right": 1152,
+        "bottom": 537
+      }
+    },
+    {
+      "label": "play-10s",
+      "title": "Worker agent delivers",
+      "stepLine": "Step 6 of 116/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, -351.146, 268.981)",
+      "activeIds": [
+        "delivery"
+      ],
+      "requiredIds": [
+        "delivery"
+      ],
+      "visible": [
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "delivery",
+        "left": 990,
+        "top": 444,
+        "right": 1152,
+        "bottom": 561
+      }
+    },
+    {
+      "label": "play-12s",
+      "title": "Artifacts collected",
+      "stepLine": "Step 7 of 117/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, -574.746, 275.404)",
+      "activeIds": [
+        "artifacts"
+      ],
+      "requiredIds": [
+        "artifacts"
+      ],
+      "visible": [
+        "feed",
+        "bid",
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "artifacts",
+        "left": 990,
+        "top": 431,
+        "right": 1152,
+        "bottom": 549
+      }
+    },
+    {
+      "label": "play-14s",
+      "title": "Advocates argue both sides",
+      "stepLine": "Step 9 of 119/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, -1021.95, 305.676)",
+      "activeIds": [
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate"
+      ],
+      "requiredIds": [
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate"
+      ],
+      "visible": [
+        "auctioneer",
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "coral",
+        "left": 767,
+        "top": 462,
+        "right": 929,
+        "bottom": 581
+      }
+    },
+    {
+      "label": "play-16s",
+      "title": "Referee returns verdict",
+      "stepLine": "Step 10 of 1110/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, -1245.55, 305.676)",
+      "activeIds": [
+        "referee"
+      ],
+      "requiredIds": [
+        "referee"
+      ],
+      "visible": [
+        "escrow",
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "referee",
+        "left": 990,
+        "top": 462,
+        "right": 1152,
+        "bottom": 567
+      }
+    },
+    {
+      "label": "play-18s",
+      "title": "Funds release",
+      "stepLine": "Step 11 of 1111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, -1419.95, 305.676)",
+      "activeIds": [
+        "settlement"
+      ],
+      "requiredIds": [
+        "settlement"
+      ],
+      "visible": [
+        "delivery",
+        "artifacts",
+        "coral",
+        "workerAdvocate",
+        "employerAdvocate",
+        "referee",
+        "settlement"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "settlement",
+        "left": 1040,
+        "top": 462,
+        "right": 1201,
+        "bottom": 567
+      }
+    },
+    {
+      "label": "play-20s",
+      "title": "Employer sets up job",
+      "stepLine": "Step 1 of 111/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 268.981)",
+      "activeIds": [
+        "employer",
+        "job"
+      ],
+      "requiredIds": [
+        "employer",
+        "job"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "employer",
+        "left": 543,
+        "top": 444,
+        "right": 705,
+        "bottom": 549
+      }
+    },
+    {
+      "label": "play-22s",
+      "title": "Agent network sees it",
+      "stepLine": "Step 2 of 112/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 543.254, 275.404)",
+      "activeIds": [
+        "feed"
+      ],
+      "requiredIds": [
+        "feed"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "feed",
+        "left": 990,
+        "top": 431,
+        "right": 1152,
+        "bottom": 537
+      }
+    },
+    {
+      "label": "play-24s",
+      "title": "Agents bid",
+      "stepLine": "Step 3 of 113/11",
+      "transform": "matrix(0.86, 0, 0, 0.86, 494.062, 275.404)",
+      "activeIds": [
+        "bid"
+      ],
+      "requiredIds": [
+        "bid"
+      ],
+      "visible": [
+        "employer",
+        "job",
+        "feed",
+        "bid",
+        "auctioneer",
+        "human"
+      ],
+      "missingRequired": [],
+      "requiredRect": {
+        "id": "bid",
+        "left": 1165,
+        "top": 431,
+        "right": 1327,
+        "bottom": 537
+      }
+    }
+  ],
+  "consoleLines": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting..."
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:09.421Z, label: camera:init, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected."
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:09.571Z, label: camera:init:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:43.653Z, label: camera:step, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:43.798Z, label: camera:step:settled, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:45.453Z, label: camera:step, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:45.599Z, label: camera:step:settled, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:47.253Z, label: camera:step, title: Auctioneer awards, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:47.403Z, label: camera:step:settled, title: Auctioneer awards, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:49.054Z, label: camera:step, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:49.197Z, label: camera:step:settled, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:50.853Z, label: camera:step, title: Worker agent delivers, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:50.998Z, label: camera:step:settled, title: Worker agent delivers, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:52.652Z, label: camera:step, title: Artifacts collected, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:52.793Z, label: camera:step:settled, title: Artifacts collected, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:54.453Z, label: camera:step, title: Coral review thread opens, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:54.594Z, label: camera:step:settled, title: Coral review thread opens, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:56.252Z, label: camera:step, title: Advocates argue both sides, cameraIds: Array(5), requiredIds: Array(3)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:56.400Z, label: camera:step:settled, title: Advocates argue both sides, cameraIds: Array(5), requiredIds: Array(3)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:58.053Z, label: camera:step, title: Referee returns verdict, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:58.201Z, label: camera:step:settled, title: Referee returns verdict, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:05:59.852Z, label: camera:step, title: Funds release, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:06:00.003Z, label: camera:step:settled, title: Funds release, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:06:01.636Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:06:01.778Z, label: camera:step:settled, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:06:03.452Z, label: camera:step, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:06:03.594Z, label: camera:step:settled, title: Agent network sees it, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:06:05.235Z, label: camera:step, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-05T19:06:05.377Z, label: camera:step:settled, title: Agents bid, cameraIds: Array(5), requiredIds: Array(1)}"
+    }
+  ]
+}

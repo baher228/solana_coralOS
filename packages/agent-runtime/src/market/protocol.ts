@@ -45,6 +45,23 @@ export interface Settled {
   sig: string
 }
 
+export interface ReviewRequest {
+  round: number
+  jobId: string
+  payload: Record<string, unknown>
+}
+
+export interface ReviewOpinion {
+  round: number
+  role: 'worker' | 'employer'
+  payload: Record<string, unknown>
+}
+
+export interface ReviewVerdict {
+  round: number
+  payload: Record<string, unknown>
+}
+
 const num = (text: string, key: string): number | undefined => {
   const m = text.match(new RegExp(`${key}=([\\d.]+)`))
   return m ? Number(m[1]) : undefined
@@ -54,6 +71,16 @@ const tok = (text: string, key: string): string | undefined =>
 const enc = (value: string): string => encodeURIComponent(value)
 const dec = (value: string): string => {
   try { return decodeURIComponent(value) } catch { return value }
+}
+const jsonPayload = (text: string): Record<string, unknown> | null => {
+  const start = text.indexOf('{')
+  if (start < 0) return null
+  try {
+    const data = JSON.parse(text.slice(start))
+    return data && typeof data === 'object' && !Array.isArray(data) ? data as Record<string, unknown> : null
+  } catch {
+    return null
+  }
 }
 
 export function verb(text: string): string {
@@ -181,6 +208,44 @@ export function formatRefunded(s: Settled): string {
 export function parseRefunded(text: string): Settled | null {
   if (verb(text) !== 'REFUNDED') return null
   return parseSettled(text)
+}
+
+export function formatReviewRequest(r: ReviewRequest): string {
+  return `REVIEW_REQUEST round=${r.round} job=${r.jobId} ${JSON.stringify(r.payload)}`
+}
+
+export function parseReviewRequest(text: string): ReviewRequest | null {
+  if (verb(text) !== 'REVIEW_REQUEST') return null
+  const round = num(text, 'round')
+  const jobId = tok(text, 'job')
+  const payload = jsonPayload(text)
+  if (round == null || !jobId || !payload) return null
+  return { round, jobId, payload }
+}
+
+export function formatReviewOpinion(o: ReviewOpinion): string {
+  return `REVIEW_OPINION round=${o.round} role=${o.role} ${JSON.stringify(o.payload)}`
+}
+
+export function parseReviewOpinion(text: string): ReviewOpinion | null {
+  if (verb(text) !== 'REVIEW_OPINION') return null
+  const round = num(text, 'round')
+  const role = tok(text, 'role')
+  const payload = jsonPayload(text)
+  if (round == null || (role !== 'worker' && role !== 'employer') || !payload) return null
+  return { round, role, payload }
+}
+
+export function formatReviewVerdict(v: ReviewVerdict): string {
+  return `REVIEW_VERDICT round=${v.round} ${JSON.stringify(v.payload)}`
+}
+
+export function parseReviewVerdict(text: string): ReviewVerdict | null {
+  if (verb(text) !== 'REVIEW_VERDICT') return null
+  const round = num(text, 'round')
+  const payload = jsonPayload(text)
+  if (round == null || !payload) return null
+  return { round, payload }
 }
 
 function parseSettled(text: string): Settled | null {

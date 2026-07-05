@@ -3,25 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Agent Network Demo</title>
-  <link rel="stylesheet" href="https://esm.sh/@xyflow/react@12.11.1/dist/style.css" />
-  <link rel="stylesheet" href="./system.css" />
-  <script type="importmap">
-    {
-      "imports": {
-        "react": "https://esm.sh/react@18.3.1",
-        "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
-        "react-dom": "https://esm.sh/react-dom@18.3.1",
-        "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-        "htm": "https://esm.sh/htm@3.1.1",
-        "lucide-react": "https://esm.sh/lucide-react@1.23.0?external=react",
-        "@xyflow/react": "https://esm.sh/@xyflow/react@12.11.1?external=react,react-dom"
-      }
-    }
-  </script>
 </head>
 <body>
   <div id="root"><p class="boot">Loading system map...</p></div>
-  <script type="module" src="./system.js?v=agent-network-demo"></script>
+  <script type="module" src="/src/system/main.jsx"></script>
 </body>
 </html>

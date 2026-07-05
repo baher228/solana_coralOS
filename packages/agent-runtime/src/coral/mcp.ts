@@ -49,6 +49,7 @@ export class CoralMcpAgent {
 
     const transport = new StreamableHTTPClientTransport(
       new URL(this.config.connectionUrl),
+      { requestInit: { headers: { "X-Coral-Agent-Name": this.config.agentName } } },
     )
 
     await this.client.connect(transport)

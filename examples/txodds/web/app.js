@@ -763,6 +763,7 @@ function ArtifactReport({ job, run }) {
     <div class="escrow-artifact-grid">
       <${ArtifactStatus} label="Repository" item=${run.repo} />
       <${ArtifactStatus} label="Build" item=${run.build} />
+      <${ArtifactStatus} label="Tests" item=${run.tests} />
       <${ArtifactStatus} label="Preview" item=${run.preview} />
     </div>
     ${screenshots.length ? html`<div class="escrow-screenshots">
@@ -782,7 +783,8 @@ function ReviewReport({ review }) {
   const missing = review.missing || []
   const risks = [...(review.criticalRisks || []), ...(review.risks || [])]
   const recommendation = review.recommendation || (review.approved ? 'approve' : 'revision')
-  const source = review.source === 'ai' ? 'Artifact AI review' : review.source === 'fallback' ? 'Review unavailable' : 'Legacy review'
+  const source = review.source === 'ai' ? 'Artifact AI review' : review.source === 'coral-panel' ? 'Coral panel review' : review.source === 'fallback' ? 'Review unavailable' : 'Legacy review'
+  const panel = review.panel
   return html`<section class=${`escrow-review-result ${recommendation}`}>
     <div class="escrow-review-top">
       <div>
@@ -792,6 +794,14 @@ function ReviewReport({ review }) {
       <strong class=${`escrow-review-pill ${review.releaseEligible ? 'approve' : recommendation}`}>${review.releaseEligible ? 'release eligible' : statusText(recommendation)}</strong>
     </div>
     <p>${review.summary}</p>
+    ${panel?.opinions?.length ? html`<div class="escrow-review-checks">
+      ${panel.opinions.map((opinion, i) => html`<div class="escrow-review-check pass" key=${i}>
+        <b>${opinion.role === 'worker' ? 'Worker advocate' : 'Employer advocate'}</b>
+        <span>${statusText(opinion.recommendation || 'opinion')}</span>
+        <p>${opinion.summary}</p>
+        ${opinion.agent ? html`<small>${opinion.agent}</small>` : null}
+      </div>`)}
+    </div>` : null}
     ${review.autoReleaseAt && review.releaseEligible ? html`<div class="escrow-review-list"><b>Auto-release</b><p>${new Date(review.autoReleaseAt).toLocaleString()}</p></div>` : null}
     ${typeof review.confidence === 'number' ? html`<div class="escrow-review-list"><b>Confidence</b><p>${review.confidence}/100</p></div>` : null}
     ${checks.length ? html`<div class="escrow-review-checks">

@@ -1,0 +1,63 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "jobId": "job_mr6d3aic_62t8e",
+  "dump": {
+    "title": "Devnet escrow funds",
+    "step": "Live step 5 of 115/11",
+    "nodeCount": 14,
+    "active": [
+      "escrow"
+    ],
+    "visible": [
+      "feed",
+      "bid",
+      "auctioneer",
+      "escrow",
+      "delivery",
+      "artifacts",
+      "human"
+    ],
+    "requiredVisible": [
+      "escrow"
+    ],
+    "transform": "matrix(0.332645, 0, 0, 0.332645, -225.463, 79.9431)",
+    "assets": {
+      "scripts": [
+        "http://localhost:3020/system.js?v=guide-aware-animated-map-15"
+      ],
+      "css": [
+        "https://esm.sh/@xyflow/react@12.11.1/dist/style.css",
+        "http://localhost:3020/system.css?v=guide-aware-animated-map-15"
+      ]
+    }
+  },
+  "logs": [
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:51:57.204Z, label: camera:init, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(4)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:51:58.436Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(4)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:51:58.604Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(4)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:51:59.153Z, label: camera:step, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(4)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:52:00.838Z, label: camera:step, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(4)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:52:02.590Z, label: camera:resize, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(4)}"
+    }
+  ]
+}

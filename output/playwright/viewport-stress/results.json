@@ -1,0 +1,484 @@
+[
+  {
+    "width": 2048,
+    "height": 949,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1756,
+        "top": 139,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 630,
+        "bottom": 931,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 567.96, 312.333)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1756,
+        "top": 139,
+        "bottom": 949,
+        "width": 1756,
+        "height": 810
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 630,
+        "bottom": 931,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 8.96, 312.333)"
+    }
+  },
+  {
+    "width": 1800,
+    "height": 850,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1508,
+        "top": 139,
+        "bottom": 850,
+        "width": 1508,
+        "height": 711
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 531,
+        "bottom": 832,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 443.96, 262.833)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1508,
+        "top": 139,
+        "bottom": 850,
+        "width": 1508,
+        "height": 711
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 531,
+        "bottom": 832,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -115.04, 262.833)"
+    }
+  },
+  {
+    "width": 1640,
+    "height": 760,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1348,
+        "top": 139,
+        "bottom": 760,
+        "width": 1348,
+        "height": 621
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 441,
+        "bottom": 742,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 363.96, 217.833)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1348,
+        "top": 139,
+        "bottom": 760,
+        "width": 1348,
+        "height": 621
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 441,
+        "bottom": 742,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -195.04, 217.833)"
+    }
+  },
+  {
+    "width": 1536,
+    "height": 710,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1244,
+        "top": 139,
+        "bottom": 710,
+        "width": 1244,
+        "height": 571
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 391,
+        "bottom": 692,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 311.96, 192.833)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1244,
+        "top": 139,
+        "bottom": 710,
+        "width": 1244,
+        "height": 571
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 391,
+        "bottom": 692,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -247.04, 192.833)"
+    }
+  },
+  {
+    "width": 1440,
+    "height": 760,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1148,
+        "top": 139,
+        "bottom": 760,
+        "width": 1148,
+        "height": 621
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 441,
+        "bottom": 742,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 263.96, 217.833)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1148,
+        "top": 139,
+        "bottom": 760,
+        "width": 1148,
+        "height": 621
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 441,
+        "bottom": 742,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -295.04, 217.833)"
+    }
+  },
+  {
+    "width": 1366,
+    "height": 720,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1074,
+        "top": 139,
+        "bottom": 720,
+        "width": 1074,
+        "height": 581
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 401,
+        "bottom": 702,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 226.96, 197.833)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 1074,
+        "top": 139,
+        "bottom": 720,
+        "width": 1074,
+        "height": 581
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 401,
+        "bottom": 702,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -332.04, 197.833)"
+    }
+  },
+  {
+    "width": 1280,
+    "height": 720,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [],
+      "stage": {
+        "left": 0,
+        "right": 988,
+        "top": 139,
+        "bottom": 720,
+        "width": 988,
+        "height": 581
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 401,
+        "bottom": 702,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 173.44, 197.833)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 988,
+        "top": 139,
+        "bottom": 720,
+        "width": 988,
+        "height": 581
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 401,
+        "bottom": 702,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -385.56, 197.833)"
+    }
+  },
+  {
+    "width": 1100,
+    "height": 700,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [],
+      "stage": {
+        "left": 0,
+        "right": 808,
+        "top": 139,
+        "bottom": 700,
+        "width": 808,
+        "height": 561
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 381,
+        "bottom": 682,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 45.64, 187.833)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 808,
+        "top": 139,
+        "bottom": 700,
+        "width": 808,
+        "height": 561
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 381,
+        "bottom": 682,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -513.36, 187.833)"
+    }
+  },
+  {
+    "width": 900,
+    "height": 700,
+    "bid": {
+      "required": [
+        "bid"
+      ],
+      "visible": [
+        "bid"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 900,
+        "top": 171,
+        "bottom": 691,
+        "width": 900,
+        "height": 520
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 381,
+        "bottom": 682,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, 110.96, 167.2)"
+    },
+    "funded": {
+      "required": [
+        "escrow"
+      ],
+      "visible": [
+        "escrow"
+      ],
+      "stage": {
+        "left": 0,
+        "right": 900,
+        "top": 152,
+        "bottom": 672,
+        "width": 900,
+        "height": 520
+      },
+      "guide": {
+        "left": 18,
+        "right": 408,
+        "top": 381,
+        "bottom": 682,
+        "width": 390,
+        "height": 301
+      },
+      "transform": "matrix(0.86, 0, 0, 0.86, -448.04, 167.2)"
+    }
+  }
+]

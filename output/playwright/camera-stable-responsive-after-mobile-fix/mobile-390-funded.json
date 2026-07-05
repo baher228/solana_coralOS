@@ -1,0 +1,66 @@
+{
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "jobId": "job_mr6c94n8_82rxd",
+  "dump": {
+    "title": "Devnet escrow funds",
+    "step": "Live step 5 of 115/11",
+    "guideTitle": "Watch bid, escrow, delivery",
+    "nodeCount": 14,
+    "active": [
+      "escrow"
+    ],
+    "visible": [
+      "feed",
+      "artifacts",
+      "human"
+    ],
+    "requiredVisible": [],
+    "transform": "matrix(0.332645, 0, 0, 0.332645, -225.463, 209.764)",
+    "assets": {
+      "scripts": [
+        "http://localhost:3020/system.js?v=guide-aware-animated-map-13"
+      ],
+      "css": [
+        "https://esm.sh/@xyflow/react@12.11.1/dist/style.css",
+        "http://localhost:3020/system.css?v=guide-aware-animated-map-13"
+      ]
+    }
+  },
+  "logs": [
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:29.923Z, label: focusCamera:set, title: Employer sets up job, cameraIds: Array(4), requiredIds: Array(2)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:33.562Z, label: focusCamera:set, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:34.127Z, label: focusCamera:retry, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:34.309Z, label: cameraGuard:repair, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:34.310Z, label: focusCamera:set, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:34.359Z, label: focusCamera:afterRetry, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:34.732Z, label: focusCamera:retry, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    },
+    {
+      "type": "info",
+      "text": "[txodds-graph] {at: 2026-07-04T12:28:34.966Z, label: focusCamera:afterRetry, title: Devnet escrow funds, cameraIds: Array(4), requiredIds: Array(1)}"
+    }
+  ]
+}
