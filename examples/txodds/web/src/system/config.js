@@ -10,11 +10,9 @@ import {
   UserRound,
   Wallet,
 } from 'lucide-react'
+import { API, CORAL_BUS } from '../shared/api.js'
 
-export const API = window.FREELANCE_API
-  ?? window.FREELANCE_ESCROW_API
-  ?? (location.port === '3021' ? 'http://localhost:8802' : 'http://localhost:8801')
-export const CORAL_BUS = window.CORAL_BUS_API ?? 'http://localhost:8001'
+export { API, CORAL_BUS }
 
 export const DEFAULT_JOB_BRIEF = {
   employer: 'Northstar Studio',

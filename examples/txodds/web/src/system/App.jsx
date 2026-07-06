@@ -64,7 +64,10 @@ export function App() {
   const guidePanelJob = guideJob?.review?.source === 'coral-panel' ? guideJob : panelJob
   const progress = followMcp ? { steps: mcpSession.steps } : runner
   const activeStepIndex = followLive || followMcp ? liveStepIndex(progress, runJob) : stepIndex
-  const step = jobAwareStep(SCRIPT[activeStepIndex], demoJob)
+  const step = useMemo(
+    () => jobAwareStep(SCRIPT[activeStepIndex] || SCRIPT[0], demoJob),
+    [activeStepIndex, demoJob],
+  )
   const metrics = liveEnabled && (followLive || followMcp) ? { ...step.metrics, ...live.metrics } : step.metrics
   const activeCameraNodes = useMemo(() => cameraNodes(step.id), [step.id])
   const activeCameraKey = activeCameraNodes.join(',')

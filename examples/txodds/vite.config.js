@@ -14,4 +14,8 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    root: fileURLToPath(new URL('.', import.meta.url)),
+    include: ['server/**/*.test.ts', 'agent/**/*.test.ts'],
+  },
 })

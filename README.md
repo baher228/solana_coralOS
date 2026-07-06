@@ -1,11 +1,12 @@
 # Freelance Escrow Platform
 
-A no-build Solana CoralOS freelance escrow platform v1: an employer funds a job, a worker tracks
+A Vite React Solana CoralOS freelance escrow platform v1: an employer funds a job, a worker tracks
 milestones and submits evidence, and review settles, disputes, or refunds the local demo escrow.
 
 This repo keeps the useful backbone from the referenced project: a root `npm run dev`, one Node proxy,
-a static React platform UI, the shared `packages/agent-runtime`, and the optional direct escrow program
-under `examples/txodds/escrow`. The previous dashboard remains available as `legacy.html`.
+a Vite React platform UI, the shared `packages/agent-runtime`, and the optional direct escrow program
+under `examples/txodds/escrow`. The previous standalone no-build dashboard remains available as
+`legacy.html`.
 
 ## Run
 
