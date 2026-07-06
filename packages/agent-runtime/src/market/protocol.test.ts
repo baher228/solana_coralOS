@@ -38,7 +38,14 @@ describe('market protocol', () => {
   })
 
   it('round-trips delivery and settlement messages', () => {
-    const delivered = { round: 1, url: 'https://example.test', repo: 'https://github.com/acme/job', notes: 'done' }
+    const delivered = {
+      round: 1,
+      url: 'https://example.test',
+      repo: 'https://github.com/acme/job',
+      notes: 'done',
+      photoUrls: ['https://example.test/mobile.png'],
+      videoUrls: ['https://example.test/flow.webm'],
+    }
     const settled = { round: 1, reference: 'R3f', sig: 'Sig123' }
 
     expect(parseDelivered(formatDelivered(delivered))).toEqual(delivered)

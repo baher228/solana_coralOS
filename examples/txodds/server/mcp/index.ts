@@ -151,18 +151,21 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
 
   server.registerTool('txodds_submit_delivery', {
     title: 'Submit TxOdds Delivery',
-    description: 'Submit a public preview URL, public GitHub repository, or notes for a job awarded to this worker agent. A preview URL is optional when the GitHub repo can be built and inspected.',
+    description: 'Submit delivery evidence for a job awarded to this worker agent. Repo must be a public GitHub HTTPS URL. Preview URL is optional when the GitHub repo can be built and inspected. Worker-provided screenshot/photo/video links can be included in evidenceUrls, photoUrls, or videoUrls.',
     inputSchema: {
       jobId: z.string().min(1),
       url: z.string().optional(),
       repo: z.string().optional(),
       notes: z.string().optional(),
+      evidenceUrls: z.array(z.string()).optional(),
+      photoUrls: z.array(z.string()).optional(),
+      videoUrls: z.array(z.string()).optional(),
       reviewMode: z.enum(['artifact-ai', 'coral-panel']).optional(),
     },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
-  }, async ({ jobId, url, repo, notes, reviewMode }) => {
+  }, async ({ jobId, url, repo, notes, evidenceUrls, photoUrls, videoUrls, reviewMode }) => {
     const job = requireMcpJob(auth, jobId)
-    const submission = submitAgentDelivery(job, { by: auth.agent.name, url, repo, notes, reviewMode })
+    const submission = submitAgentDelivery(job, { by: auth.agent.name, url, repo, notes, evidenceUrls, photoUrls, videoUrls, reviewMode })
     if (deliveryReviewMode({ reviewMode }) === 'coral-panel') {
       addEvent(job, 'agent', 'coral_panel_requested', 'Delivery queued for Coral panel review')
     } else {
@@ -246,8 +249,10 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
           `You are ${auth.agent.name}, a connected worker agent on the TxOdds freelance escrow platform.`,
           'Use txodds_list_jobs to inspect open work, then txodds_get_job before bidding.',
           'Bid only when the scope, acceptance criteria, budget, and payout wallet are clear.',
-          'After award/funding, build the requested artifact and call txodds_submit_delivery with a public GitHub repo, detailed notes, and reviewMode: "coral-panel".',
-          'A public preview URL is optional if the GitHub repo has a build script/output the platform can inspect. If your work only runs on your local machine, forward/tunnel the local port to a public URL before submitting it; do not submit 127.0.0.1, localhost, file://, or a local filesystem path because the platform cannot inspect worker-machine-local evidence.',
+          'After award/funding, build the requested artifact and call txodds_submit_delivery with detailed notes and reviewMode: "coral-panel".',
+          'Use repo only for a public GitHub HTTPS repository. Do not put preview URLs in repo.',
+          'A public preview URL is optional if the GitHub repo has a build script/output the platform can inspect. If your work only runs on your local machine, forward/tunnel the local port to a public URL before submitting it.',
+          'You may include your own public screenshot/photo/video evidence in evidenceUrls, photoUrls, or videoUrls so advocates can inspect what you built. Do not submit 127.0.0.1, localhost, file://, or a local filesystem path because the platform cannot inspect worker-machine-local evidence.',
           'Do not claim to have completed work until delivery evidence is available.',
         ].join('\n'),
       },

@@ -6,11 +6,19 @@ export type ReviewSource = 'ai' | 'coral-panel' | 'legacy-heuristic' | 'fallback
 export type ReviewRecommendation = 'approve' | 'revision' | 'dispute'
 export type ReviewCheckStatus = 'pass' | 'fail' | 'unclear'
 export type ArtifactStatus = 'pass' | 'fail' | 'skipped'
-export type ArtifactKind = 'screenshot' | 'log' | 'text'
+export type ArtifactKind = 'screenshot' | 'log' | 'text' | 'link'
 
 export interface Event { at: string; actor: Actor; type: string; summary: string }
 export interface Message { at: string; author: Exclude<Actor, 'system'>; text: string }
-export interface Submission { at: string; url: string; repo: string; notes: string }
+export interface Submission {
+  at: string
+  url: string
+  repo: string
+  notes: string
+  evidenceUrls?: string[]
+  photoUrls?: string[]
+  videoUrls?: string[]
+}
 export interface ReviewCheck { label: string; status: ReviewCheckStatus; reason: string; evidence: string }
 export interface ReviewArtifact { id: string; kind: ArtifactKind; label: string; file: string; mime: string }
 export interface ArtifactResult { status: ArtifactStatus; summary: string; error?: string; log?: string }

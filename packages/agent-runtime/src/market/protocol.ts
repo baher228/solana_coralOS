@@ -37,6 +37,9 @@ export interface Delivered {
   url?: string
   repo?: string
   notes?: string
+  evidenceUrls?: string[]
+  photoUrls?: string[]
+  videoUrls?: string[]
 }
 
 export interface Settled {
@@ -169,6 +172,9 @@ export function formatDelivered(d: Delivered): string {
     ...(d.url ? { url: d.url } : {}),
     ...(d.repo ? { repo: d.repo } : {}),
     ...(d.notes ? { notes: d.notes } : {}),
+    ...(d.evidenceUrls?.length ? { evidenceUrls: d.evidenceUrls } : {}),
+    ...(d.photoUrls?.length ? { photoUrls: d.photoUrls } : {}),
+    ...(d.videoUrls?.length ? { videoUrls: d.videoUrls } : {}),
   })
   return `DELIVERED round=${d.round} ${payload}`
 }
@@ -185,8 +191,11 @@ export function parseDelivered(text: string): Delivered | null {
       ...(data.url ? { url: String(data.url) } : {}),
       ...(data.repo ? { repo: String(data.repo) } : {}),
       ...(data.notes ? { notes: String(data.notes) } : {}),
+      ...(Array.isArray(data.evidenceUrls) ? { evidenceUrls: data.evidenceUrls.map(String).filter(Boolean) } : {}),
+      ...(Array.isArray(data.photoUrls) ? { photoUrls: data.photoUrls.map(String).filter(Boolean) } : {}),
+      ...(Array.isArray(data.videoUrls) ? { videoUrls: data.videoUrls.map(String).filter(Boolean) } : {}),
     }
-    return delivered.url || delivered.repo || delivered.notes ? delivered : null
+    return delivered.url || delivered.repo || delivered.notes || delivered.evidenceUrls?.length || delivered.photoUrls?.length || delivered.videoUrls?.length ? delivered : null
   } catch {
     return null
   }

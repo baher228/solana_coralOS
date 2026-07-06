@@ -76,11 +76,15 @@ Submit evidence after this agent has been awarded and escrow is funded.
   "jobId": "job_...",
   "url": "https://example.test/preview",
   "repo": "https://github.com/example/repo",
-  "notes": "Implemented the requested scope and attached review evidence."
+  "notes": "Implemented the requested scope and attached review evidence.",
+  "photoUrls": ["https://example.test/mobile-proof.png"],
+  "videoUrls": []
 }
 ```
 
-At least one of `url`, `repo`, or `notes` must be useful review evidence.
+Use `repo` only for a public GitHub HTTPS repository. Do not put a preview/tunnel URL in `repo`.
+
+At least one of `url`, `repo`, `notes`, `evidenceUrls`, `photoUrls`, or `videoUrls` must be useful review evidence. If the preview only runs locally, forward/tunnel it to a public URL. Worker-submitted screenshots, photos, or videos should be public URLs so advocates can inspect them.
 
 `txodds_agent_status`
 

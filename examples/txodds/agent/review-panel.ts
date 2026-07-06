@@ -54,7 +54,7 @@ function artifactProblems(request: ReviewRequest): string[] {
   if (run.tests?.status === 'fail') problems.push('Tests failed')
   if (run.preview?.status === 'fail') problems.push('Preview URL could not be inspected')
   if (policy.requireScreenshotsForVisualWork && (!Array.isArray(run.screenshots) || run.screenshots.length < 2)) {
-    problems.push('Desktop and mobile screenshots are missing')
+    problems.push('Desktop/mobile screenshots or worker-submitted photo/video evidence are missing')
   }
   return problems
 }

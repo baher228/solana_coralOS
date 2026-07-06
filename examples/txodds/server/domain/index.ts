@@ -52,8 +52,13 @@ export function submitJob(job: Job, input: Record<string, unknown>): Submission 
     url: String(input.url || '').trim(),
     repo: String(input.repo || '').trim(),
     notes: String(input.notes || '').trim(),
+    evidenceUrls: evidenceList(input.evidenceUrls),
+    photoUrls: evidenceList(input.photoUrls),
+    videoUrls: evidenceList(input.videoUrls),
   }
-  if (!submission.url && !submission.repo && !submission.notes) fail('submission evidence is required')
+  if (!submission.url && !submission.repo && !submission.notes && !submission.evidenceUrls.length && !submission.photoUrls.length && !submission.videoUrls.length) {
+    fail('submission evidence is required')
+  }
   job.submission = submission
   job.status = 'submitted'
   addEvent(job, 'worker', 'submitted', 'Worker submitted delivery evidence')
@@ -78,6 +83,10 @@ function isPublicPreviewUrl(input: string): boolean {
   return Boolean(url && ['http:', 'https:'].includes(url.protocol) && !isLoopbackHost(url.hostname))
 }
 
+function isPublicEvidenceUrl(input: string): boolean {
+  return isPublicPreviewUrl(input)
+}
+
 function isLocalPreviewUrl(input: string): boolean {
   const url = parseUrl(input)
   return Boolean(url && ['http:', 'https:'].includes(url.protocol) && isLoopbackHost(url.hostname))
@@ -90,13 +99,33 @@ function isPublicGithubRepo(input: string): boolean {
   return parts.length >= 2
 }
 
+function evidenceList(input: unknown): string[] {
+  const raw = Array.isArray(input)
+    ? input
+    : typeof input === 'string'
+      ? input.split(/[\n,]+/)
+      : []
+  return [...new Set(raw.map((item) => String(item || '').trim()).filter(Boolean))].slice(0, 12)
+}
+
 function validateAgentDeliveryEvidence(submission: Submission): void {
   const hasPublicPreview = isPublicPreviewUrl(submission.url)
   const hasPublicRepo = isPublicGithubRepo(submission.repo)
   const hasLocalPreview = isLocalPreviewUrl(submission.url)
   const hasPrivateRepo = Boolean(submission.repo && !hasPublicRepo)
+  const evidenceUrls = [...(submission.evidenceUrls || []), ...(submission.photoUrls || []), ...(submission.videoUrls || [])]
+  const hasWorkerEvidence = evidenceUrls.length > 0
 
-  if (hasPublicPreview || hasPublicRepo) return
+  if (submission.repo && !hasPublicRepo) {
+    fail('delivery evidence is not reviewable: repo must be a public GitHub HTTPS URL. Put public previews, screenshots, photos, or videos in url/evidenceUrls/photoUrls/videoUrls, not repo.')
+  }
+
+  const invalidEvidenceUrl = evidenceUrls.find((url) => !isPublicEvidenceUrl(url))
+  if (invalidEvidenceUrl) {
+    fail('delivery evidence is not reviewable: evidenceUrls/photoUrls/videoUrls must be public http(s) URLs visible to the platform.')
+  }
+
+  if (hasPublicPreview || hasPublicRepo || hasWorkerEvidence) return
 
   if (hasLocalPreview && hasPrivateRepo) {
     fail('delivery evidence is not reviewable: localhost/127.0.0.1 preview URLs and file/local repos are only visible on the worker machine. Submit a public forwarded preview URL or a public GitHub repo with build instructions.')
@@ -259,8 +288,13 @@ export function submitAgentDelivery(job: Job, input: Record<string, unknown>): S
     url: String(input.url || '').trim(),
     repo: String(input.repo || '').trim(),
     notes: String(input.notes || '').trim(),
+    evidenceUrls: evidenceList(input.evidenceUrls),
+    photoUrls: evidenceList(input.photoUrls),
+    videoUrls: evidenceList(input.videoUrls),
   }
-  if (!candidate.url && !candidate.repo && !candidate.notes) fail('submission evidence is required')
+  if (!candidate.url && !candidate.repo && !candidate.notes && !candidate.evidenceUrls.length && !candidate.photoUrls.length && !candidate.videoUrls.length) {
+    fail('submission evidence is required')
+  }
   validateAgentDeliveryEvidence(candidate)
   const submission = submitJob(job, input)
   marketplace.status = 'delivered'

@@ -65,13 +65,13 @@ export function agentPrompt(session, job, brief) {
     '2. Call txodds_list_jobs, then txodds_get_job for the target job.',
     '3. Bid with txodds_bid_job only if the scope and acceptance criteria are clear. Use the priceSol argument.',
     '4. Build the requested work after the backend awards/funds the job.',
-    '5. Submit delivery with txodds_submit_delivery. Use the exact argument names url, repo, notes, and reviewMode: "coral-panel".',
+    '5. Submit delivery with txodds_submit_delivery. Use the exact argument names url, repo, notes, evidenceUrls, photoUrls, videoUrls, and reviewMode: "coral-panel". Use repo only for a public GitHub HTTPS repository.',
     '6. Do not settle escrow or pretend delivery is complete without evidence.',
     '',
     'Exact tool-call shape:',
     `await client.callTool({ name: 'txodds_get_job', arguments: { jobId: ${JSON.stringify(id)} } });`,
     `await client.callTool({ name: 'txodds_bid_job', arguments: { jobId: ${JSON.stringify(id)}, priceSol: ${bidValue}, note: 'I can deliver the requested scope and acceptance criteria.' } });`,
-    `await client.callTool({ name: 'txodds_submit_delivery', arguments: { jobId: ${JSON.stringify(id)}, url: 'http://127.0.0.1:PORT/', repo: 'https://github.com/OWNER/REPO', notes: 'Acceptance criteria evidence and delivery notes.', reviewMode: 'coral-panel' } });`,
+    `await client.callTool({ name: 'txodds_submit_delivery', arguments: { jobId: ${JSON.stringify(id)}, url: 'https://PUBLIC-FORWARDED-PREVIEW.example/', repo: 'https://github.com/OWNER/REPO', notes: 'Acceptance criteria evidence and delivery notes.', photoUrls: ['https://PUBLIC-EVIDENCE.example/mobile.png'], videoUrls: [], reviewMode: 'coral-panel' } });`,
   ].join('\n')
 }
 

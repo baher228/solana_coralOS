@@ -172,7 +172,7 @@ function submittedTask(notes = 'Responsive marketplace task card with budget, sc
   claimJob(job, { worker: 'Checkout Guild' })
   submitJob(job, {
     url: 'https://example.test/preview',
-    repo: 'https://example.test/repo',
+    repo: 'https://github.com/example/repo',
     notes,
   })
   return job
@@ -719,7 +719,7 @@ describe('freelance escrow platform flow', () => {
     completeMilestone(job, job.milestones[0].id)
     submitJob(job, {
       url: 'https://example.test/preview',
-      repo: 'https://example.test/repo',
+      repo: 'https://github.com/example/repo',
       notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
     })
 
@@ -759,7 +759,7 @@ describe('freelance escrow platform flow', () => {
       submitAgentDelivery(job, {
         by: 'build-agent',
         url: 'https://example.test/preview',
-        repo: 'https://example.test/repo',
+        repo: 'https://github.com/example/repo',
         notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
       })
       const review = await assessJobWithAi(job, aiApprove(), collectArtifacts())
@@ -783,7 +783,7 @@ describe('freelance escrow platform flow', () => {
       submitAgentDelivery(job, {
         by: 'panel-worker',
         url: 'https://example.test/preview',
-        repo: 'https://example.test/repo',
+        repo: 'https://github.com/example/repo',
         notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
       })
       await collectPanelReviewArtifacts(job, { threadId: 'thread-panel' }, collectArtifacts())
@@ -945,7 +945,7 @@ describe('freelance escrow platform flow', () => {
       submitAgentDelivery(job, {
         by: 'fallback-agent',
         url: 'https://example.test/preview',
-        repo: 'https://example.test/repo',
+        repo: 'https://github.com/example/repo',
         notes: 'Delivery evidence is present.',
       })
       await assessJobWithAi(job, async () => 'not json', collectArtifacts())
@@ -1025,6 +1025,43 @@ describe('freelance escrow platform flow', () => {
 
     expect(review.releaseEligible).toBe(true)
     expect(review.missing.join(' ')).not.toMatch(/Preview URL/)
+  })
+
+  it('rejects preview URLs submitted in the repo field before review starts', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'wrong-repo-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+
+      expect(() => submitAgentDelivery(job, {
+        by: 'wrong-repo-agent',
+        url: 'https://preview.example.test/',
+        repo: 'https://preview.example.test/',
+        notes: 'The preview URL was accidentally duplicated into repo.',
+      })).toThrow(/repo must be a public GitHub HTTPS URL/)
+      expect(job.status).toBe('funded')
+      expect(job.submission).toBeUndefined()
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('accepts worker-submitted photo evidence when backend screenshots are unavailable', async () => {
+    const job = submittedTask()
+    if (job.submission) {
+      job.submission.photoUrls = ['https://example.test/mobile-proof.png']
+    }
+
+    const review = await assessJobWithAi(job, aiApprove({
+      criteriaResults: [
+        { label: 'Build artifact', status: 'pass', reason: 'Repository build output was inspected.', evidence: 'repo build' },
+        { label: 'Worker media', status: 'pass', reason: 'Worker submitted public mobile proof.', evidence: 'photoUrls' },
+      ],
+    }), collectArtifacts(artifactRun({ screenshots: [] })))
+
+    expect(review.releaseEligible).toBe(true)
+    expect(review.missing.join(' ')).not.toMatch(/screenshots|photo/i)
   })
 
   it('keeps AI revision recommendations from releasing funds', async () => {
@@ -1149,7 +1186,7 @@ describe('freelance escrow platform flow', () => {
   it('blocks invalid transitions after release', () => {
     const job = platformJob()
     submitJob(job, {
-      repo: 'https://example.test/repo',
+      repo: 'https://github.com/example/repo',
       notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
     })
     reviewJob(job)

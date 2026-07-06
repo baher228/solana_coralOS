@@ -229,6 +229,27 @@ function localPreviewUrl(input: string): boolean {
   }
 }
 
+function submittedEvidenceUrls(job: Job): string[] {
+  const submission = job.submission
+  if (!submission) return []
+  return [
+    ...(submission.evidenceUrls || []),
+    ...(submission.photoUrls || []),
+    ...(submission.videoUrls || []),
+  ].map((url) => String(url || '').trim()).filter(Boolean)
+}
+
+function workerVisualEvidenceCount(job: Job): number {
+  const submission = job.submission
+  if (!submission) return 0
+  const media = [
+    ...(submission.photoUrls || []),
+    ...(submission.videoUrls || []),
+    ...(submission.evidenceUrls || []).filter((url) => /\.(png|jpe?g|webp|gif|mp4|mov|webm)(?:[?#].*)?$/i.test(url)),
+  ]
+  return media.map((url) => String(url || '').trim()).filter(Boolean).length
+}
+
 async function serveStatic(root: string, fn: (url: string) => Promise<void>): Promise<void> {
   const server = http.createServer(async (req, res) => {
     try {
@@ -296,6 +317,10 @@ export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
   }
   const dir = path.join(REVIEW_DIR, job.id, run.id)
   await fs.mkdir(dir, { recursive: true })
+  const workerEvidence = submittedEvidenceUrls(job)
+  if (workerEvidence.length) {
+    await addArtifact(run, dir, 'link', 'Worker-submitted media evidence', 'worker-evidence.json', JSON.stringify(workerEvidence, null, 2), 'application/json')
+  }
   if (job.submission?.repo) {
     const cloneUrl = githubCloneUrl(job.submission.repo)
     const localRepo = cloneUrl ? null : fileRepoPath(job.submission.repo)
@@ -384,7 +409,9 @@ function artifactGateProblems(job: Job, run?: ArtifactRun): string[] {
   if (run.build.status === 'fail') problems.push('Submitted project did not build cleanly')
   if (run.tests.status === 'fail') problems.push('Submitted project tests failed')
   if (job.submission?.url && !localPreviewUrl(job.submission.url) && run.preview.status !== 'pass') problems.push('Preview URL could not be inspected')
-  if (visualReviewRequired(job) && run.screenshots.length < 2) problems.push('Required visual screenshots were not captured')
+  if (visualReviewRequired(job) && run.screenshots.length < 2 && workerVisualEvidenceCount(job) === 0) {
+    problems.push('Required visual screenshots or worker-submitted photo/video evidence were not captured')
+  }
   return problems
 }
 
@@ -487,7 +514,8 @@ function reviewPrompt(job: Job, artifactRun?: ArtifactRun, mode: 'delivery' | 'd
       minimumScore: 80,
       requireEveryCriterionPass: true,
       requireNoCriticalRisks: true,
-      requireScreenshotsForVisualWork: visualReviewRequired(job),
+      requireScreenshotsForVisualWork: visualReviewRequired(job) && workerVisualEvidenceCount(job) === 0,
+      workerSubmittedVisualEvidence: workerVisualEvidenceCount(job),
       finalReleaseBy: mode === 'dispute' ? 'backend after unsupported dispute' : 'employer or auto-release timeout',
       disputeRule: 'If the employer dispute is not supported by the platform-visible evidence and all release gates pass, recommend approve. If evidence is incomplete, recommend revision. Use dispute only for unresolved fraud, safety, or contract ambiguity.',
     },
