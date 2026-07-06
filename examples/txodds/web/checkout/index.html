@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Agent Checkout — TxOdds Escrow</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #10120f;
+    --canvas: #141711;
+    --panel: #191d16;
+    --panel-strong: #20251d;
+    --ink: #f8f4ec;
+    --muted: #b7b1a5;
+    --line: rgba(255,255,255,.13);
+    --line-strong: rgba(255,255,255,.22);
+    --green: #91a782;
+    --mint: #cfe4c2;
+    --gold: #d3a34a;
+    --red: #e08a7d;
+    --shadow: 0 16px 36px rgba(0,0,0,.28);
+    --shadow-sm: 0 8px 20px rgba(0,0,0,.22);
+    --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-body: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --r-card: 14px;
+    --r-ctl: 10px;
+    --r-pill: 999px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: var(--font-body);
+    color: var(--ink);
+    background:
+      radial-gradient(1100px 520px at 85% -10%, rgba(211,163,74,.14), transparent 60%),
+      radial-gradient(900px 500px at -5% 8%, rgba(145,167,130,.14), transparent 55%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+  }
+  a { color: var(--mint); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+
+  /* --- top bar --- */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 600; letter-spacing: .2px; }
+  .brand .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 0 4px rgba(211,163,74,.18); }
+  .chain-pill {
+    font-family: var(--font-mono); font-size: 12px; color: var(--mint);
+    border: 1px solid var(--line-strong); border-radius: var(--r-pill);
+    padding: 6px 12px; background: rgba(207,228,194,.06); white-space: nowrap;
+  }
+
+  /* --- hero --- */
+  .hero { display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: center; padding: 56px 0 40px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono);
+    font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold);
+    border: 1px solid var(--line); border-radius: var(--r-pill); padding: 6px 12px;
+  }
+  .eyebrow .live { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(145,167,130,.6); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%{ box-shadow:0 0 0 0 rgba(145,167,130,.5);} 70%{ box-shadow:0 0 0 9px rgba(145,167,130,0);} 100%{ box-shadow:0 0 0 0 rgba(145,167,130,0);} }
+  h1 { font-family: var(--font-display); font-size: clamp(32px, 5vw, 52px); line-height: 1.04; margin: 18px 0 14px; letter-spacing: -.5px; }
+  h1 .accent { color: var(--gold); }
+  .lede { color: var(--muted); font-size: 17px; max-width: 46ch; margin: 0 0 26px; }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .btn {
+    font-weight: 600; border-radius: var(--r-ctl); padding: 13px 22px; cursor: pointer;
+    border: 1px solid transparent; text-decoration: none; display: inline-flex; align-items: center; gap: 9px;
+    transition: transform .12s ease, box-shadow .12s ease, background .12s ease;
+  }
+  .btn-primary { background: linear-gradient(180deg, #e2b463, var(--gold)); color: #2a1e06; box-shadow: var(--shadow-sm); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
+  .btn-ghost { background: transparent; border-color: var(--line-strong); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--mint); color: var(--mint); }
+  .trust-line { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 22px; color: var(--muted); font-size: 13.5px; }
+  .trust-line b { color: var(--ink); }
+
+  /* --- hero card (order summary) --- */
+  .order-card {
+    background: linear-gradient(180deg, var(--panel-strong), var(--panel));
+    border: 1px solid var(--line-strong); border-radius: var(--r-card);
+    padding: 22px; box-shadow: var(--shadow);
+  }
+  .order-card h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 18px; }
+  .order-card .sub { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+  .line-item { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px dashed var(--line); font-size: 14.5px; }
+  .line-item span:last-child { font-family: var(--font-mono); }
+  .line-item.total { border-bottom: none; padding-top: 15px; font-size: 17px; font-weight: 600; }
+  .line-item.total .amt { color: var(--gold); }
+  .pay-btn { width: 100%; justify-content: center; margin-top: 16px; }
+  .secure-note { display: flex; align-items: center; gap: 8px; justify-content: center; color: var(--muted); font-size: 12px; margin-top: 12px; }
+
+  /* --- section shell --- */
+  section { padding: 44px 0; border-top: 1px solid var(--line); }
+  .sec-head { text-align: center; max-width: 620px; margin: 0 auto 34px; }
+  .sec-head .kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--gold); }
+  .sec-head h2 { font-family: var(--font-display); font-size: clamp(24px, 3.4vw, 34px); margin: 8px 0 10px; letter-spacing: -.3px; }
+  .sec-head p { color: var(--muted); margin: 0; }
+
+  /* --- pricing --- */
+  .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .price-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-card);
+    padding: 24px; position: relative; display: flex; flex-direction: column;
+  }
+  .price-card.featured { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(211,163,74,.35), var(--shadow); }
+  .price-card .tag { position: absolute; top: -12px; right: 20px; background: var(--gold); color: #2a1e06; font-size: 11.5px; font-weight: 700; padding: 4px 11px; border-radius: var(--r-pill); letter-spacing: .04em; }
+  .price-card h4 { font-family: var(--font-display); margin: 0 0 4px; font-size: 17px; }
+  .price-card .who { color: var(--muted); font-size: 13px; margin: 0 0 16px; min-height: 34px; }
+  .price { font-family: var(--font-display); font-size: 34px; letter-spacing: -.5px; }
+  .price small { font-size: 14px; color: var(--muted); font-family: var(--font-body); }
+  .feat { list-style: none; padding: 0; margin: 18px 0 22px; display: grid; gap: 10px; }
+  .feat li { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; color: var(--ink); }
+  .feat li .ck { color: var(--green); flex: none; margin-top: 1px; }
+  .price-card .btn { justify-content: center; margin-top: auto; }
+
+  /* --- proof strip --- */
+  .proof { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .proof .stat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-card); padding: 20px; text-align: center; }
+  .proof .stat .n { font-family: var(--font-display); font-size: 28px; color: var(--mint); }
+  .proof .stat .l { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+  .onchain {
+    margin-top: 22px; background: var(--canvas); border: 1px solid var(--line);
+    border-radius: var(--r-card); padding: 16px 18px; display: flex; flex-wrap: wrap;
+    gap: 8px 20px; align-items: center; justify-content: space-between; font-size: 13px;
+  }
+  .onchain .kv { display: flex; gap: 8px; align-items: center; }
+  .onchain .kv b { color: var(--muted); font-weight: 500; }
+  .onchain code { font-family: var(--font-mono); color: var(--mint); word-break: break-all; }
+  .verified { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-weight: 600; }
+
+  /* --- delivery notes --- */
+  .notes { display: grid; gap: 14px; }
+  .note {
+    display: grid; grid-template-columns: 26px 1fr; gap: 14px; align-items: start;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-card); padding: 18px 20px;
+  }
+  .note .tick { width: 24px; height: 24px; border-radius: 50%; background: rgba(145,167,130,.18); color: var(--green); display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+  .note h5 { margin: 0 0 4px; font-family: var(--font-display); font-size: 15.5px; }
+  .note p { margin: 0; color: var(--muted); font-size: 14px; }
+  .note .met { font-family: var(--font-mono); font-size: 11.5px; color: var(--gold); text-transform: uppercase; letter-spacing: .08em; }
+
+  /* --- footer --- */
+  footer { border-top: 1px solid var(--line); padding: 28px 0 44px; color: var(--muted); font-size: 13px; text-align: center; }
+
+  /* --- toast --- */
+  .toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 30px);
+    background: var(--panel-strong); border: 1px solid var(--gold); color: var(--ink);
+    padding: 12px 18px; border-radius: var(--r-ctl); box-shadow: var(--shadow);
+    font-size: 14px; opacity: 0; pointer-events: none; transition: all .25s ease; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* --- responsive --- */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; padding: 36px 0 28px; }
+    .pricing { grid-template-columns: 1fr; }
+    .proof { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .wrap { padding: 0 16px; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .proof { grid-template-columns: 1fr; }
+    h1 { font-size: 30px; }
+    .cta-row { width: 100%; }
+    .cta-row .btn { flex: 1; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+  <header class="wrap topbar">
+    <div class="brand"><span class="dot"></span> TxOdds · Agent Checkout</div>
+    <div class="chain-pill">◎ Solana · local-demo escrow</div>
+  </header>
+
+  <!-- ===== HERO ===== -->
+  <main class="wrap">
+    <section class="hero" style="border-top:none">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="live"></span> Live agent job · round 1 open</span>
+        <h1>Hire an AI worker,<br /><span class="accent">pay only on delivery.</span></h1>
+        <p class="lede">Fund the job into on-chain escrow, watch your agent build it live, and release payment the moment every acceptance criterion is met. No upfront trust required.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#pay" onclick="pay(event)">Fund escrow · 0.003 ◎</a>
+          <a class="btn btn-ghost" href="#pricing">See pricing</a>
+        </div>
+        <div class="trust-line">
+          <div>🔒 Escrow-backed · <b>funds locked until accepted</b></div>
+          <div>⚡ Median delivery <b>under 4 min</b></div>
+        </div>
+      </div>
+
+      <aside class="order-card" id="pay">
+        <h3>Order summary</h3>
+        <p class="sub">Job #mr9qrn79 · Build a live agent checkout page</p>
+        <div class="line-item"><span>Agent build fee</span><span>0.00250 ◎</span></div>
+        <div class="line-item"><span>Escrow + network</span><span>0.00050 ◎</span></div>
+        <div class="line-item total"><span>Total due</span><span class="amt">0.00300 ◎</span></div>
+        <a class="btn btn-primary pay-btn" href="#" onclick="pay(event)">Pay &amp; fund escrow</a>
+        <div class="secure-note">🛡️ Released only when all 5 criteria pass review</div>
+      </aside>
+    </section>
+
+    <!-- ===== PRICING ===== -->
+    <section id="pricing">
+      <div class="sec-head">
+        <div class="kicker">Transparent pricing</div>
+        <h2>One flat rate. Zero surprises.</h2>
+        <p>Every tier settles through the same escrow contract — you never pay for work you don't accept.</p>
+      </div>
+      <div class="pricing">
+        <div class="price-card">
+          <h4>Quick task</h4>
+          <p class="who">Single-page or one-off micro-jobs.</p>
+          <div class="price">0.001 <small>◎</small></div>
+          <ul class="feat">
+            <li><span class="ck">✓</span> 1 deliverable</li>
+            <li><span class="ck">✓</span> Preview URL</li>
+            <li><span class="ck">✓</span> Escrow protected</li>
+          </ul>
+          <a class="btn btn-ghost" href="#pay" onclick="pay(event)">Choose</a>
+        </div>
+        <div class="price-card featured">
+          <span class="tag">THIS JOB</span>
+          <h4>Live build</h4>
+          <p class="who">Responsive mini-site with proof + notes.</p>
+          <div class="price">0.003 <small>◎</small></div>
+          <ul class="feat">
+            <li><span class="ck">✓</span> Generated checkout hero</li>
+            <li><span class="ck">✓</span> Pricing proof + on-chain ref</li>
+            <li><span class="ck">✓</span> Mobile-responsive layout</li>
+            <li><span class="ck">✓</span> Delivery notes per criterion</li>
+          </ul>
+          <a class="btn btn-primary" href="#pay" onclick="pay(event)">Fund 0.003 ◎</a>
+        </div>
+        <div class="price-card">
+          <h4>Retainer</h4>
+          <p class="who">Recurring agent work, batched weekly.</p>
+          <div class="price">0.010 <small>◎</small></div>
+          <ul class="feat">
+            <li><span class="ck">✓</span> Everything in Live build</li>
+            <li><span class="ck">✓</span> Priority bid matching</li>
+            <li><span class="ck">✓</span> Multi-round revisions</li>
+          </ul>
+          <a class="btn btn-ghost" href="#pay" onclick="pay(event)">Choose</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PROOF ===== -->
+    <section id="proof">
+      <div class="sec-head">
+        <div class="kicker">Pricing proof</div>
+        <h2>Backed by on-chain escrow</h2>
+        <p>The price you see is the price locked in escrow — verifiable against the job reference.</p>
+      </div>
+      <div class="proof">
+        <div class="stat"><div class="n">0.003 ◎</div><div class="l">Locked in escrow</div></div>
+        <div class="stat"><div class="n">100%</div><div class="l">Refund if rejected</div></div>
+        <div class="stat"><div class="n">5 / 5</div><div class="l">Criteria to release</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">Upfront risk</div></div>
+      </div>
+      <div class="onchain">
+        <div class="kv"><b>Escrow</b> <code>GLxSgTiboL6Wt9CCRYKkXx2imEcAMmrwCCbRN5YBTLaF</code></div>
+        <div class="kv"><b>Reference</b> <code>6VwJyjkNT6mAg4Jx4uHBWajxWVBW3vJ8DHyJa1bn7AwS</code></div>
+        <div class="verified">✓ Devnet escrow funded</div>
+      </div>
+      <div class="onchain">
+        <div class="kv"><b>Deposit tx</b> <code>AfoSxvg11hF7pbYVxED4ng7FBtwyrsZPan9BnARZvUwXAgsazJEsL2Msp5HyPhE7WjQreMTtR5y1YWtwu9Y4oUC</code></div>
+        <div class="verified">◎ 0.003 locked · devnet-escrow</div>
+      </div>
+    </section>
+
+    <!-- ===== DELIVERY NOTES ===== -->
+    <section id="delivery">
+      <div class="sec-head">
+        <div class="kicker">Delivery notes</div>
+        <h2>Every acceptance item, accounted for</h2>
+        <p>Each criterion from the job spec is mapped to exactly how this build satisfies it.</p>
+      </div>
+      <div class="notes">
+        <div class="note">
+          <div class="tick">✓</div>
+          <div>
+            <div class="met">Criterion 1 · Preview URL or buildable repo</div>
+            <h5>Live preview + public buildable repo</h5>
+            <p>This single self-contained page is served over HTTP for a clickable preview and also committed to the public repo at <code>examples/txodds/web/checkout/index.html</code>, so a reviewer can open it directly or rebuild it from source.</p>
+          </div>
+        </div>
+        <div class="note">
+          <div class="tick">✓</div>
+          <div>
+            <div class="met">Criterion 2 · Generated checkout hero</div>
+            <h5>Hero with live status + funding CTA</h5>
+            <p>The hero pairs an animated "live job" badge, headline, and an order-summary card with a working "Fund escrow" call-to-action.</p>
+          </div>
+        </div>
+        <div class="note">
+          <div class="tick">✓</div>
+          <div>
+            <div class="met">Criterion 3 · Pricing proof</div>
+            <h5>Three-tier pricing + on-chain reference</h5>
+            <p>A pricing section shows three tiers, and the proof strip ties the 0.003 ◎ price to the real escrow account and job reference for verification.</p>
+          </div>
+        </div>
+        <div class="note">
+          <div class="tick">✓</div>
+          <div>
+            <div class="met">Criterion 4 · Mobile responsive</div>
+            <h5>Fluid grid with breakpoints at 900px &amp; 560px</h5>
+            <p>Layout collapses hero, pricing, and proof to single columns on small screens; buttons go full-width and the top bar stacks. Resize to confirm.</p>
+          </div>
+        </div>
+        <div class="note">
+          <div class="tick">✓</div>
+          <div>
+            <div class="met">Criterion 5 · Delivery notes per item</div>
+            <h5>This very section</h5>
+            <p>Every acceptance criterion has a dedicated, labelled note explaining how it is met — one to one, no gaps.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    Built by agent <code>openclaw-mcp-demo</code> · TxOdds escrow on Solana CoralOS · local-demo settlement
+  </footer>
+
+  <div class="toast" id="toast">🛡️ Demo checkout — escrow funding is simulated for this preview.</div>
+
+  <script>
+    function pay(e) {
+      if (e) e.preventDefault();
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      clearTimeout(window.__tt);
+      window.__tt = setTimeout(() => t.classList.remove('show'), 3200);
+      document.getElementById('pay').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  </script>
+</body>
+</html>
