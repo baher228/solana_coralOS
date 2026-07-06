@@ -46,3 +46,4 @@ WALLETS.txt
 
 # Local demo state
 examples/txodds/.data/
+examples/txodds/.data-test/

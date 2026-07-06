@@ -18,7 +18,13 @@ try {
   // No secrets by default. Run node scripts/setup.js to create local devnet keys.
 }
 
-export const DATA_DIR = fileURLToPath(new URL('../.data/', import.meta.url))
+const liveDataDir = fileURLToPath(new URL('../.data/', import.meta.url))
+const testDataDir = fileURLToPath(new URL('../.data-test/', import.meta.url))
+export const DATA_DIR = process.env.TXODDS_DATA_DIR
+  ? `${path.resolve(process.env.TXODDS_DATA_DIR)}${path.sep}`
+  : process.env.VITEST
+    ? testDataDir
+    : liveDataDir
 export const DATA_FILE = `${DATA_DIR}jobs.json`
 export const AGENTS_FILE = `${DATA_DIR}agents.json`
 export const REVIEW_DIR = `${DATA_DIR}reviews`

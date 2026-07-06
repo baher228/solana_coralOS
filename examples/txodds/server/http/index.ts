@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { CORAL_BUS_API, DEMO_SESSION_TTL_MS, PORT, PUBLIC_BASE_URL, REVIEW_DIR, corsOrigin } from '../config.js'
 import { createConnectedAgent, hydrateJob, jobs, listConnectedAgents, resetStoresForTest, revokeConnectedAgent, saveAgents, saveJobs } from '../store.js'
-import { cleanDemoState, createDemoRunJob, demoSessionJobs, demoStatus, localDemoRunner, localDemoRunnerForSession, mcpDemoStatus, sanitizeDemoStatus, startMcpDemoSession, touchDemoSession } from '../demo/index.js'
+import { cleanDemoState, createDemoRunJob, demoSessionJobs, demoStatus, localDemoRunner, localDemoRunnerForSession, mcpDemoStatus, recoverDemoSessionId, sanitizeDemoStatus, startMcpDemoSession, touchDemoSession } from '../demo/index.js'
 import { approveReviewedJob, assessDisputeWithAi, assessJobWithAi, assessJobWithPanel, collectPanelReviewArtifacts, disputeJob, panelReviewRequest, recordPanelOpinions, requestRevisionJob, reviewJob } from '../review/index.js'
 import { awardAgentBid, cancelJob, claimJob, completeMilestone, createJob, deliveryReviewMode, recordAgentBid, refundJob, runAgentMarketTick, settleAgentEscrow, submitAgentDelivery, submitJob } from '../domain/index.js'
 import { addEvent, fail, now, terminal, walletsWithBalances } from '../domain/utils.js'
@@ -42,7 +42,8 @@ function cookieValue(req: http.IncomingMessage, name: string): string | undefine
 
 function ensureDemoSession(req: http.IncomingMessage, res: http.ServerResponse): string {
   const existing = cookieValue(req, 'txodds_demo_session')
-  const sessionId = existing?.match(/^[a-zA-Z0-9_-]{16,80}$/) ? existing : `demo_${randomBytes(18).toString('base64url')}`
+  const validExisting = existing?.match(/^[a-zA-Z0-9_-]{16,80}$/) ? existing : undefined
+  const sessionId = recoverDemoSessionId(validExisting) || validExisting || `demo_${randomBytes(18).toString('base64url')}`
   touchDemoSession(sessionId)
   if (sessionId !== existing) {
     const maxAge = Math.max(60, Math.floor(DEMO_SESSION_TTL_MS / 1000))

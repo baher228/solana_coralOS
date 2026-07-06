@@ -19,7 +19,7 @@ export const DEFAULT_JOB_BRIEF = {
   title: 'Build a live agent checkout page',
   budgetSol: '0.003',
   scope: 'Generate and serve a responsive checkout mini-site with pricing copy, mobile proof, and delivery notes.',
-  acceptanceCriteria: 'Clickable preview URL, generated checkout hero, pricing proof, mobile responsive layout, and delivery notes for every acceptance item.',
+  acceptanceCriteria: 'Public preview URL or buildable repository artifact, generated checkout hero, pricing proof, mobile responsive layout, and delivery notes for every acceptance item.',
 }
 
 export const EMPTY_RUNNER = { running: false, agentName: 'demo-worker-live', logs: [], steps: {} }
@@ -68,7 +68,7 @@ export const SCRIPT = [
   {
     id: 'delivery',
     title: 'Worker agent delivers',
-    copy: 'The agent submits preview URL, repo, and notes. The platform attaches the evidence to the funded contract.',
+    copy: 'The agent submits a public preview URL when available, or a buildable repo plus notes. The platform attaches the evidence to the funded contract.',
     metrics: { budget: '0.003 SOL', bid: '0.001 SOL winner', escrow: 'funded', review: 'queued', settlement: '--' },
     active: ['delivery'],
     complete: ['employer', 'job', 'feed', 'bid', 'auctioneer', 'escrow'],
@@ -76,7 +76,7 @@ export const SCRIPT = [
   {
     id: 'artifacts',
     title: 'Artifacts collected',
-    copy: 'The platform scans the repo, runs build/test when available, inspects the preview, and captures desktop plus mobile screenshots.',
+    copy: 'The platform scans the repo, runs build/test when available, inspects a public preview or built local output, and captures desktop plus mobile screenshots.',
     metrics: { budget: '0.003 SOL', bid: '0.001 SOL winner', escrow: 'funded', review: 'artifacts ready', settlement: '--' },
     active: ['artifacts'],
     complete: ['employer', 'job', 'feed', 'bid', 'auctioneer', 'escrow', 'delivery'],

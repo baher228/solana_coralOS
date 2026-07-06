@@ -79,6 +79,28 @@ export function demoSessionJobs(sessionId?: string): Job[] {
   return [...jobs.values()].filter((job) => !sessionId || job.demoSessionId === sessionId)
 }
 
+function hasDemoSessionState(sessionId: string): boolean {
+  return demoSessionJobs(sessionId).length > 0
+    || [...connectedAgents.values()].some((agent) => agent.demoSessionId === sessionId && agent.status === 'active')
+}
+
+export function recoverDemoSessionId(existing?: string): string | undefined {
+  cleanupDemoSessions()
+  if (existing && hasDemoSessionState(existing)) return existing
+
+  const scores = new Map<string, number>()
+  for (const job of jobs.values()) {
+    if (!job.demoSessionId || ['released', 'refunded', 'cancelled'].includes(job.status)) continue
+    scores.set(job.demoSessionId, Math.max(scores.get(job.demoSessionId) || 0, new Date(job.createdAt).getTime()))
+  }
+  for (const agent of connectedAgents.values()) {
+    if (!agent.demoSessionId || agent.status !== 'active') continue
+    scores.set(agent.demoSessionId, Math.max(scores.get(agent.demoSessionId) || 0, new Date(agent.lastSeenAt || agent.createdAt).getTime()))
+  }
+
+  return [...scores.entries()].sort((a, b) => b[1] - a[1])[0]?.[0]
+}
+
 function demoSteps(state: DemoRunState, job?: Job): DemoRunStatus['steps'] {
   const market = job?.marketplace
   return {
@@ -199,7 +221,7 @@ function demoJobDetails(input: Record<string, unknown> = {}) {
     title: String(input.title || 'Build a live agent checkout page').trim() || 'Build a live agent checkout page',
     employer: String(input.employer || 'Northstar Studio').trim() || 'Northstar Studio',
     scope: String(input.scope || 'Generate and serve a responsive checkout mini-site with pricing copy, mobile proof, and delivery notes.').trim(),
-    acceptanceCriteria: String(input.acceptanceCriteria || 'Includes a clickable preview URL; generated checkout hero; pricing proof; mobile responsive layout; delivery notes for every acceptance item.').trim(),
+    acceptanceCriteria: String(input.acceptanceCriteria || 'Includes a public preview URL or buildable repository artifact; generated checkout hero; pricing proof; mobile responsive layout; delivery notes for every acceptance item.').trim(),
     amountSol: Number(input.amountSol || input.budgetSol || 0.003) || 0.003,
   }
 }
@@ -215,8 +237,8 @@ export function createDemoRunJob(input: Record<string, unknown> = {}, sessionId?
     amountSol: details.amountSol,
     milestones: [
       'Generate checkout mini-site',
-      'Serve local preview',
-      'Submit preview URL and delivery notes',
+      'Build reviewable artifact',
+      'Submit public preview URL or repo plus delivery notes',
     ],
   })
   if (sessionId) job.demoSessionId = sessionId
@@ -224,7 +246,7 @@ export function createDemoRunJob(input: Record<string, unknown> = {}, sessionId?
     const fastBidWindow = Number(process.env.DEMO_RUN_BID_WINDOW_MS ?? 3000)
     job.marketplace.bidWindowEndsAt = new Date(Date.now() + (Number.isFinite(fastBidWindow) ? fastBidWindow : 3000)).toISOString()
   }
-  job.messages.push({ at: now(), author: 'employer', text: 'Demo run: worker agent should generate and submit a clickable preview.' })
+  job.messages.push({ at: now(), author: 'employer', text: 'Demo run: worker agent should generate and submit reviewable evidence. A public preview URL is useful but a buildable repo with notes is acceptable.' })
   addEvent(job, 'system', 'demo_run', 'One-click live agent demo started')
   return job
 }

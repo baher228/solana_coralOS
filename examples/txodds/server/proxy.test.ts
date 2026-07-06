@@ -976,6 +976,27 @@ describe('freelance escrow platform flow', () => {
     expect(review.missing.join(' ')).toMatch(/Preview URL/)
   })
 
+  it('allows localhost preview URLs when build artifacts provide screenshots', async () => {
+    const job = submittedTask()
+    if (job.submission) job.submission.url = 'http://127.0.0.1:3041/'
+
+    const review = await assessJobWithAi(job, aiApprove({
+      criteriaResults: [
+        { label: 'Build artifact', status: 'pass', reason: 'Repository build output was inspected.', evidence: 'local-build screenshots' },
+        { label: 'Mobile proof', status: 'pass', reason: 'Mobile screenshot shows responsive layout.', evidence: 'local-build mobile screenshot' },
+      ],
+    }), collectArtifacts(artifactRun({
+      preview: { status: 'skipped', summary: 'Local preview URL ignored', url: 'http://127.0.0.1:3041/' },
+      screenshots: [
+        { id: 'shot_desktop', kind: 'screenshot', label: 'local-build desktop', file: 'job/review/desktop.png', mime: 'image/png' },
+        { id: 'shot_mobile', kind: 'screenshot', label: 'local-build mobile', file: 'job/review/mobile.png', mime: 'image/png' },
+      ],
+    })))
+
+    expect(review.releaseEligible).toBe(true)
+    expect(review.missing.join(' ')).not.toMatch(/Preview URL/)
+  })
+
   it('keeps AI revision recommendations from releasing funds', async () => {
     const job = submittedTask('I did the work, please release.')
 

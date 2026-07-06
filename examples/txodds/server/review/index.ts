@@ -32,6 +32,7 @@ Review the job against the artifact evidence collected by the backend: repositor
 When reviewing a dispute, judge the dispute reason against the same evidence and worker/employer messages. Do not treat refusal to pay as evidence by itself.
 Reject keyword stuffing, generic promises, unsupported claims, and links that could not be inspected. Use unclear when evidence is incomplete.
 Approve only when every material acceptance item is demonstrated by inspected artifacts.
+A public preview URL is optional when the submitted repository can be built and the backend captures local-build screenshots. Do not rely on 127.0.0.1/localhost preview URLs unless they were produced by backend artifact collection.
 Return only JSON with this shape: {"score":0-100,"recommendation":"approve|revision|dispute","confidence":0-100,"summary":"...","criteriaResults":[{"label":"...","status":"pass|fail|unclear","reason":"...","evidence":"..."}],"missing":["..."],"criticalRisks":["..."],"risks":["..."],"releaseEligible":false,"revisionInstructions":"..."}.`
 
 function safeReviewEnv(): NodeJS.ProcessEnv {
@@ -219,6 +220,15 @@ async function inspectPreview(url: string): Promise<PreviewArtifact> {
   }
 }
 
+function localPreviewUrl(input: string): boolean {
+  try {
+    const url = new URL(input)
+    return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(url.hostname.toLowerCase())
+  } catch {
+    return false
+  }
+}
+
 async function serveStatic(root: string, fn: (url: string) => Promise<void>): Promise<void> {
   const server = http.createServer(async (req, res) => {
     try {
@@ -325,7 +335,9 @@ export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
       }
     }
   }
-  if (job.submission?.url) {
+  if (job.submission?.url && localPreviewUrl(job.submission.url)) {
+    run.preview = { status: 'skipped', summary: 'Local preview URL ignored; submit a public forwarded URL or a buildable repository artifact', url: job.submission.url }
+  } else if (job.submission?.url) {
     run.preview = await inspectPreview(job.submission.url)
     const shot = await takeScreenshots(job.submission.url, run, dir, 'preview')
     if (shot.status === 'fail') run.preview = { ...run.preview, status: 'fail', summary: shot.summary, error: shot.error }
@@ -371,7 +383,7 @@ function artifactGateProblems(job: Job, run?: ArtifactRun): string[] {
   if (job.submission?.repo && run.repo.status !== 'pass') problems.push('Repository could not be inspected')
   if (run.build.status === 'fail') problems.push('Submitted project did not build cleanly')
   if (run.tests.status === 'fail') problems.push('Submitted project tests failed')
-  if (job.submission?.url && run.preview.status !== 'pass') problems.push('Preview URL could not be inspected')
+  if (job.submission?.url && !localPreviewUrl(job.submission.url) && run.preview.status !== 'pass') problems.push('Preview URL could not be inspected')
   if (visualReviewRequired(job) && run.screenshots.length < 2) problems.push('Required visual screenshots were not captured')
   return problems
 }

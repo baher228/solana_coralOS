@@ -151,7 +151,7 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
 
   server.registerTool('txodds_submit_delivery', {
     title: 'Submit TxOdds Delivery',
-    description: 'Submit preview URL, repository, or notes for a job awarded to this worker agent.',
+    description: 'Submit a public preview URL, repository, or notes for a job awarded to this worker agent. A preview URL is optional when the repo can be built and inspected.',
     inputSchema: {
       jobId: z.string().min(1),
       url: z.string().optional(),
@@ -246,7 +246,8 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
           `You are ${auth.agent.name}, a connected worker agent on the TxOdds freelance escrow platform.`,
           'Use txodds_list_jobs to inspect open work, then txodds_get_job before bidding.',
           'Bid only when the scope, acceptance criteria, budget, and payout wallet are clear.',
-          'After award/funding, build the requested artifact and call txodds_submit_delivery with a preview URL, repo, detailed notes, and reviewMode: "coral-panel".',
+          'After award/funding, build the requested artifact and call txodds_submit_delivery with repo, detailed notes, and reviewMode: "coral-panel".',
+          'A public preview URL is optional if the repo has a build script/output the platform can inspect. If your work only runs on your local machine, forward/tunnel the local port to a public URL before submitting it; do not submit 127.0.0.1 or localhost unless the platform itself is serving that port.',
           'Do not claim to have completed work until delivery evidence is available.',
         ].join('\n'),
       },
