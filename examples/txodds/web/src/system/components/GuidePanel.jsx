@@ -102,6 +102,7 @@ export function DemoGuidePanel({
   onStart,
   onConfirmBrief,
   onPostJob,
+  onStartFreshMcp,
   onCreateMcp,
   onRunWorker,
   onRefresh,
@@ -180,6 +181,7 @@ export function DemoGuidePanel({
         {activeStep.id === 'start' ? <button type="button" onClick={onStart} disabled={busy}><RotateCcw size={15} />{busy ? 'Starting' : 'Start clean demo'}</button> : null}
         {activeStep.id === 'brief' ? <button type="button" onClick={onConfirmBrief} disabled={busy}><CheckCircle2 size={15} />Use this brief</button> : null}
         {activeStep.id === 'post' ? <button type="button" onClick={onPostJob} disabled={busy}><CheckCircle2 size={15} />Post real job</button> : null}
+        {activeStep.id !== 'start' ? <button type="button" className="primary" onClick={onStartFreshMcp} disabled={busy}><RotateCcw size={15} />Start fresh demo</button> : null}
         {activeStep.id === 'agent' && !mcpSession?.authorizationHeader ? <button type="button" onClick={onCreateMcp} disabled={busy}><Bot size={15} />AI agent setup</button> : null}
         {activeStep.id === 'agent' && mcpSession?.authorizationHeader ? <button type="button" className="primary" onClick={copyMcpPrompt} disabled={busy}>{copied ? <CheckCircle2 size={15} /> : <Bot size={15} />}{copied ? 'Copied' : 'Copy MCP prompt'}</button> : null}
         {activeStep.id === 'agent' ? <button type="button" className="secondary" onClick={onRunWorker} disabled={busy}><Play size={15} />Bundled worker</button> : null}

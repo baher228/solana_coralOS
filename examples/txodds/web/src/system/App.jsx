@@ -222,6 +222,44 @@ export function App() {
     }
   }
 
+  const startFreshMcpDemo = async () => {
+    setGuideBusy(true)
+    setGuideError('')
+    setJobError('')
+    setMcpError('')
+    setRunnerError('')
+    setPlaying(false)
+    setFollowLive(false)
+    setFollowMcp(false)
+    setLiveEnabled(true)
+    try {
+      await api('/api/demo/reset', {})
+      const next = await api('/api/demo/mcp-session', { restart: true })
+      const freshJob = next.job || {}
+      const brief = normalizeJobBrief({
+        employer: freshJob.employer || DEFAULT_JOB_BRIEF.employer,
+        title: freshJob.title || DEFAULT_JOB_BRIEF.title,
+        budgetSol: String(freshJob.marketplace?.budgetSol || freshJob.amountSol || DEFAULT_JOB_BRIEF.budgetSol),
+        scope: freshJob.scope || DEFAULT_JOB_BRIEF.scope,
+        acceptanceCriteria: freshJob.acceptanceCriteria || DEFAULT_JOB_BRIEF.acceptanceCriteria,
+      })
+      setRunner(EMPTY_RUNNER)
+      setMcpSession(next)
+      setBackendJobId(next.jobId || '')
+      setDemoJob(brief)
+      setJobDraft(brief)
+      setJobBriefOpen(true)
+      setGuideStarted(true)
+      setBriefConfirmed(true)
+      setStepIndex(0)
+      await Promise.all([refreshLive(true), refreshBus()])
+    } catch (e) {
+      setGuideError(e.message || String(e))
+    } finally {
+      setGuideBusy(false)
+    }
+  }
+
   const startRunner = async () => {
     setRunnerBusy(true)
     setRunnerError('')
@@ -409,6 +447,7 @@ export function App() {
         onStart={startGuidedDemo}
         onConfirmBrief={confirmBrief}
         onPostJob={applyJobDraft}
+        onStartFreshMcp={startFreshMcpDemo}
         onCreateMcp={startMcp}
         onRunWorker={startRunner}
         onRefresh={refreshDemoState}
