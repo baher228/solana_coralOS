@@ -14,7 +14,7 @@ export function TaskTable({ jobs, selectedId, setSelectedId, emptyTitle = 'No ta
   return (
     <section className="escrow-table">
       <div className="escrow-table-head">
-        <span>Task</span><span>Client / worker</span><span>Budget</span><span>Status</span>
+        <span>Task</span><span>Issued / taken</span><span>Budget</span><span>Status</span>
       </div>
       {jobs.map((job) => (
         <button
@@ -23,7 +23,7 @@ export function TaskTable({ jobs, selectedId, setSelectedId, emptyTitle = 'No ta
           onClick={() => setSelectedId(job.id)}
         >
           <span><b>{job.title}</b><small>{short(job.reference)}</small></span>
-          <span>{party(job.employer)}<small>{job.status === 'open' ? 'Waiting for worker' : party(job.worker)}</small></span>
+          <span>{party(job.employer)}<small>{job.status === 'open' ? 'awaiting worker' : `→ ${party(job.worker)}`}</small></span>
           <span><b>{money(job.amountSol)}</b><small>{job.settlement.mode}</small></span>
           <span><Badge status={job.status} /></span>
         </button>
@@ -202,6 +202,8 @@ export function DetailPanel({ job, session, act }) {
         <button className="escrow-primary" onClick={() => act(() => api(`/api/jobs/${job.id}/claim`, { worker: session.organization, name: session.name }))}>Claim task</button>
       ) : null}
       <dl className="escrow-definition">
+        <div><dt>Issued by</dt><dd>{party(job.employer)}</dd></div>
+        <div><dt>Taken by</dt><dd>{job.status === 'open' ? 'Awaiting worker' : party(job.worker)}</dd></div>
         <div><dt>Reference</dt><dd>{job.reference}</dd></div>
         <div><dt>Escrow</dt><dd>{job.settlement.escrow}</dd></div>
         <div><dt>Amount</dt><dd>{money(job.amountSol)}</dd></div>

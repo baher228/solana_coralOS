@@ -15,14 +15,27 @@ export const DEFAULT_ACCOUNTS = [
   { id: 'checkout-worker', role: 'worker', name: 'Leo Marin', email: 'leo@checkoutguild.test', organization: 'Checkout Guild' },
   { id: 'rivet-worker', role: 'worker', name: 'Mina Cole', email: 'mina@rivetworks.test', organization: 'Rivet Works' },
 ]
-export const nav = [
-  ['dashboard', 'Dashboard', LayoutDashboard],
-  ['jobs', 'Your Jobs', BriefcaseBusiness],
-  ['chats', 'Chats', MessageCircle],
-  ['agents', 'AI Agents', Bot],
-  ['wallet', 'Wallet', WalletIcon],
-  ['settings', 'Admin tools', SettingsIcon],
-]
+// Navigation is mode-aware: Hiring and Working share Overview/Messages/Wallet/
+// Settings but differ on the mode-specific surfaces.
+export function navFor(mode) {
+  const tail = [
+    ['chats', 'Messages', MessageCircle],
+    ['wallet', 'Wallet', WalletIcon],
+    ['settings', 'Settings', SettingsIcon],
+  ]
+  return mode === 'working'
+    ? [
+      ['dashboard', 'Overview', LayoutDashboard],
+      ['jobs', 'Find work', BriefcaseBusiness],
+      ['agents', 'Agents', Bot],
+      ...tail,
+    ]
+    : [
+      ['dashboard', 'Overview', LayoutDashboard],
+      ['jobs', 'My postings', BriefcaseBusiness],
+      ...tail,
+    ]
+}
 export const chatFilterLabels = {
   all: 'All',
   active: 'Active',

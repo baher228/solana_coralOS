@@ -55,7 +55,7 @@ export function jobSections(jobs, session) {
   return session?.role === 'worker'
     ? [
       ['working', 'Working on', 'Claimed jobs assigned to you', partyJobs.filter((job) => job.worker === org && !isOpen(job) && !isTerminal(job))],
-      ['available', 'Available', 'Open jobs ready to claim', openTasks],
+      ['available', 'Available', 'Open jobs ready to claim', openTasks.filter((job) => job.employer !== org)],
       ['review', 'In review', 'Submitted, disputed, or revision work', review],
       ['completed', 'Completed', 'Released, refunded, or cancelled jobs', completed],
     ]

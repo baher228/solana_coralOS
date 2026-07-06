@@ -1,6 +1,6 @@
-import React from 'react'
-import { Plus, RefreshCw, Search } from 'lucide-react'
-import { nav } from '../lib/config.js'
+import React, { useEffect, useRef, useState } from 'react'
+import { ChevronDown, LogOut, Plus, Search } from 'lucide-react'
+import { navFor } from '../lib/config.js'
 import { chatConversations, walletTransactions } from '../lib/selectors.js'
 import { Avatar, Icon } from './Common.jsx'
 
@@ -14,7 +14,26 @@ export function Stat({ label, value, sub }) {
   )
 }
 
-export function Sidebar({ view, setView, data, session }) {
+export function ModeToggle({ mode, setMode }) {
+  return (
+    <div className="lance-mode-toggle" role="group" aria-label="Workspace mode">
+      {[['hiring', 'Hiring'], ['working', 'Working']].map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          data-mode={id}
+          className={mode === id ? 'on' : ''}
+          aria-pressed={mode === id}
+          onClick={() => setMode(id)}
+        >
+          <span className="dot" />{label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export function Sidebar({ view, setView, data, session, mode }) {
   const counts = data.summary || {}
   const conversations = chatConversations(data.jobs || [], session)
   const transactions = walletTransactions(data.jobs || [], session)
@@ -27,16 +46,16 @@ export function Sidebar({ view, setView, data, session }) {
         : null
   return (
     <aside className="escrow-sidebar">
-      <div className="escrow-brand">
-        <div className="escrow-mark">FE</div>
-        <div><b>Escrow Desk</b><span>Local settlement workspace</span></div>
-      </div>
+      <a className="escrow-brand" href="./landing.html" aria-label="LanceAI home">
+        <img className="lance-brandmark" src="./lance-logo-white.png?v=1" alt="" />
+        <div><b>LanceAI</b><span>Freelance marketplace</span></div>
+      </a>
       <button className="escrow-new" onClick={() => setView('jobs')}>
         <Icon icon={Plus} />
-        <span>{session.role === 'worker' ? 'Find work' : 'Post job'}</span>
+        <span>{mode === 'working' ? 'Find work' : 'Post a job'}</span>
       </button>
       <nav className="escrow-nav">
-        {nav.map(([id, label, Glyph]) => (
+        {navFor(mode).map(([id, label, Glyph]) => (
           <button key={id} className={view === id ? 'on' : ''} onClick={() => setView(id)}>
             <span><Icon icon={Glyph} />{label}</span>
             {badgeFor(id) ? <b>{badgeFor(id)}</b> : null}
@@ -46,35 +65,67 @@ export function Sidebar({ view, setView, data, session }) {
       <div className="escrow-side-note">
         <span>Signed in as</span>
         <b>{session.organization}</b>
-        <small>{session.role}</small>
-      </div>
-      <div className="escrow-side-tools">
-        <a href="./legacy.html">Legacy demo</a>
+        <small>{mode === 'working' ? 'Working mode' : 'Hiring mode'}</small>
       </div>
     </aside>
   )
 }
 
-export function Topbar({ session, refresh, busy, onLogout }) {
+export function Topbar({ session, mode, setMode, onLogout }) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef(null)
+  useEffect(() => {
+    if (!open) return undefined
+    const onPointer = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
   return (
     <header className="escrow-topbar">
       <div className="escrow-search"><Icon icon={Search} /><input placeholder="Search jobs, clients, references" /></div>
-      <div className="escrow-account">
-        <button className="escrow-ghost iconed" disabled={busy} onClick={refresh}><Icon icon={RefreshCw} /><span>Refresh</span></button>
-        <Avatar name={session.name} />
-        <div><b>{session.name}</b><span>{session.email}</span></div>
-        <button className="escrow-ghost" onClick={onLogout}>Switch account</button>
+      <div className="escrow-topbar-right">
+        <div className="escrow-account" ref={menuRef}>
+          <button
+            type="button"
+            className={`escrow-account-trigger ${open ? 'on' : ''}`}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <Avatar name={session.name} />
+            <span className="escrow-account-id"><b>{session.name}</b><span>{session.organization}</span></span>
+            <Icon icon={ChevronDown} size={16} />
+          </button>
+          {open && (
+            <div className="escrow-account-menu" role="menu">
+              <div className="escrow-account-menu-head">
+                <Avatar name={session.name} />
+                <div><b>{session.name}</b><span>{session.email}</span></div>
+              </div>
+              <button type="button" role="menuitem" onClick={() => { setOpen(false); onLogout() }}>
+                <Icon icon={LogOut} size={16} />
+                <span>Switch account</span>
+              </button>
+            </div>
+          )}
+        </div>
+        <ModeToggle mode={mode} setMode={setMode} />
       </div>
     </header>
   )
 }
 
-export function AppShell({ session, data, view, setView, refresh, busy, error, onLogout, children }) {
+export function AppShell({ session, mode, setMode, data, view, setView, error, onLogout, children }) {
   return (
     <div className="escrow-app">
-      <Sidebar view={view} setView={setView} data={data} session={session} />
+      <Sidebar view={view} setView={setView} data={data} session={session} mode={mode} />
       <section className="escrow-content">
-        <Topbar session={session} refresh={refresh} busy={busy} onLogout={onLogout} />
+        <Topbar session={session} mode={mode} setMode={setMode} onLogout={onLogout} />
         {error && <p className="escrow-error">{error}</p>}
         {children}
       </section>
