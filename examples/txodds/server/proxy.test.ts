@@ -492,6 +492,37 @@ describe('freelance escrow platform flow', () => {
     }
   })
 
+  it('rejects worker-machine-local MCP delivery evidence before review', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const wallet = Keypair.generate().publicKey.toBase58()
+      const job = openTask()
+      const handler = createHandler({ escrowAdapter: fakeEscrow(), reviewer: aiApprove(), collectArtifacts: collectArtifacts() })
+      const created = await request(handler, '/api/agents', json({ name: 'mcp-worker', wallet }))
+      recordAgentBid(job, { by: 'mcp-worker', wallet, priceSol: 0.001 })
+      await awardAgentBid(job, { by: 'mcp-worker' }, fakeEscrow())
+
+      await withMcpClient(handler, created.body.token, async (client) => {
+        const result = await client.callTool({
+          name: 'txodds_submit_delivery',
+          arguments: {
+            jobId: job.id,
+            url: 'http://127.0.0.1:4173/',
+            repo: 'file:///home/user/txodds-live-checkout',
+            notes: 'Built locally on the worker machine.',
+            reviewMode: 'coral-panel',
+          },
+        })
+        expect(result.isError).toBe(true)
+        expect(JSON.stringify(result.content)).toMatch(/not reviewable/)
+        expect(job.submission).toBeUndefined()
+        expect(job.status).toBe('funded')
+      })
+    } finally {
+      restoreBuyer()
+    }
+  })
+
   it('starts an MCP demo session and tracks real MCP activity safely', async () => {
     const wallet = Keypair.generate().publicKey.toBase58()
     const handler = createHandler()
@@ -779,8 +810,7 @@ describe('freelance escrow platform flow', () => {
       const repoDir = await fs.mkdtemp(path.join(os.tmpdir(), 'txodds-local-repo-'))
       await fs.writeFile(path.join(repoDir, 'index.html'), '<title>Local Checkout</title><main>responsive pricing proof</main>')
       await fs.writeFile(path.join(repoDir, 'README.md'), 'Local delivery evidence for the checkout demo.')
-      submitAgentDelivery(job, {
-        by: 'demo-worker',
+      submitJob(job, {
         repo: pathToFileURL(repoDir).href,
         notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
       })

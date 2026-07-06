@@ -61,6 +61,55 @@ export function submitJob(job: Job, input: Record<string, unknown>): Submission 
   return submission
 }
 
+function parseUrl(input: string): URL | null {
+  try {
+    return input ? new URL(input) : null
+  } catch {
+    return null
+  }
+}
+
+function isLoopbackHost(hostname: string): boolean {
+  return ['localhost', '127.0.0.1', '::1', '[::1]'].includes(hostname.toLowerCase())
+}
+
+function isPublicPreviewUrl(input: string): boolean {
+  const url = parseUrl(input)
+  return Boolean(url && ['http:', 'https:'].includes(url.protocol) && !isLoopbackHost(url.hostname))
+}
+
+function isLocalPreviewUrl(input: string): boolean {
+  const url = parseUrl(input)
+  return Boolean(url && ['http:', 'https:'].includes(url.protocol) && isLoopbackHost(url.hostname))
+}
+
+function isPublicGithubRepo(input: string): boolean {
+  const url = parseUrl(input)
+  if (!url || url.protocol !== 'https:' || url.hostname.toLowerCase() !== 'github.com') return false
+  const parts = url.pathname.replace(/\.git$/i, '').split('/').filter(Boolean)
+  return parts.length >= 2
+}
+
+function validateAgentDeliveryEvidence(submission: Submission): void {
+  const hasPublicPreview = isPublicPreviewUrl(submission.url)
+  const hasPublicRepo = isPublicGithubRepo(submission.repo)
+  const hasLocalPreview = isLocalPreviewUrl(submission.url)
+  const hasPrivateRepo = Boolean(submission.repo && !hasPublicRepo)
+
+  if (hasPublicPreview || hasPublicRepo) return
+
+  if (hasLocalPreview && hasPrivateRepo) {
+    fail('delivery evidence is not reviewable: localhost/127.0.0.1 preview URLs and file/local repos are only visible on the worker machine. Submit a public forwarded preview URL or a public GitHub repo with build instructions.')
+  }
+  if (hasLocalPreview) {
+    fail('delivery evidence is not reviewable: localhost/127.0.0.1 preview URLs are only visible on the worker machine. Forward/tunnel the port to a public URL before submitting, or submit a public GitHub repo.')
+  }
+  if (hasPrivateRepo) {
+    fail('delivery evidence is not reviewable: repo must be a public GitHub HTTPS URL for worker-agent delivery.')
+  }
+  fail('delivery evidence is not reviewable: submit a public preview URL or a public GitHub repo with notes.')
+}
+
 export interface DevnetEscrowAdapterInput {
   buyer: Keypair
   seller: PublicKey
@@ -205,6 +254,14 @@ export function submitAgentDelivery(job: Job, input: Record<string, unknown>): S
   const marketplace = ensureMarketplace(job)
   const by = String(input.by || input.agent || '').trim()
   if (marketplace.awardedBid && by && by !== marketplace.awardedBid.by) fail('only the awarded agent can deliver', 403)
+  const candidate = {
+    at: now(),
+    url: String(input.url || '').trim(),
+    repo: String(input.repo || '').trim(),
+    notes: String(input.notes || '').trim(),
+  }
+  if (!candidate.url && !candidate.repo && !candidate.notes) fail('submission evidence is required')
+  validateAgentDeliveryEvidence(candidate)
   const submission = submitJob(job, input)
   marketplace.status = 'delivered'
   delete marketplace.awardError
