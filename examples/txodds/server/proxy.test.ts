@@ -749,6 +749,33 @@ describe('freelance escrow platform flow', () => {
     expect(job.settlement.release).toContain('demo-release')
   })
 
+  it('auto-releases demo-session devnet jobs after approved artifact review', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      job.demoSessionId = 'demo-session-auto-release'
+      recordAgentBid(job, { by: 'build-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'build-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
+      })
+
+      const review = await assessJobWithAi(job, aiApprove(), collectArtifacts())
+
+      expect(review.releaseEligible).toBe(true)
+      expect(review.autoReleaseAt).toBe(review.at)
+      expect(await runAgentMarketTick(fakeEscrow(), new Date())).toBe(1)
+      expect(job.status).toBe('released')
+      expect(job.settlement.release).toBe('sig-release')
+      expect(job.settlement.devnet?.release).toBe('sig-release')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
   it('runs open job -> agent bid -> devnet delivery -> review -> release', async () => {
     const restoreBuyer = withBuyerKey()
     try {

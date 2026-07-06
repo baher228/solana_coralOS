@@ -432,12 +432,13 @@ function finalizeReviewGates(job: Job, review: Review, options: { ignoreActiveDi
   const problems = releaseGateProblems(job, review, options)
   const missing = [...new Set([...review.missing, ...problems])]
   const releaseEligible = problems.length === 0
+  const demoDevnetAutoRelease = Boolean(job.demoSessionId && job.settlement.mode === 'devnet-escrow')
   return {
     ...review,
     missing: missing.slice(0, 12),
     releaseEligible,
     approved: releaseEligible,
-    autoReleaseAt: releaseEligible ? review.autoReleaseAt || deadlineFrom(review.at) : undefined,
+    autoReleaseAt: releaseEligible ? (demoDevnetAutoRelease ? review.at : review.autoReleaseAt || deadlineFrom(review.at)) : undefined,
     revisionInstructions: review.revisionInstructions || (problems.length ? `Please address: ${problems.join('; ')}` : 'Ready for employer release.'),
   }
 }
