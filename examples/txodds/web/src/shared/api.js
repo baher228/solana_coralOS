@@ -1,8 +1,8 @@
 export const API = window.FREELANCE_API
   ?? window.FREELANCE_ESCROW_API
-  ?? 'http://localhost:8801'
+  ?? ''
 
-export const CORAL_BUS = window.CORAL_BUS_API ?? 'http://localhost:8001'
+export const CORAL_BUS = window.CORAL_BUS_API ?? ''
 
 export async function api(path, body) {
   const res = await fetch(`${API}${path}`, {

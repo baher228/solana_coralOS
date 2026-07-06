@@ -3,7 +3,7 @@ import { createRoot } from 'https://esm.sh/react-dom@18.3.1/client'
 import htm from 'https://esm.sh/htm@3.1.1'
 
 const html = htm.bind(React.createElement)
-const API = window.FREELANCE_API ?? window.FREELANCE_ESCROW_API ?? 'http://localhost:8801'
+const API = window.FREELANCE_API ?? window.FREELANCE_ESCROW_API ?? ''
 
 const STATUS_LABELS = {
   funded: 'Funded',

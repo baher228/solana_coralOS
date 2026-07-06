@@ -158,7 +158,8 @@ export function App() {
   const refreshBus = async () => {
     setBusError('')
     try {
-      const res = await fetch(`${CORAL_BUS}/health`, { cache: 'no-store' })
+      const healthPath = CORAL_BUS ? `${CORAL_BUS}/health` : '/api/coral/health'
+      const res = await fetch(healthPath, { cache: 'no-store' })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) throw new Error(data.error || res.statusText)
       setBusHealth(data)
