@@ -263,6 +263,9 @@ a { color: inherit; text-decoration: none; }
 .ev.is-on { opacity: 1; transform: none; filter: none; }
 .ev__k { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted-2); }
 .ev__b { color: var(--bone); font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev__b--stack { display: flex; flex-direction: column; gap: 2px; line-height: 1.2; white-space: normal; overflow: visible; }
+.ev__title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev__who { font-family: var(--mono); font-size: 11px; font-weight: 500; color: var(--iris); }
 .ev__v { font-family: var(--mono); font-weight: 500; color: var(--muted); }
 .ev--job.is-on { border-color: var(--line-2); }
 .ev--job .ev__k { color: var(--iris); }
