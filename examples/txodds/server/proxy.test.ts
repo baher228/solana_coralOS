@@ -789,7 +789,6 @@ describe('freelance escrow platform flow', () => {
       await collectPanelReviewArtifacts(job, { threadId: 'thread-panel' }, collectArtifacts())
 
       const review = assessJobWithPanel(job, panelApprove())
-      review.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
 
       expect(review.source).toBe('coral-panel')
       expect(review.panel?.opinions).toHaveLength(2)

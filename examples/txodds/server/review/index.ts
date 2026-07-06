@@ -701,9 +701,10 @@ export function assessJobWithPanel(job: Job, input: Record<string, unknown> = {}
     })
     : normalizeAiReview(job, artifactRun, verdict as AiReviewReply, {}, 'coral-panel', panel)
       ?? finalizeReviewGates(job, { ...fallbackReview('Coral panel referee returned an unreadable verdict; request clearer evidence or retry panel review.', artifactRun), source: 'coral-panel', panel })
+  if (review.releaseEligible) review.autoReleaseAt = review.at
   job.review = review
   addEvent(job, 'agent', 'coral_panel_reviewed', review.summary)
-  addSettlementEvent(job, 'reviewed', review.releaseEligible ? 'Coral panel review passed; agent settlement can release after the dispute window' : 'Coral panel review requested clearer delivery evidence')
+  addSettlementEvent(job, 'reviewed', review.releaseEligible ? 'Coral panel review passed; agent settlement is ready to release' : 'Coral panel review requested clearer delivery evidence')
   return review
 }
 
