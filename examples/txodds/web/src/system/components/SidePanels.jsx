@@ -133,6 +133,7 @@ export function CoralPanelStatus({ job, bus, error, active, onRefresh }) {
   const review = job?.review
   const run = review?.artifactRun
   const panel = review?.panel
+  const hasPanel = Boolean(panel)
   const opinions = panel?.opinions || []
   const verdict = panel?.verdict
   const opinionByRole = new Map(opinions.map((opinion) => [opinion.role, opinion]))
@@ -152,10 +153,10 @@ export function CoralPanelStatus({ job, bus, error, active, onRefresh }) {
       <div className="system-run-steps">
         {[
           ['Artifacts', Boolean(run)],
-          ['Thread', Boolean(panel?.threadId)],
-          ['Worker', opinions.some((item) => item.role === 'worker')],
-          ['Employer', opinions.some((item) => item.role === 'employer')],
-          ['Referee', Boolean(verdict)],
+          ['Thread', !review || !hasPanel ? false : Boolean(panel?.threadId)],
+          ['Worker', !review || !hasPanel ? Boolean(review?.releaseEligible) : opinions.some((item) => item.role === 'worker')],
+          ['Employer', !review || !hasPanel ? Boolean(review?.releaseEligible) : opinions.some((item) => item.role === 'employer')],
+          ['Referee', !review || !hasPanel ? Boolean(review?.recommendation) : Boolean(verdict)],
           ['Gate', Boolean(review?.releaseEligible)],
         ].map(([label, done]) => <span key={label} className={done ? 'done' : ''}>{label}</span>)}
       </div>
@@ -165,7 +166,18 @@ export function CoralPanelStatus({ job, bus, error, active, onRefresh }) {
         <div><dt>Artifacts</dt><dd>build {artifactState(run, 'build')} {'\u00b7'} tests {artifactState(run, 'tests')} {'\u00b7'} preview {artifactState(run, 'preview')}</dd></div>
         <div><dt>Verdict</dt><dd>{verdict?.recommendation || review?.recommendation || '--'}</dd></div>
       </dl>
-      {review || active ? (
+      {review && !hasPanel ? (
+        <div className="system-panel-opinions">
+          <p className={review.releaseEligible ? '' : 'pending'}>
+            <b>{review.source === 'ai' ? 'Artifact AI review' : review.source === 'fallback' ? 'Fallback review' : 'Artifact review'}</b>
+            <span>{review.recommendation || 'review'} {'\u00b7'} {review.summary || 'Automated artifact review completed.'}</span>
+          </p>
+          <p className={job?.settlement?.release || job?.status === 'released' ? 'referee' : 'pending referee'}>
+            <b>Settlement</b>
+            <span>{job?.settlement?.release || job?.status === 'released' ? 'Released.' : review.releaseEligible ? 'Approved; waiting for settlement tick.' : 'Not release eligible.'}</span>
+          </p>
+        </div>
+      ) : review || active ? (
         <div className="system-panel-opinions">
           {panelOpinionRoles.map(([role, label]) => {
             const opinion = opinionByRole.get(role)

@@ -48,6 +48,24 @@ const advocateRoles = [
 ]
 
 function AdvocateOutput({ job, review }) {
+  const hasPanel = Boolean(review?.panel)
+  if (review && !hasPanel) {
+    const settled = Boolean(job?.settlement?.release || job?.settlement?.refund || job?.status === 'released' || job?.status === 'refunded')
+    const source = review.source === 'ai' ? 'Artifact AI review' : review.source === 'fallback' ? 'Fallback review' : 'Artifact review'
+    return (
+      <div className="system-advocate-output">
+        <article className={review.releaseEligible ? '' : 'pending'}>
+          <b>{source}</b>
+          <span>{review.recommendation || (review.releaseEligible ? 'approve' : 'review')} {'\u00b7'} {review.summary || 'Automated artifact review completed.'}</span>
+          {typeof review.score === 'number' ? <small>Score: {review.score}/100</small> : null}
+        </article>
+        <article className={settled ? 'referee' : 'referee pending'}>
+          <b>Settlement</b>
+          <span>{settled ? 'Released or settled.' : review.releaseEligible ? 'Approved; waiting for settlement tick.' : 'Not release eligible.'}</span>
+        </article>
+      </div>
+    )
+  }
   const opinions = review?.panel?.opinions || []
   const verdict = review?.panel?.verdict
   const opinionByRole = new Map(opinions.map((opinion) => [opinion.role, opinion]))
