@@ -1576,9 +1576,18 @@ button.escrow-ghost:hover:not(:disabled) {
     flex-direction: column;
     overflow: hidden;
   }
+  .escrow-content > .escrow-view:has(> .escrow-create) {
+    display: grid;
+    align-content: start;
+    overflow-y: auto;
+  }
   .escrow-content > .escrow-view:has(> .escrow-workspace-grid) > .escrow-workspace-grid {
     flex: 1;
     min-height: 0;
+  }
+  .escrow-content > .escrow-view:has(> .escrow-create) > .escrow-workspace-grid {
+    flex: none;
+    min-height: auto;
   }
   .escrow-content > .escrow-workspace-grid { overflow: hidden; }
   /* Inner panels take the scroll instead of the page. */

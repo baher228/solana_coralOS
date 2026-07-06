@@ -6,9 +6,10 @@ import {
   Settings as SettingsIcon,
   Wallet as WalletIcon,
 } from 'lucide-react'
+import accountsUrl from '../../../accounts.json?url'
 
 export const SESSION_KEY = 'freelance-escrow-session'
-export const ACCOUNTS_URL = './accounts.json'
+export const ACCOUNTS_URL = accountsUrl
 export const terminal = new Set(['released', 'refunded', 'cancelled'])
 export const DEFAULT_ACCOUNTS = [
   { id: 'northstar-employer', role: 'employer', name: 'Ava Hart', email: 'ava@northstar.test', organization: 'Northstar Studio' },
