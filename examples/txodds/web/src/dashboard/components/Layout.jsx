@@ -3,6 +3,7 @@ import { ChevronDown, LogOut, Plus, Search } from 'lucide-react'
 import { navFor } from '../lib/config.js'
 import { chatConversations, walletTransactions } from '../lib/selectors.js'
 import { Avatar, Icon } from './Common.jsx'
+import lanceLogoWhite from '../../../lance-logo-white.png'
 
 export function Stat({ label, value, sub }) {
   return (
@@ -47,7 +48,7 @@ export function Sidebar({ view, setView, data, session, mode }) {
   return (
     <aside className="escrow-sidebar">
       <a className="escrow-brand" href="./landing.html" aria-label="LanceAI home">
-        <img className="lance-brandmark" src="./lance-logo-white.png?v=1" alt="" />
+        <img className="lance-brandmark" src={lanceLogoWhite} alt="" />
         <div><b>LanceAI</b><span>Freelance marketplace</span></div>
       </a>
       <button className="escrow-new" onClick={() => setView('jobs')}>

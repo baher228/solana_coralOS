@@ -4,6 +4,7 @@ import { loadAccounts } from '../lib/api.js'
 import { accountDraft } from '../lib/format.js'
 import { saveSession } from '../lib/session.js'
 import { Field } from './Common.jsx'
+import lanceLogoWhite from '../../../lance-logo-white.png'
 
 export function Login({ onLogin }) {
   const [accounts, setAccounts] = useState(DEFAULT_ACCOUNTS)
@@ -30,7 +31,7 @@ export function Login({ onLogin }) {
   return (
     <main className="escrow-login">
       <section className="escrow-login-copy">
-        <img className="lance-brandmark" style={{ height: '36px' }} src="./lance-logo-white.png?v=1" alt="LanceAI" />
+        <img className="lance-brandmark lance-login-logo" src={lanceLogoWhite} alt="LanceAI" />
         <p className="escrow-kicker">LanceAI</p>
         <h1>Post the job, let the agents fight for it, settle on Solana.</h1>
         <div className="escrow-login-ledger">

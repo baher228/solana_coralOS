@@ -3879,3 +3879,194 @@ h1 { font-weight: 700; letter-spacing: -0.03em; }
 
 /* Top bar: search left, account + Hiring/Working toggle grouped right */
 .escrow-topbar-right { display: flex; align-items: center; gap: 14px; }
+
+/* Login polish: the incoming skin was too flat and the logo path was unbundled. */
+.escrow-login {
+  min-height: 100svh;
+  grid-template-columns: minmax(420px, 1.1fr) minmax(420px, .9fr);
+  background: #f6f7fb;
+}
+
+.escrow-login-copy {
+  position: relative;
+  align-content: center;
+  min-height: 100svh;
+  gap: 18px;
+  padding: clamp(48px, 7vw, 96px);
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(201, 242, 78, .14), transparent 34%),
+    linear-gradient(155deg, #0d111a 0%, #151a27 48%, #243f36 100%);
+}
+
+.escrow-login-copy::before,
+.escrow-login-copy::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.escrow-login-copy::before {
+  inset: 0;
+  background:
+    linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: linear-gradient(90deg, rgba(0,0,0,.9), transparent 82%);
+}
+
+.escrow-login-copy::after {
+  width: 420px;
+  height: 420px;
+  right: -120px;
+  bottom: -160px;
+  border: 1px solid rgba(201, 242, 78, .32);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 64px rgba(106, 76, 240, .08);
+}
+
+.escrow-login-copy > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lance-login-logo {
+  width: 124px;
+  height: auto;
+  margin-bottom: 6px;
+}
+
+.escrow-login-copy .escrow-kicker {
+  color: #c9f24e;
+}
+
+.escrow-login-copy h1 {
+  max-width: 640px;
+  font-size: clamp(40px, 4.5vw, 58px);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.escrow-login-ledger {
+  max-width: 680px;
+  border-color: rgba(255,255,255,.14);
+  background: rgba(255,255,255,.09);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 28px 70px -48px rgba(0,0,0,.8);
+}
+
+.escrow-login-ledger div {
+  min-height: 76px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,.06);
+}
+
+.escrow-login-ledger span {
+  color: rgba(255,255,255,.58);
+}
+
+.escrow-login-ledger b {
+  color: #ffffff;
+  font-family: var(--display);
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+.escrow-login-form {
+  width: min(500px, calc(100% - 48px));
+  max-height: calc(100svh - 48px);
+  overflow: auto;
+  gap: 12px;
+  padding: 24px;
+  border: 1px solid #e3e6ee;
+  border-radius: 8px;
+  box-shadow: 0 30px 70px -46px rgba(16, 20, 32, .5);
+}
+
+.escrow-login-form h2 {
+  font-size: 28px;
+  line-height: 1.05;
+}
+
+.escrow-test-accounts {
+  padding: 12px;
+  border-color: #e3e6ee;
+  background: #f9fafc;
+}
+
+.escrow-account-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.escrow-account-card {
+  min-height: 78px;
+  border-radius: 8px;
+  border-color: #e0e4ed;
+  background: #ffffff;
+}
+
+.escrow-account-card:hover:not(:disabled),
+.escrow-account-card.on,
+.escrow-account-card.on:hover:not(:disabled) {
+  border-color: #6a4cf0;
+  background: #f1eefe;
+  box-shadow: inset 0 0 0 1px #6a4cf0;
+}
+
+.escrow-login-form .field {
+  gap: 6px;
+}
+
+.escrow-login-form input {
+  height: 40px;
+  border-radius: 8px;
+  border-color: #d9deea;
+  background: #ffffff;
+}
+
+.escrow-login-hint {
+  color: #667085;
+  font-size: 13px;
+}
+
+.escrow-login .escrow-primary {
+  min-height: 44px;
+  border-color: #c9f24e;
+  background: #c9f24e;
+  color: #10131c;
+}
+
+.escrow-login .escrow-primary:hover:not(:disabled) {
+  background: #d8ff66;
+  color: #10131c;
+}
+
+@media (max-width: 980px) {
+  .escrow-login {
+    grid-template-columns: 1fr;
+  }
+
+  .escrow-login-copy {
+    min-height: auto;
+    padding: 34px 22px;
+  }
+
+  .escrow-login-copy h1 {
+    font-size: clamp(36px, 11vw, 58px);
+  }
+
+  .escrow-login-form {
+    width: min(100%, 560px);
+    max-height: none;
+    margin: 0 auto;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .escrow-account-grid,
+  .escrow-login-ledger {
+    grid-template-columns: 1fr;
+  }
+}
