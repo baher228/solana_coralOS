@@ -2,6 +2,7 @@ import http from 'node:http'
 import fs from 'node:fs/promises'
 import { spawn } from 'node:child_process'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { complete, parseJsonReply } from '../../../../packages/agent-runtime/src/llm/complete.ts'
 import { AUTO_RELEASE_MS, MAX_LOG_CHARS, MAX_SNIPPET_CHARS, REVIEW_DIR, REVIEW_TIMEOUT_MS } from '../config.js'
 import { jobs } from '../store.js'
@@ -91,6 +92,19 @@ function githubCloneUrl(input: string): string | null {
   } catch {
     return null
   }
+}
+
+function fileRepoPath(input: string): string | null {
+  try {
+    const url = new URL(input.trim())
+    return url.protocol === 'file:' ? fileURLToPath(url) : null
+  } catch {
+    return null
+  }
+}
+
+function copyableRepoFile(source: string): boolean {
+  return !['.git', 'node_modules', 'dist', 'build', '.next', 'coverage'].includes(path.basename(source))
 }
 
 async function exists(file: string) {
@@ -274,27 +288,40 @@ export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
   await fs.mkdir(dir, { recursive: true })
   if (job.submission?.repo) {
     const cloneUrl = githubCloneUrl(job.submission.repo)
-    if (!cloneUrl) {
+    const localRepo = cloneUrl ? null : fileRepoPath(job.submission.repo)
+    if (!cloneUrl && !localRepo) {
       run.repo = { status: 'fail', summary: 'Only public HTTPS GitHub repos are supported in v1', url: job.submission.repo }
     } else {
       const repoDir = path.join(dir, 'repo')
-      const clone = await runCommand('git', ['clone', '--depth', '1', cloneUrl, repoDir], dir)
-      await addArtifact(run, dir, 'log', 'Clone log', 'clone.log', clone.output || '(no output)', 'text/plain')
-      if (!clone.ok) {
-        run.repo = { status: 'fail', summary: clone.timedOut ? 'Repository clone timed out' : 'Repository clone failed', url: job.submission.repo, log: clone.output }
-      } else {
-        const commit = await runCommand('git', ['-C', repoDir, 'rev-parse', '--short', 'HEAD'], dir, 10000)
-        run.repo = { status: 'pass', summary: 'Repository cloned and scanned', url: job.submission.repo, commit: commit.output.trim(), ...(await scanRepo(repoDir)) }
-        run.build = await buildRepo(repoDir, run, dir)
-        run.tests = await testRepo(repoDir, run, dir)
-        if (run.build.outputDir) {
-          const outputDir = run.build.outputDir
-          await serveStatic(outputDir, async (url) => {
-            const shot = await takeScreenshots(url, run, dir, 'local-build')
-            if (shot.status === 'fail') run.build = { ...run.build, status: 'fail', summary: shot.summary, error: shot.error }
-          })
-          run.build.outputDir = path.relative(dir, outputDir).replace(/\\/g, '/')
+      if (localRepo) {
+        const stat = await fs.stat(localRepo).catch(() => null)
+        if (!stat?.isDirectory()) {
+          run.repo = { status: 'fail', summary: 'Local repository path is not a directory', url: job.submission.repo }
+        } else {
+          await fs.cp(localRepo, repoDir, { recursive: true, filter: copyableRepoFile })
+          run.repo = { status: 'pass', summary: 'Local repository copied and scanned', url: job.submission.repo, ...(await scanRepo(repoDir)) }
+          run.build = await buildRepo(repoDir, run, dir)
+          run.tests = await testRepo(repoDir, run, dir)
         }
+      } else {
+        const clone = await runCommand('git', ['clone', '--depth', '1', cloneUrl!, repoDir], dir)
+        await addArtifact(run, dir, 'log', 'Clone log', 'clone.log', clone.output || '(no output)', 'text/plain')
+        if (!clone.ok) {
+          run.repo = { status: 'fail', summary: clone.timedOut ? 'Repository clone timed out' : 'Repository clone failed', url: job.submission.repo, log: clone.output }
+        } else {
+          const commit = await runCommand('git', ['-C', repoDir, 'rev-parse', '--short', 'HEAD'], dir, 10000)
+          run.repo = { status: 'pass', summary: 'Repository cloned and scanned', url: job.submission.repo, commit: commit.output.trim(), ...(await scanRepo(repoDir)) }
+          run.build = await buildRepo(repoDir, run, dir)
+          run.tests = await testRepo(repoDir, run, dir)
+        }
+      }
+      if (run.build.outputDir) {
+        const outputDir = run.build.outputDir
+        await serveStatic(outputDir, async (url) => {
+          const shot = await takeScreenshots(url, run, dir, 'local-build')
+          if (shot.status === 'fail') run.build = { ...run.build, status: 'fail', summary: shot.summary, error: shot.error }
+        })
+        run.build.outputDir = path.relative(dir, outputDir).replace(/\\/g, '/')
       }
     }
   }
@@ -763,4 +790,3 @@ export function autoReleaseExpiredJobs(at = new Date()): number {
   }
   return released
 }
-

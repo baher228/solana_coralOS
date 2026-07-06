@@ -60,15 +60,17 @@ export function App() {
   const runnerJob = jobById(liveData, runner.jobId)
   const backendJob = jobById(liveData, backendJobId)
   const panelJob = backendJob?.review?.source === 'coral-panel' ? backendJob : latestCoralPanelJob(liveData.jobs)
-  const guideJob = backendJob || jobById(liveData, mcpSession.jobId) || runnerJob
+  const guideJob = backendJob || jobById(liveData, mcpSession.jobId) || runnerJob || panelJob
   const guidePanelJob = guideJob?.review?.source === 'coral-panel' ? guideJob : panelJob
   const progress = followMcp ? { steps: mcpSession.steps } : runner
-  const activeStepIndex = followLive || followMcp ? liveStepIndex(progress, runJob) : stepIndex
+  const inferredRunJob = runJob || guideJob
+  const showLiveProgress = followLive || followMcp || (!guideStarted && Boolean(inferredRunJob))
+  const activeStepIndex = showLiveProgress ? liveStepIndex(progress, inferredRunJob) : stepIndex
   const step = useMemo(
     () => jobAwareStep(SCRIPT[activeStepIndex] || SCRIPT[0], demoJob),
     [activeStepIndex, demoJob],
   )
-  const metrics = liveEnabled && (followLive || followMcp) ? { ...step.metrics, ...live.metrics } : step.metrics
+  const metrics = liveEnabled && showLiveProgress ? { ...step.metrics, ...live.metrics } : step.metrics
   const activeCameraNodes = useMemo(() => cameraNodes(step.id), [step.id])
   const activeCameraKey = activeCameraNodes.join(',')
   const activeRequiredNodes = useMemo(
@@ -78,15 +80,24 @@ export function App() {
   const activeRequiredKey = activeRequiredNodes.join(',')
   const mcpAgentConnected = Boolean(mcpSession.steps?.connected)
   const mcpAgentProgress = Boolean(mcpSession.steps?.bidPlaced || mcpSession.steps?.deliverySubmitted)
-  const progressGuideTitle = followLive || followMcp ? `Watch ${step.title.toLowerCase()}` : 'Watch marketplace progress'
-  const progressGuideDetail = followLive || followMcp
+  const guideHasBackendJob = Boolean(guideJob)
+  const guideHasAgentProgress = Boolean(
+    mcpAgentProgress
+    || runner.jobId
+    || runner.running
+    || guideJob?.marketplace?.bids?.length
+    || guideJob?.marketplace?.awardedBid
+    || guideJob?.worker,
+  )
+  const progressGuideTitle = showLiveProgress ? `Watch ${step.title.toLowerCase()}` : 'Watch marketplace progress'
+  const progressGuideDetail = showLiveProgress
     ? `Live step ${activeStepIndex + 1} of ${SCRIPT.length}: ${step.copy}`
     : guideJob?.submission ? 'Delivery evidence was submitted.' : 'Wait for bid, award, escrow funding, and delivery.'
   const guideSteps = [
-    { id: 'start', index: 1, title: 'Start clean demo', detail: guideStarted ? 'Local demo state is ready.' : 'Clear old local jobs before evaluating.', done: guideStarted },
-    { id: 'brief', index: 2, title: 'Fill job brief', detail: 'Review or edit the task details in this window.', done: guideStarted && briefConfirmed },
-    { id: 'post', index: 3, title: 'Post real backend job', detail: guideJob ? `Backend ${guideJob.id}` : 'Create an open marketplace task.', done: Boolean(guideJob) },
-    { id: 'agent', index: 4, title: mcpSession.authorizationHeader ? 'AI agent MCP setup' : 'Choose AI agent path', detail: mcpSession.authorizationHeader ? (mcpAgentConnected ? 'Agent connected. Keep this prompt open until it bids or use the bundled worker.' : 'Copy the MCP prompt into your AI agent, then refresh after it calls the tools.') : runner.jobId ? 'Bundled worker is running.' : 'Use any MCP-capable agent or the bundled worker.', done: Boolean(mcpAgentProgress || runner.jobId || runner.running) },
+    { id: 'start', index: 1, title: 'Start clean demo', detail: guideStarted ? 'Local demo state is ready.' : 'Clear old local jobs before evaluating.', done: guideStarted || guideHasBackendJob },
+    { id: 'brief', index: 2, title: 'Fill job brief', detail: 'Review or edit the task details in this window.', done: (guideStarted || guideHasBackendJob) && (briefConfirmed || guideHasBackendJob) },
+    { id: 'post', index: 3, title: 'Post real backend job', detail: guideJob ? `Backend ${guideJob.id}` : 'Create an open marketplace task.', done: guideHasBackendJob },
+    { id: 'agent', index: 4, title: mcpSession.authorizationHeader ? 'AI agent MCP setup' : 'Choose AI agent path', detail: mcpSession.authorizationHeader ? (mcpAgentConnected ? 'Agent connected. Keep this prompt open until it bids or use the bundled worker.' : 'Copy the MCP prompt into your AI agent, then refresh after it calls the tools.') : runner.jobId ? 'Bundled worker is running.' : 'Use any MCP-capable agent or the bundled worker.', done: guideHasAgentProgress },
     { id: 'delivery', index: 5, title: progressGuideTitle, detail: progressGuideDetail, done: Boolean(guideJob?.submission) },
     { id: 'panel', index: 6, title: 'Watch Coral panel', detail: guidePanelJob?.settlement?.release ? 'Settlement released.' : guidePanelJob?.review?.panel?.verdict ? 'Referee verdict received.' : 'Artifacts, advocate opinions, and referee verdict appear here.', done: Boolean(guidePanelJob?.review?.panel?.verdict || guidePanelJob?.settlement?.release || guidePanelJob?.settlement?.refund) },
   ]
@@ -390,6 +401,7 @@ export function App() {
         backendJob={backendJob}
         panelJob={panelJob}
         mcpSession={mcpSession}
+        wallets={liveData.setup?.wallets}
         busy={guideBusy || jobBusy || mcpBusy || runnerBusy}
         error={guideError || jobError || mcpError || runnerError}
         onDraft={setDraft}

@@ -124,12 +124,18 @@ export function LiveFacts({ data, enabled, error }) {
   )
 }
 
+const panelOpinionRoles = [
+  ['worker', 'Worker advocate'],
+  ['employer', 'Employer advocate'],
+]
+
 export function CoralPanelStatus({ job, bus, error, active, onRefresh }) {
   const review = job?.review
   const run = review?.artifactRun
   const panel = review?.panel
   const opinions = panel?.opinions || []
   const verdict = panel?.verdict
+  const opinionByRole = new Map(opinions.map((opinion) => [opinion.role, opinion]))
   const busOnline = Boolean(bus?.ok)
 
   return (
@@ -159,14 +165,21 @@ export function CoralPanelStatus({ job, bus, error, active, onRefresh }) {
         <div><dt>Artifacts</dt><dd>build {artifactState(run, 'build')} {'\u00b7'} tests {artifactState(run, 'tests')} {'\u00b7'} preview {artifactState(run, 'preview')}</dd></div>
         <div><dt>Verdict</dt><dd>{verdict?.recommendation || review?.recommendation || '--'}</dd></div>
       </dl>
-      {opinions.length ? (
+      {review || active ? (
         <div className="system-panel-opinions">
-          {opinions.map((opinion) => (
-            <p key={opinion.role}>
-              <b>{opinion.role}</b>
-              <span>{opinion.recommendation || 'opinion'} {'\u00b7'} {opinion.summary || opinion.agent || ''}</span>
-            </p>
-          ))}
+          {panelOpinionRoles.map(([role, label]) => {
+            const opinion = opinionByRole.get(role)
+            return (
+              <p key={role} className={opinion ? '' : 'pending'}>
+                <b>{label}</b>
+                <span>{opinion ? `${opinion.recommendation || 'opinion'} \u00b7 ${opinion.summary || opinion.agent || ''}` : 'Waiting for live advocate output.'}</span>
+              </p>
+            )
+          })}
+          <p className={verdict ? 'referee' : 'pending referee'}>
+            <b>Referee</b>
+            <span>{verdict ? `${verdict.recommendation || review?.recommendation || 'verdict'} \u00b7 ${verdict.summary || review?.summary || ''}` : opinions.length < 2 ? `Waiting for both advocate opinions (${opinions.length}/2).` : 'Both opinions received; waiting for verdict.'}</span>
+          </p>
         </div>
       ) : null}
     </section>

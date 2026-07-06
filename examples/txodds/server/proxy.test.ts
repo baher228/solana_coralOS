@@ -1,4 +1,8 @@
 import http from 'node:http'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { pathToFileURL } from 'node:url'
 import bs58 from 'bs58'
 import { Keypair } from '@solana/web3.js'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
@@ -760,6 +764,30 @@ describe('freelance escrow platform flow', () => {
       expect(review.releaseEligible).toBe(true)
       expect(await settleAgentEscrow(job, fakeEscrow(), new Date())).toBe('released')
       expect(job.settlement.devnet?.release).toBe('sig-release')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('collects Coral panel artifacts from local file repos', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'demo-worker', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.001 })
+      await awardAgentBid(job, { by: 'demo-worker' }, fakeEscrow())
+      const repoDir = await fs.mkdtemp(path.join(os.tmpdir(), 'txodds-local-repo-'))
+      await fs.writeFile(path.join(repoDir, 'index.html'), '<title>Local Checkout</title><main>responsive pricing proof</main>')
+      await fs.writeFile(path.join(repoDir, 'README.md'), 'Local delivery evidence for the checkout demo.')
+      submitAgentDelivery(job, {
+        by: 'demo-worker',
+        repo: pathToFileURL(repoDir).href,
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
+      })
+
+      const review = await collectPanelReviewArtifacts(job, {})
+
+      expect(review.artifactRun?.repo.status).toBe('pass')
+      expect(review.artifactRun?.repo.summary).toMatch(/Local repository/)
     } finally {
       restoreBuyer()
     }

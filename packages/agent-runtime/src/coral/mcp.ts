@@ -28,6 +28,11 @@ export interface CoralMcpConfig {
   version?: string
 }
 
+function isMcpTimeout(error: unknown): boolean {
+  const source = error as { code?: unknown; message?: unknown }
+  return source.code === -32001 || /request timed out/i.test(String(source.message || error))
+}
+
 export class CoralMcpAgent {
   private client: Client | null = null
   private toolNames: { waitForMention: string; waitForAgent: string; sendMessage: string; createThread: string } | null = null
@@ -86,7 +91,12 @@ export class CoralMcpAgent {
     const result = await this.client.callTool({
       name: this.toolNames.waitForMention,
       arguments: { maxWaitMs, currentUnixTime: Date.now() },
+    }).catch((error: unknown) => {
+      if (isMcpTimeout(error)) return null
+      throw error
     })
+
+    if (!result) return null
 
     // Extract text from content array
     const text = (result.content as Array<{ type: string; text?: string }>)
@@ -136,7 +146,12 @@ export class CoralMcpAgent {
     const result = await this.client.callTool({
       name: this.toolNames.waitForAgent,
       arguments: { agentName, maxWaitMs, currentUnixTime: Date.now() },
+    }).catch((error: unknown) => {
+      if (isMcpTimeout(error)) return null
+      throw error
     })
+
+    if (!result) return null
 
     const text = (result.content as Array<{ type: string; text?: string }>)
       .filter((c) => c.type === "text")

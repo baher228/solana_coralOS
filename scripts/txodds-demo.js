@@ -3,7 +3,7 @@
 
 import { randomBytes } from 'node:crypto'
 import { spawn, spawnSync } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { platform } from 'node:os'
@@ -12,6 +12,17 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const txDir = join(root, 'examples', 'txodds')
 const url = 'http://localhost:3020/system.html'
 const npm = platform() === 'win32' ? 'npm.cmd' : 'npm'
+
+function loadEnvFile() {
+  const envPath = process.env.KIT_ENV || join(root, '.env')
+  if (!existsSync(envPath)) return
+  for (const line of readFileSync(envPath, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/)
+    if (m && process.env[m[1]] === undefined) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '')
+  }
+}
+
+loadEnvFile()
 const token = process.env.AGENT_API_TOKEN || `demo_${randomBytes(18).toString('base64url')}`
 
 if (Number(process.versions.node.split('.')[0]) < 20) {
@@ -61,6 +72,23 @@ async function waitFor(label, endpoint) {
   throw new Error(`${label} did not become ready at ${endpoint}`)
 }
 
+async function waitForPlatformAuth(endpoint) {
+  const deadline = Date.now() + 30_000
+  while (Date.now() < deadline) {
+    try {
+      const res = await fetch(endpoint, { headers: { Authorization: `Bearer ${token}` } })
+      if (res.ok) return
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(`API rejected AGENT_API_TOKEN. Stop the old API on :8801 or use the same AGENT_API_TOKEN in .env and the launcher.`)
+      }
+    } catch (e) {
+      if (String((e).message || e).includes('AGENT_API_TOKEN')) throw e
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500))
+  }
+  throw new Error(`API platform auth did not become ready at ${endpoint}`)
+}
+
 const children = []
 children.push(run('api', ['run', 'proxy']))
 children.push(run('web', ['run', 'web']))
@@ -71,6 +99,7 @@ try {
     waitFor('API', 'http://127.0.0.1:8801/api/health'),
     waitFor('Coral bus', 'http://127.0.0.1:8001/health'),
   ])
+  await waitForPlatformAuth('http://127.0.0.1:8801/api/agent/jobs')
 } catch (e) {
   console.error(`[freelance-escrow] ${(e).message}`)
   for (const child of children) child.kill()

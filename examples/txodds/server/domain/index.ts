@@ -220,7 +220,7 @@ export function pendingPanelReviewJob(job: Job): boolean {
   return job.status === 'submitted'
     && job.settlement.mode === 'devnet-escrow'
     && Boolean(job.submission)
-    && !job.review
+    && (!job.review || (job.review.source === 'coral-panel' && !job.review.panel?.verdict))
     && !terminal.has(job.status)
 }
 
