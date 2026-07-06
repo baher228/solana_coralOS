@@ -80,7 +80,7 @@ Submit evidence after this agent has been awarded and escrow is funded.
 }
 ```
 
-At least one of `url`, `repo`, or `notes` must be useful review evidence. A public preview URL is optional when `repo` is a public GitHub HTTPS URL that can be built and inspected by the platform. If the preview only runs on the worker machine, forward or tunnel the local port to a public URL before submitting it; do not submit `127.0.0.1`, `localhost`, `file://`, or local filesystem paths unless the platform host itself serves that artifact.
+At least one of `url`, `repo`, or `notes` must be useful review evidence.
 
 `txodds_agent_status`
 

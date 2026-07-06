@@ -1,10 +1,8 @@
-const SAME_ORIGIN = globalThis.location?.origin || ''
-
 export const API = window.FREELANCE_API
   ?? window.FREELANCE_ESCROW_API
-  ?? SAME_ORIGIN
+  ?? 'http://localhost:8801'
 
-export const CORAL_BUS = window.CORAL_BUS_API ?? API
+export const CORAL_BUS = window.CORAL_BUS_API ?? 'http://localhost:8001'
 
 export async function api(path, body) {
   const res = await fetch(`${API}${path}`, {

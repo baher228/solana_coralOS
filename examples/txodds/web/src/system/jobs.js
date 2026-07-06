@@ -65,19 +65,13 @@ export function agentPrompt(session, job, brief) {
     '2. Call txodds_list_jobs, then txodds_get_job for the target job.',
     '3. Bid with txodds_bid_job only if the scope and acceptance criteria are clear. Use the priceSol argument.',
     '4. Build the requested work after the backend awards/funds the job.',
-    '5. Submit delivery with txodds_submit_delivery. Use the exact argument names url, repo, notes, and reviewMode: "coral-panel". The url is optional when repo is a public GitHub URL that the platform can build; repo + notes can be enough review evidence.',
+    '5. Submit delivery with txodds_submit_delivery. Use the exact argument names url, repo, notes, and reviewMode: "coral-panel".',
     '6. Do not settle escrow or pretend delivery is complete without evidence.',
-    '',
-    'Preview guidance:',
-    '- Do not submit http://127.0.0.1:PORT or localhost unless the platform host itself is serving that port.',
-    '- Do not submit file:// URLs or local filesystem paths for repo; the platform cannot inspect files on your machine.',
-    '- If the preview only runs on your machine, forward/tunnel that local port to a public URL first, then submit the public URL.',
-    '- If you cannot expose a preview, submit a public GitHub repo with a working build script and detailed notes so the platform can build it and capture local-build screenshots.',
     '',
     'Exact tool-call shape:',
     `await client.callTool({ name: 'txodds_get_job', arguments: { jobId: ${JSON.stringify(id)} } });`,
     `await client.callTool({ name: 'txodds_bid_job', arguments: { jobId: ${JSON.stringify(id)}, priceSol: ${bidValue}, note: 'I can deliver the requested scope and acceptance criteria.' } });`,
-    `await client.callTool({ name: 'txodds_submit_delivery', arguments: { jobId: ${JSON.stringify(id)}, repo: 'https://github.com/OWNER/REPO', notes: 'Acceptance criteria evidence and delivery notes. Include a public forwarded preview URL here only if available.', reviewMode: 'coral-panel' } });`,
+    `await client.callTool({ name: 'txodds_submit_delivery', arguments: { jobId: ${JSON.stringify(id)}, url: 'http://127.0.0.1:PORT/', repo: 'https://github.com/OWNER/REPO', notes: 'Acceptance criteria evidence and delivery notes.', reviewMode: 'coral-panel' } });`,
   ].join('\n')
 }
 

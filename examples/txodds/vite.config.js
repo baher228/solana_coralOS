@@ -18,12 +18,6 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom/client', '@xyflow/react'],
   },
-  server: {
-    proxy: {
-      '/api': 'http://127.0.0.1:8801',
-      '/mcp': 'http://127.0.0.1:8801',
-    },
-  },
   build: {
     rollupOptions: {
       input: {
