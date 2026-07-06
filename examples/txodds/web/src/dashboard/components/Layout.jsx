@@ -1,5 +1,5 @@
-import React from 'react'
-import { Plus, RefreshCw, Search } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { ChevronDown, LogOut, Plus, Search } from 'lucide-react'
 import { nav } from '../lib/config.js'
 import { chatConversations, walletTransactions } from '../lib/selectors.js'
 import { Avatar, Icon } from './Common.jsx'
@@ -48,33 +48,62 @@ export function Sidebar({ view, setView, data, session }) {
         <b>{session.organization}</b>
         <small>{session.role}</small>
       </div>
-      <div className="escrow-side-tools">
-        <a href="./legacy.html">Legacy demo</a>
-      </div>
     </aside>
   )
 }
 
-export function Topbar({ session, refresh, busy, onLogout }) {
+export function Topbar({ session, onLogout }) {
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef(null)
+  useEffect(() => {
+    if (!open) return undefined
+    const onPointer = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false) }
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
   return (
     <header className="escrow-topbar">
       <div className="escrow-search"><Icon icon={Search} /><input placeholder="Search jobs, clients, references" /></div>
-      <div className="escrow-account">
-        <button className="escrow-ghost iconed" disabled={busy} onClick={refresh}><Icon icon={RefreshCw} /><span>Refresh</span></button>
-        <Avatar name={session.name} />
-        <div><b>{session.name}</b><span>{session.email}</span></div>
-        <button className="escrow-ghost" onClick={onLogout}>Switch account</button>
+      <div className="escrow-account" ref={menuRef}>
+        <button
+          type="button"
+          className={`escrow-account-trigger ${open ? 'on' : ''}`}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <Avatar name={session.name} />
+          <span className="escrow-account-id"><b>{session.name}</b><span>{session.organization}</span></span>
+          <Icon icon={ChevronDown} size={16} />
+        </button>
+        {open && (
+          <div className="escrow-account-menu" role="menu">
+            <div className="escrow-account-menu-head">
+              <Avatar name={session.name} />
+              <div><b>{session.name}</b><span>{session.email}</span></div>
+            </div>
+            <button type="button" role="menuitem" onClick={() => { setOpen(false); onLogout() }}>
+              <Icon icon={LogOut} size={16} />
+              <span>Switch account</span>
+            </button>
+          </div>
+        )}
       </div>
     </header>
   )
 }
 
-export function AppShell({ session, data, view, setView, refresh, busy, error, onLogout, children }) {
+export function AppShell({ session, data, view, setView, error, onLogout, children }) {
   return (
     <div className="escrow-app">
       <Sidebar view={view} setView={setView} data={data} session={session} />
       <section className="escrow-content">
-        <Topbar session={session} refresh={refresh} busy={busy} onLogout={onLogout} />
+        <Topbar session={session} onLogout={onLogout} />
         {error && <p className="escrow-error">{error}</p>}
         {children}
       </section>

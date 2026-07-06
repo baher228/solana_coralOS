@@ -77,7 +77,6 @@ export function Login({ onLogin }) {
           ))}
         </div>
         <button className="escrow-primary">Continue</button>
-        <a href="./legacy.html">Open legacy demo</a>
       </form>
     </main>
   )

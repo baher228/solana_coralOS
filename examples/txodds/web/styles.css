@@ -1430,14 +1430,83 @@ button.escrow-ghost:hover:not(:disabled) {
   background: #f7f9fb;
 }
 .escrow-account {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.escrow-account a {
-  color: #245c9e;
-  font-weight: 800;
+.escrow-account .escrow-account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 5px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: #253244;
+  cursor: pointer;
 }
+.escrow-account .escrow-account-trigger:hover,
+.escrow-account .escrow-account-trigger.on {
+  border-color: #d8e0e8;
+  background: #f7f9fb;
+}
+.escrow-account-trigger > svg { color: #8a97a8; flex: none; }
+.escrow-account-id {
+  display: grid;
+  text-align: left;
+  line-height: 1.2;
+}
+.escrow-account-id b { font-size: 13px; font-weight: 800; }
+.escrow-account-id span { font-size: 12px; font-weight: 600; color: #697586; }
+.escrow-account-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: 250px;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid #d8e0e8;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 18px 44px -20px rgba(15, 23, 42, .5);
+  animation: escrow-menu-in .12s ease-out;
+}
+@keyframes escrow-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.escrow-account-menu-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 10px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #edf1f5;
+}
+.escrow-account-menu-head b { display: block; font-size: 13px; }
+.escrow-account-menu-head span { display: block; font-size: 12px; font-weight: 600; color: #697586; }
+.escrow-account .escrow-account-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #253244;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+.escrow-account .escrow-account-menu button:hover {
+  background: #f2f5f9;
+  color: #183f68;
+}
+.escrow-account-menu button > svg { color: #8a97a8; flex: none; }
 .escrow-avatar {
   width: 36px;
   height: 36px;
@@ -1453,6 +1522,43 @@ button.escrow-ghost:hover:not(:disabled) {
   display: grid;
   gap: 14px;
   padding: 18px;
+}
+
+/* App shell fits the viewport on desktop: only the content pane scrolls. */
+@media (min-width: 1181px) {
+  .escrow-app {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .escrow-sidebar {
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .escrow-content {
+    height: 100dvh;
+    overflow-y: auto;
+  }
+  .escrow-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+}
+
+/* Sign-in fits the viewport on desktop: the form pane scrolls if it must. */
+@media (min-width: 861px) {
+  .escrow-login {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .escrow-login-copy {
+    overflow-y: auto;
+  }
+  .escrow-login-form {
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+  }
 }
 .escrow-stats {
   display: grid;
