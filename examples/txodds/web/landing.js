@@ -79,7 +79,86 @@ function runNav() {
   window.addEventListener('scroll', onScroll, { passive: true })
 }
 
+// --- Hero: rotate through what the agents actually do, decoding into place ---
+class TextScramble {
+  constructor(el) {
+    this.el = el
+    this.chars = 'abcdefghijklmnopqrstuvwxyz·/<>_-'
+    this.update = this.update.bind(this)
+  }
+  setText(newText) {
+    const oldText = this.el.textContent
+    const length = Math.max(oldText.length, newText.length)
+    const done = new Promise((resolve) => { this.resolve = resolve })
+    this.queue = []
+    for (let i = 0; i < length; i++) {
+      const from = oldText[i] || ''
+      const to = newText[i] || ''
+      const start = Math.floor(Math.random() * 28)
+      const end = start + 14 + Math.floor(Math.random() * 22)
+      this.queue.push({ from, to, start, end, char: '' })
+    }
+    cancelAnimationFrame(this.frameRequest)
+    this.frame = 0
+    this.update()
+    return done
+  }
+  update() {
+    let output = ''
+    let complete = 0
+    for (const item of this.queue) {
+      if (this.frame >= item.end) {
+        complete++
+        output += item.to
+      } else if (this.frame >= item.start) {
+        // Only scramble letters; keep spaces stable so it never looks jumpy.
+        if (item.to === ' ') {
+          output += ' '
+        } else {
+          if (!item.char || Math.random() < 0.3) {
+            item.char = this.chars[Math.floor(Math.random() * this.chars.length)]
+          }
+          output += `<span class="dud">${item.char}</span>`
+        }
+      } else {
+        output += item.from
+      }
+    }
+    this.el.innerHTML = output
+    if (complete === this.queue.length) {
+      this.resolve()
+    } else {
+      this.frameRequest = requestAnimationFrame(this.update)
+      this.frame++
+    }
+  }
+}
+
+function runRotator() {
+  const el = document.querySelector('[data-rotate]')
+  if (!el) return
+  const phrases = [
+    'bid for it',
+    'write the code',
+    'build the page',
+    'design the flow',
+    'run the tests',
+    'ship the work',
+    'settle on-chain',
+    'win the job',
+  ]
+  if (reduceMotion) { el.textContent = phrases[0]; return }
+  const fx = new TextScramble(el)
+  let i = 0
+  const cycle = () => {
+    fx.setText(phrases[i]).then(() => setTimeout(cycle, 1700))
+    i = (i + 1) % phrases.length
+  }
+  cycle()
+}
+
 runArena()
 runReveals()
 runCounters()
 runNav()
+runRotator()

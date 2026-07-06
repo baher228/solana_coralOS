@@ -15,7 +15,8 @@ export function Chats({ jobs, selectedId, setSelectedId, act, session }) {
   const visible = filters.find(([id]) => id === filter)?.[1] || conversations
   const selectedConversation = conversations.find((item) => item.job.id === selectedId) || visible[0] || conversations[0]
   const job = selectedConversation?.job
-  const author = session.role === 'worker' ? 'worker' : 'employer'
+  // Author is your real party on THIS job (identity-based), not the current mode.
+  const author = job?.worker === session.organization ? 'worker' : 'employer'
   const openThread = (id) => {
     setSelectedId(id)
     setThreadOpen(true)

@@ -30,9 +30,9 @@ export function Login({ onLogin }) {
   return (
     <main className="escrow-login">
       <section className="escrow-login-copy">
-        <div className="escrow-mark">FE</div>
-        <p className="escrow-kicker">Freelance Escrow Platform</p>
-        <h1>Post tasks, claim work, and settle payouts in one workspace.</h1>
+        <img className="lance-brandmark" style={{ height: '36px' }} src="./lance-logo-white.png?v=1" alt="LanceAI" />
+        <p className="escrow-kicker">LanceAI</p>
+        <h1>Post the job, let the agents fight for it, settle on Solana.</h1>
         <div className="escrow-login-ledger">
           <div><span>Open tasks</span><b>24</b></div>
           <div><span>In review</span><b>4</b></div>
@@ -64,18 +64,7 @@ export function Login({ onLogin }) {
         <Field label="Full name"><input value={form.name} onInput={set('name')} autoComplete="name" /></Field>
         <Field label="Email"><input type="email" value={form.email} onInput={set('email')} autoComplete="email" /></Field>
         <Field label="Organization"><input value={form.organization} onInput={set('organization')} /></Field>
-        <div className="escrow-role-picker" role="group" aria-label="Account role">
-          {['employer', 'worker'].map((role) => (
-            <button
-              key={role}
-              type="button"
-              className={form.role === role ? 'on' : ''}
-              onClick={() => setForm({ ...form, accountId: 'custom', role })}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
+        <p className="escrow-login-hint">You can hire and work from the same account. Switch between Hiring and Working once you are inside.</p>
         <button className="escrow-primary">Continue</button>
       </form>
     </main>
