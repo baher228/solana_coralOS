@@ -1,7 +1,22 @@
 import path from 'node:path'
 import { spawn } from 'node:child_process'
-import { PORT, ROOT_DIR } from '../config.js'
-import { connectedAgents, createConnectedAgent, demoAgentBase, demoRunState, jobs, mcpDemoAgentBase, mcpDemoState, saveAgents, saveJobs } from '../store.js'
+import { DEMO_MAX_WORKERS, DEMO_SESSION_TTL_MS, INTERNAL_API_BASE, ROOT_DIR, publicUrl } from '../config.js'
+import {
+  connectedAgents,
+  createConnectedAgent,
+  demoAgentBase,
+  demoRunState,
+  demoRunStates,
+  demoSessions,
+  jobs,
+  mcpDemoAgentBase,
+  mcpDemoState,
+  mcpDemoStates,
+  saveAgents,
+  saveJobs,
+  type DemoRunState,
+  type McpDemoState,
+} from '../store.js'
 import { createJob } from '../domain/index.js'
 import type { ConnectedAgent, DemoRunStatus, Job, McpDemoStatus, DemoRunner } from '../types.js'
 import { addEvent, fail, now, publicKey, wallets } from '../domain/utils.js'
@@ -10,15 +25,69 @@ function npmCommand() {
   return process.platform === 'win32' ? 'npm.cmd' : 'npm'
 }
 
-function demoSteps(job?: Job): DemoRunStatus['steps'] {
+function demoRunForSession(sessionId?: string): DemoRunState {
+  if (!sessionId) return demoRunState
+  let state = demoRunStates.get(sessionId)
+  if (!state) {
+    state = { logs: [] }
+    demoRunStates.set(sessionId, state)
+  }
+  return state
+}
+
+function mcpStateForSession(sessionId?: string): McpDemoState {
+  if (!sessionId) return mcpDemoState
+  let state = mcpDemoStates.get(sessionId)
+  if (!state) {
+    state = {}
+    mcpDemoStates.set(sessionId, state)
+  }
+  return state
+}
+
+function activeWorkerCount(except?: DemoRunState): number {
+  const states = [demoRunState, ...demoRunStates.values()]
+  return states.filter((state) =>
+    state !== except
+    && state.child
+    && state.child.exitCode === null
+    && !state.child.killed
+  ).length
+}
+
+export function touchDemoSession(sessionId: string): void {
+  cleanupDemoSessions()
+  demoSessions.set(sessionId, { lastSeen: Date.now() })
+}
+
+export function cleanupDemoSessions(nowMs = Date.now()): void {
+  if (!Number.isFinite(DEMO_SESSION_TTL_MS) || DEMO_SESSION_TTL_MS <= 0) return
+  for (const [sessionId, session] of demoSessions) {
+    if (nowMs - session.lastSeen <= DEMO_SESSION_TTL_MS) continue
+    resetDemoRun(sessionId)
+    resetMcpDemoSession(sessionId)
+    for (const [jobId, job] of jobs) {
+      if (job.demoSessionId === sessionId) jobs.delete(jobId)
+    }
+    demoRunStates.delete(sessionId)
+    mcpDemoStates.delete(sessionId)
+    demoSessions.delete(sessionId)
+  }
+}
+
+export function demoSessionJobs(sessionId?: string): Job[] {
+  return [...jobs.values()].filter((job) => !sessionId || job.demoSessionId === sessionId)
+}
+
+function demoSteps(state: DemoRunState, job?: Job): DemoRunStatus['steps'] {
   const market = job?.marketplace
   return {
-    agentStarted: Boolean(demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed),
+    agentStarted: Boolean(state.child && state.child.exitCode === null && !state.child.killed),
     jobPosted: Boolean(job),
     bidPlaced: Boolean(market?.bids?.length),
     awarded: Boolean(market?.awardedBid),
     funded: job?.settlement.mode === 'devnet-escrow',
-    buildServed: Boolean(demoRunState.previewUrl || job?.submission?.url),
+    buildServed: Boolean(state.previewUrl || job?.submission?.url),
     deliverySubmitted: Boolean(job?.submission),
     reviewCaptured: Boolean(job?.review),
   }
@@ -30,34 +99,35 @@ function cleanDemoText(value: unknown): string {
     .replace(/AGENT_API_TOKEN=\S+/g, 'AGENT_API_TOKEN=[redacted]')
 }
 
-function appendDemoLog(value: unknown): void {
+function appendDemoLog(state: DemoRunState, value: unknown): void {
   for (const line of cleanDemoText(value).split(/\r?\n/).map((item) => item.trim()).filter(Boolean)) {
     const preview = line.match(/serving generated delivery at\s+(https?:\/\/\S+)/i)?.[1]
-    if (preview) demoRunState.previewUrl = preview
-    demoRunState.logs.push(line)
+    if (preview) state.previewUrl = preview
+    state.logs.push(line)
   }
-  demoRunState.logs = demoRunState.logs.slice(-40)
+  state.logs = state.logs.slice(-40)
 }
 
-function demoJob(): Job | undefined {
-  return demoRunState.jobId ? jobs.get(demoRunState.jobId) : undefined
+function demoJob(state: DemoRunState): Job | undefined {
+  return state.jobId ? jobs.get(state.jobId) : undefined
 }
 
-export function demoStatus(): DemoRunStatus {
-  const job = demoJob()
-  const running = Boolean(demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed)
-  const previewUrl = job?.submission?.url || demoRunState.previewUrl
-  const error = demoRunState.error || job?.marketplace?.awardError
+export function demoStatus(sessionId?: string): DemoRunStatus {
+  const state = demoRunForSession(sessionId)
+  const job = demoJob(state)
+  const running = Boolean(state.child && state.child.exitCode === null && !state.child.killed)
+  const previewUrl = job?.submission?.url || state.previewUrl
+  const error = state.error || job?.marketplace?.awardError
   return {
     running,
-    agentName: demoRunState.agentName || demoAgentBase,
-    ...(running && demoRunState.child?.pid ? { pid: demoRunState.child.pid } : {}),
-    ...(demoRunState.jobId ? { jobId: demoRunState.jobId } : {}),
+    agentName: state.agentName || demoAgentBase,
+    ...(running && state.child?.pid ? { pid: state.child.pid } : {}),
+    ...(state.jobId ? { jobId: state.jobId } : {}),
     ...(previewUrl ? { previewUrl } : {}),
-    ...(demoRunState.startedAt ? { startedAt: demoRunState.startedAt } : {}),
+    ...(state.startedAt ? { startedAt: state.startedAt } : {}),
     ...(error ? { error: cleanDemoText(error) } : {}),
-    logs: demoRunState.logs.map(cleanDemoText),
-    steps: demoSteps(job),
+    logs: state.logs.map(cleanDemoText),
+    steps: demoSteps(state, job),
   }
 }
 
@@ -86,29 +156,35 @@ export function sanitizeDemoStatus(input: DemoRunStatus | Record<string, unknown
   }
 }
 
-export function resetDemoRun(): void {
-  if (demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed) {
-    demoRunState.child.kill()
+export function resetDemoRun(sessionId?: string): void {
+  const state = demoRunForSession(sessionId)
+  if (state.child && state.child.exitCode === null && !state.child.killed) {
+    state.child.kill()
   }
-  if (demoRunState.agentName) {
-    for (const agent of connectedAgents.values()) {
-      if (agent.name === demoRunState.agentName && agent.status === 'active') agent.status = 'revoked'
-    }
+  for (const agent of connectedAgents.values()) {
+    const sameSession = sessionId ? agent.demoSessionId === sessionId : agent.name === state.agentName
+    if (sameSession && agent.status === 'active') agent.status = 'revoked'
   }
-  demoRunState.child = undefined
-  demoRunState.agentName = undefined
-  demoRunState.token = undefined
-  demoRunState.jobId = undefined
-  demoRunState.previewUrl = undefined
-  demoRunState.startedAt = undefined
-  demoRunState.error = undefined
-  demoRunState.logs = []
+  state.child = undefined
+  state.agentName = undefined
+  state.token = undefined
+  state.jobId = undefined
+  state.previewUrl = undefined
+  state.startedAt = undefined
+  state.error = undefined
+  state.logs = []
 }
 
-export function cleanDemoState(): void {
-  resetDemoRun()
-  resetMcpDemoSession()
-  jobs.clear()
+export function cleanDemoState(sessionId?: string): void {
+  resetDemoRun(sessionId)
+  resetMcpDemoSession(sessionId)
+  if (sessionId) {
+    for (const [jobId, job] of jobs) {
+      if (job.demoSessionId === sessionId) jobs.delete(jobId)
+    }
+  } else {
+    jobs.clear()
+  }
 }
 
 function demoAgentName(): string {
@@ -128,7 +204,7 @@ function demoJobDetails(input: Record<string, unknown> = {}) {
   }
 }
 
-function createDemoRunJob(input: Record<string, unknown> = {}): Job {
+export function createDemoRunJob(input: Record<string, unknown> = {}, sessionId?: string): Job {
   const details = demoJobDetails(input)
   const job = createJob({
     title: details.title,
@@ -143,6 +219,7 @@ function createDemoRunJob(input: Record<string, unknown> = {}): Job {
       'Submit preview URL and delivery notes',
     ],
   })
+  if (sessionId) job.demoSessionId = sessionId
   if (job.marketplace) {
     const fastBidWindow = Number(process.env.DEMO_RUN_BID_WINDOW_MS ?? 3000)
     job.marketplace.bidWindowEndsAt = new Date(Date.now() + (Number.isFinite(fastBidWindow) ? fastBidWindow : 3000)).toISOString()
@@ -152,23 +229,28 @@ function createDemoRunJob(input: Record<string, unknown> = {}): Job {
   return job
 }
 
-async function startLocalDemoRun(input: Record<string, unknown> = {}): Promise<DemoRunStatus> {
+async function startLocalDemoRun(input: Record<string, unknown> = {}, sessionId?: string): Promise<DemoRunStatus> {
+  const state = demoRunForSession(sessionId)
   if (input.stop) {
-    resetDemoRun()
-    return demoStatus()
+    resetDemoRun(sessionId)
+    return demoStatus(sessionId)
   }
   const restart = Boolean(input.restart)
-  const running = Boolean(demoRunState.child && demoRunState.child.exitCode === null && !demoRunState.child.killed)
-  if (running && !restart) return demoStatus()
-  if (running && restart) resetDemoRun()
+  const running = Boolean(state.child && state.child.exitCode === null && !state.child.killed)
+  if (running && !restart) return demoStatus(sessionId)
+  if (running && restart) resetDemoRun(sessionId)
+  if (!running && DEMO_MAX_WORKERS > 0 && activeWorkerCount(state) >= DEMO_MAX_WORKERS) {
+    fail('demo worker capacity is full; try again shortly', 429)
+  }
 
   const workerWallet = wallets().worker
   if (!publicKey(workerWallet)) fail('SELLER_KEYPAIR_B58 or WALLET is required before running the live agent demo', 503)
 
-  const created = createConnectedAgent({ name: demoAgentName(), wallet: workerWallet })
+  const created = createConnectedAgent({ name: demoAgentName(), wallet: workerWallet, ...(sessionId ? { demoSessionId: sessionId } : {}) })
   const requestedJobId = String(input.jobId || '').trim()
-  const job = requestedJobId ? jobs.get(requestedJobId) : createDemoRunJob(input)
+  const job = requestedJobId ? jobs.get(requestedJobId) : createDemoRunJob(input, sessionId)
   if (!job) fail('job not found', 404)
+  if (sessionId && job.demoSessionId !== sessionId) fail('job not found', 404)
   if (!job.marketplace || job.status !== 'open') fail('demo worker job must be an open marketplace task', 409)
   if (requestedJobId) {
     const fastBidWindow = Number(process.env.DEMO_RUN_BID_WINDOW_MS ?? 3000)
@@ -179,18 +261,18 @@ async function startLocalDemoRun(input: Record<string, unknown> = {}): Promise<D
   await saveAgents()
   await saveJobs()
 
-  demoRunState.agentName = created.agent.name
-  demoRunState.token = created.token
-  demoRunState.jobId = job.id
-  demoRunState.previewUrl = undefined
-  demoRunState.startedAt = now()
-  demoRunState.error = undefined
-  demoRunState.logs = []
+  state.agentName = created.agent.name
+  state.token = created.token
+  state.jobId = job.id
+  state.previewUrl = undefined
+  state.startedAt = now()
+  state.error = undefined
+  state.logs = []
 
   const env = {
     ...process.env,
     AGENT_TRANSPORT: 'api',
-    AGENT_API_BASE: `http://localhost:${PORT}`,
+    AGENT_API_BASE: INTERNAL_API_BASE,
     AGENT_API_TOKEN: created.token,
     AGENT_NAME: created.agent.name,
     DEMO_WORKER_WALLET: workerWallet,
@@ -214,42 +296,49 @@ async function startLocalDemoRun(input: Record<string, unknown> = {}): Promise<D
     })
   } catch (e) {
     const message = (e as Error).message
-    demoRunState.error = message
-    appendDemoLog(`[demo-run] worker error: ${message}`)
-    return demoStatus()
+    state.error = message
+    appendDemoLog(state, `[demo-run] worker error: ${message}`)
+    return demoStatus(sessionId)
   }
-  demoRunState.child = child
-  appendDemoLog(`[demo-run] started ${created.agent.name} for ${job.id}`)
-  child.stdout?.on('data', appendDemoLog)
-  child.stderr?.on('data', appendDemoLog)
+  state.child = child
+  appendDemoLog(state, `[demo-run] started ${created.agent.name} for ${job.id}`)
+  child.stdout?.on('data', (chunk) => appendDemoLog(state, chunk))
+  child.stderr?.on('data', (chunk) => appendDemoLog(state, chunk))
   child.on('error', (error) => {
-    demoRunState.error = error.message
-    appendDemoLog(`[demo-run] worker error: ${error.message}`)
+    state.error = error.message
+    appendDemoLog(state, `[demo-run] worker error: ${error.message}`)
   })
   child.on('exit', (code) => {
-    if (code && !demoRunState.error) demoRunState.error = `worker exited with code ${code}`
-    appendDemoLog(`[demo-run] worker exited with code ${code ?? 'unknown'}`)
+    if (code && !state.error) state.error = `worker exited with code ${code}`
+    appendDemoLog(state, `[demo-run] worker exited with code ${code ?? 'unknown'}`)
   })
-  return demoStatus()
+  return demoStatus(sessionId)
 }
 
-export const localDemoRunner: DemoRunner = {
-  start: startLocalDemoRun,
-  async status() {
-    return demoStatus()
-  },
+export function localDemoRunnerForSession(sessionId?: string): DemoRunner {
+  return {
+    start(input) {
+      return startLocalDemoRun(input, sessionId)
+    },
+    async status() {
+      return demoStatus(sessionId)
+    },
+  }
 }
 
-export function resetMcpDemoSession(): void {
-  if (mcpDemoState.agentId) {
-    const agent = connectedAgents.get(mcpDemoState.agentId)
+export const localDemoRunner: DemoRunner = localDemoRunnerForSession()
+
+export function resetMcpDemoSession(sessionId?: string): void {
+  const state = mcpStateForSession(sessionId)
+  if (state.agentId) {
+    const agent = connectedAgents.get(state.agentId)
     if (agent) agent.status = 'revoked'
   }
-  mcpDemoState.agentId = undefined
-  mcpDemoState.agentName = undefined
-  mcpDemoState.token = undefined
-  mcpDemoState.jobId = undefined
-  mcpDemoState.startedAt = undefined
+  state.agentId = undefined
+  state.agentName = undefined
+  state.token = undefined
+  state.jobId = undefined
+  state.startedAt = undefined
 }
 
 function mcpDemoAgentName(): string {
@@ -259,16 +348,16 @@ function mcpDemoAgentName(): string {
   return `${mcpDemoAgentBase}-${Date.now().toString(36)}`
 }
 
-function mcpDemoAgent(): ConnectedAgent | undefined {
-  return mcpDemoState.agentId ? connectedAgents.get(mcpDemoState.agentId) : undefined
+function mcpDemoAgent(state: McpDemoState): ConnectedAgent | undefined {
+  return state.agentId ? connectedAgents.get(state.agentId) : undefined
 }
 
-function mcpDemoJob(): Job | undefined {
-  return mcpDemoState.jobId ? jobs.get(mcpDemoState.jobId) : undefined
+function mcpDemoJob(state: McpDemoState): Job | undefined {
+  return state.jobId ? jobs.get(state.jobId) : undefined
 }
 
 function mcpDemoUrl(): string {
-  return `http://localhost:${PORT}/mcp`
+  return publicUrl('/mcp')
 }
 
 function mcpDemoSteps(agent?: ConnectedAgent, job?: Job): McpDemoStatus['steps'] {
@@ -285,24 +374,25 @@ function mcpDemoSteps(agent?: ConnectedAgent, job?: Job): McpDemoStatus['steps']
   }
 }
 
-export function mcpDemoStatus(includeSecret = false): McpDemoStatus {
-  const agent = mcpDemoAgent()
-  const job = mcpDemoJob()
+export function mcpDemoStatus(includeSecret = false, sessionId?: string): McpDemoStatus {
+  const state = mcpStateForSession(sessionId)
+  const agent = mcpDemoAgent(state)
+  const job = mcpDemoJob(state)
   const previewUrl = job?.submission?.url
-  const token = includeSecret ? mcpDemoState.token : undefined
+  const token = includeSecret ? state.token : undefined
   const authorizationHeader = token ? `Authorization: Bearer ${token}` : undefined
   const setup = token ? [
     `MCP_URL=${mcpDemoUrl()}`,
     `MCP_AUTH_HEADER=${authorizationHeader}`,
-    `MCP_JOB_ID=${mcpDemoState.jobId || ''}`,
+    `MCP_JOB_ID=${state.jobId || ''}`,
   ].join('\n') : undefined
   return {
     active: Boolean(agent || job),
-    agentName: agent?.name || mcpDemoState.agentName || mcpDemoAgentBase,
+    agentName: agent?.name || state.agentName || mcpDemoAgentBase,
     mcpUrl: mcpDemoUrl(),
-    ...(mcpDemoState.jobId ? { jobId: mcpDemoState.jobId } : {}),
+    ...(state.jobId ? { jobId: state.jobId } : {}),
     ...(previewUrl ? { previewUrl } : {}),
-    ...(mcpDemoState.startedAt ? { startedAt: mcpDemoState.startedAt } : {}),
+    ...(state.startedAt ? { startedAt: state.startedAt } : {}),
     ...(agent?.lastSeenAt ? { lastSeenAt: agent.lastSeenAt } : {}),
     ...(authorizationHeader ? { authorizationHeader } : {}),
     ...(setup ? { setup } : {}),
@@ -313,33 +403,35 @@ export function mcpDemoStatus(includeSecret = false): McpDemoStatus {
   }
 }
 
-export async function startMcpDemoSession(input: Record<string, unknown> = {}): Promise<McpDemoStatus> {
+export async function startMcpDemoSession(input: Record<string, unknown> = {}, sessionId?: string): Promise<McpDemoStatus> {
+  const state = mcpStateForSession(sessionId)
   if (input.resetOnly) {
-    resetMcpDemoSession()
+    resetMcpDemoSession(sessionId)
     await saveAgents()
-    return mcpDemoStatus(false)
+    return mcpDemoStatus(false, sessionId)
   }
-  if (input.restart) resetMcpDemoSession()
+  if (input.restart) resetMcpDemoSession(sessionId)
   const requestedJobId = String(input.jobId || '').trim()
-  if (requestedJobId && mcpDemoState.jobId !== requestedJobId) resetMcpDemoSession()
-  if (mcpDemoState.token && mcpDemoState.jobId && mcpDemoAgent()?.status === 'active') {
-    return mcpDemoStatus(true)
+  if (requestedJobId && state.jobId !== requestedJobId) resetMcpDemoSession(sessionId)
+  if (state.token && state.jobId && mcpDemoAgent(state)?.status === 'active') {
+    return mcpDemoStatus(true, sessionId)
   }
 
   const wallet = String(input.wallet || wallets().worker || '').trim()
   if (wallet && !publicKey(wallet)) fail('valid payout wallet is required')
-  const created = createConnectedAgent({ name: mcpDemoAgentName(), wallet })
-  const job = requestedJobId ? jobs.get(requestedJobId) : createDemoRunJob(input)
+  const created = createConnectedAgent({ name: mcpDemoAgentName(), wallet, ...(sessionId ? { demoSessionId: sessionId } : {}) })
+  const job = requestedJobId ? jobs.get(requestedJobId) : createDemoRunJob(input, sessionId)
   if (!job) fail('job not found', 404)
+  if (sessionId && job.demoSessionId !== sessionId) fail('job not found', 404)
   if (!job.marketplace || job.status !== 'open') fail('MCP demo job must be an open marketplace task', 409)
   job.messages.push({ at: now(), author: 'employer', text: 'MCP demo: connect OpenClaw to the platform MCP server, bid, build, and submit delivery evidence.' })
   addEvent(job, 'system', 'mcp_demo', 'MCP worker-agent demo session created')
-  mcpDemoState.agentId = created.agent.id
-  mcpDemoState.agentName = created.agent.name
-  mcpDemoState.token = created.token
-  mcpDemoState.jobId = job.id
-  mcpDemoState.startedAt = now()
+  state.agentId = created.agent.id
+  state.agentName = created.agent.name
+  state.token = created.token
+  state.jobId = job.id
+  state.startedAt = now()
   await saveAgents()
   await saveJobs()
-  return mcpDemoStatus(true)
+  return mcpDemoStatus(true, sessionId)
 }

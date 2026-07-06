@@ -100,6 +100,7 @@ export interface ConnectedAgent {
   id: string
   name: string
   wallet?: string
+  demoSessionId?: string
   tokenHash: string
   status: 'active' | 'revoked'
   createdAt: string
@@ -127,6 +128,7 @@ export interface Settlement {
 }
 export interface Job {
   id: string
+  demoSessionId?: string
   status: Status
   createdAt: string
   title: string

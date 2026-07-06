@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { DEFAULT_JOB_BRIEF, EMPTY_MCP_SESSION, EMPTY_RUNNER, SCRIPT, CORAL_BUS } from './config.js'
+import { DEFAULT_JOB_BRIEF, EMPTY_MCP_SESSION, EMPTY_RUNNER, SCRIPT } from './config.js'
 import { api } from './client.js'
 import { cameraNodes, focusCamera, graphDebugEnabled, recordGraphDebug } from './camera.js'
 import { makeGraph } from './graph.js'
@@ -125,7 +125,7 @@ export function App() {
     setJobError('')
     setLiveEnabled(true)
     try {
-      const state = await api('/api/jobs', jobPostBody(next))
+      const state = await api('/api/demo/jobs', jobPostBody(next))
       const created = state.createdJob || newest(state.jobs || [])
       setDemoJob(next)
       setJobDraft(next)
@@ -149,7 +149,7 @@ export function App() {
     if (!force && !liveEnabled) return
     setLiveError('')
     try {
-      setLiveData(await api('/api/platform'))
+      setLiveData(await api('/api/demo/platform'))
     } catch (e) {
       setLiveError(e.message || String(e))
     }
@@ -158,10 +158,7 @@ export function App() {
   const refreshBus = async () => {
     setBusError('')
     try {
-      const res = await fetch(`${CORAL_BUS}/health`, { cache: 'no-store' })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || res.statusText)
-      setBusHealth(data)
+      setBusHealth(await api('/api/coral/health'))
     } catch (e) {
       setBusHealth(null)
       setBusError(e.message || String(e))

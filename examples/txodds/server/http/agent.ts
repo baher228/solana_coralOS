@@ -77,6 +77,7 @@ export function agentVisibleJobs(auth: AgentAuth) {
   const name = auth.agent.name
   return {
     jobs: list
+      .filter((job) => !auth.agent.demoSessionId || job.demoSessionId === auth.agent.demoSessionId)
       .filter((job) => job.status === 'open' || job.marketplace?.awardedBid?.by === name)
       .map(agentJob),
     reviews: [],

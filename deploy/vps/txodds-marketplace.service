@@ -1,0 +1,15 @@
+[Unit]
+Description=TxOdds marketplace bridge
+After=network.target txodds-api.service txodds-coral-bus.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/solana_coralOS/examples/txodds
+Environment=KIT_ENV=/opt/solana_coralOS/.env.production
+Environment=AGENT_NAME=marketplace-bridge
+ExecStart=/usr/bin/env npm run agent:marketplace
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

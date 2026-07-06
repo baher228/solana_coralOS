@@ -5,18 +5,15 @@ import { AGENTS_FILE, DATA_DIR, DATA_FILE } from './config.js'
 import type { ConnectedAgent, DemoRunStatus, DevnetEscrow, Dispute, Job, MarketplaceBid, MarketplaceState, Milestone, Status } from './types.js'
 import { deadlineFromNowSecs, fail, makeMilestones, now, participantName, publicKey, referenceFor, statuses, wallets } from './domain/utils.js'
 
-export const jobs = new Map<string, Job>()
-export const connectedAgents = new Map<string, ConnectedAgent>()
-export const demoAgentBase = 'demo-worker-live'
-export const mcpDemoAgentBase = 'openclaw-mcp-demo'
-export const mcpDemoState: {
+export interface McpDemoState {
   agentId?: string
   agentName?: string
   token?: string
   jobId?: string
   startedAt?: string
-} = {}
-export const demoRunState: {
+}
+
+export interface DemoRunState {
   child?: ChildProcess
   agentName?: string
   token?: string
@@ -25,11 +22,24 @@ export const demoRunState: {
   startedAt?: string
   error?: string
   logs: string[]
-} = { logs: [] }
+}
+
+export const jobs = new Map<string, Job>()
+export const connectedAgents = new Map<string, ConnectedAgent>()
+export const demoAgentBase = 'demo-worker-live'
+export const mcpDemoAgentBase = 'openclaw-mcp-demo'
+export const mcpDemoState: McpDemoState = {}
+export const demoRunState: DemoRunState = { logs: [] }
+export const demoSessions = new Map<string, { lastSeen: number }>()
+export const demoRunStates = new Map<string, DemoRunState>()
+export const mcpDemoStates = new Map<string, McpDemoState>()
 
 export function resetStoresForTest(): void {
   jobs.clear()
   connectedAgents.clear()
+  demoSessions.clear()
+  demoRunStates.clear()
+  mcpDemoStates.clear()
   Object.keys(mcpDemoState).forEach((key) => delete mcpDemoState[key as keyof typeof mcpDemoState])
   demoRunState.child = undefined
   demoRunState.agentName = undefined
@@ -85,6 +95,7 @@ function hydrateConnectedAgent(input: unknown): ConnectedAgent | null {
     id,
     name,
     ...(source.wallet ? { wallet: String(source.wallet) } : {}),
+    ...(source.demoSessionId ? { demoSessionId: String(source.demoSessionId) } : {}),
     tokenHash,
     status: source.status === 'revoked' ? 'revoked' : 'active',
     createdAt: String(source.createdAt || now()),
@@ -109,8 +120,9 @@ export async function saveAgents(): Promise<void> {
   await fs.writeFile(AGENTS_FILE, JSON.stringify([...connectedAgents.values()], null, 2))
 }
 
-export function listConnectedAgents() {
+export function listConnectedAgents(demoSessionId?: string) {
   return [...connectedAgents.values()]
+    .filter((agent) => !demoSessionId || agent.demoSessionId === demoSessionId)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map(sanitizeAgent)
 }
@@ -129,6 +141,7 @@ export function createConnectedAgent(input: Record<string, unknown>): { agent: R
     id,
     name,
     ...(wallet ? { wallet } : {}),
+    ...(input.demoSessionId ? { demoSessionId: String(input.demoSessionId) } : {}),
     tokenHash: hashToken(token),
     status: 'active',
     createdAt: now(),
@@ -243,6 +256,7 @@ export function hydrateJob(input: unknown): Job | null {
   const marketplace = hydrateMarketplace(source.marketplace, amountSol)
   return {
     id: String(source.id),
+    ...(source.demoSessionId ? { demoSessionId: String(source.demoSessionId) } : {}),
     status,
     createdAt: String(source.createdAt || now()),
     title,

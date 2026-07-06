@@ -1,13 +1,14 @@
 import type http from 'node:http'
+import { randomBytes } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { CORAL_BUS_API, PORT, REVIEW_DIR } from '../config.js'
-import { connectedAgents, createConnectedAgent, hydrateJob, jobs, listConnectedAgents, revokeConnectedAgent, saveAgents, saveJobs } from '../store.js'
-import { cleanDemoState, demoStatus, localDemoRunner, mcpDemoStatus, resetDemoRun, resetMcpDemoSession, sanitizeDemoStatus, startMcpDemoSession } from '../demo/index.js'
+import { CORAL_BUS_API, DEMO_SESSION_TTL_MS, PORT, PUBLIC_BASE_URL, REVIEW_DIR, corsOrigin } from '../config.js'
+import { createConnectedAgent, hydrateJob, jobs, listConnectedAgents, resetStoresForTest, revokeConnectedAgent, saveAgents, saveJobs } from '../store.js'
+import { cleanDemoState, createDemoRunJob, demoSessionJobs, demoStatus, localDemoRunner, localDemoRunnerForSession, mcpDemoStatus, sanitizeDemoStatus, startMcpDemoSession, touchDemoSession } from '../demo/index.js'
 import { approveReviewedJob, assessDisputeWithAi, assessJobWithAi, assessJobWithPanel, collectPanelReviewArtifacts, disputeJob, panelReviewRequest, recordPanelOpinions, requestRevisionJob, reviewJob } from '../review/index.js'
 import { awardAgentBid, cancelJob, claimJob, completeMilestone, createJob, deliveryReviewMode, recordAgentBid, refundJob, runAgentMarketTick, settleAgentEscrow, submitAgentDelivery, submitJob } from '../domain/index.js'
 import { addEvent, fail, now, terminal, walletsWithBalances } from '../domain/utils.js'
-import { agentJob, agentVisibleJobs, readJson, requireAgentAuth, requireLocalRequest, send } from './agent.js'
+import { agentJob, agentVisibleJobs, readJson, requireAgentAuth, send } from './agent.js'
 import { runBackendTicks } from './ticks.js'
 import type { HandlerOptions } from './types.js'
 import { handleMcpRequest, mcpAgentJob, requireMcpOrigin } from '../mcp/index.js'
@@ -31,9 +32,30 @@ export async function sendArtifact(res: http.ServerResponse, job: Job, artifactI
   res.end(await fs.readFile(file))
 }
 
-export async function state() {
+function cookieValue(req: http.IncomingMessage, name: string): string | undefined {
+  const raw = Array.isArray(req.headers.cookie) ? req.headers.cookie.join(';') : req.headers.cookie
+  return raw?.split(';')
+    .map((part) => part.trim())
+    .map((part) => part.match(/^([^=]+)=(.*)$/))
+    .find((match) => match?.[1] === name)?.[2]
+}
+
+function ensureDemoSession(req: http.IncomingMessage, res: http.ServerResponse): string {
+  const existing = cookieValue(req, 'txodds_demo_session')
+  const sessionId = existing?.match(/^[a-zA-Z0-9_-]{16,80}$/) ? existing : `demo_${randomBytes(18).toString('base64url')}`
+  touchDemoSession(sessionId)
+  if (sessionId !== existing) {
+    const maxAge = Math.max(60, Math.floor(DEMO_SESSION_TTL_MS / 1000))
+    const secure = PUBLIC_BASE_URL.startsWith('https://') ? '; Secure' : ''
+    res.setHeader('Set-Cookie', `txodds_demo_session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`)
+  }
+  return sessionId
+}
+
+export async function state(demoSessionId?: string) {
   const w = await walletsWithBalances()
-  const list = [...jobs.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const list = (demoSessionId ? demoSessionJobs(demoSessionId) : [...jobs.values()])
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
   const hasDevnetEscrow = list.some((job) => job.settlement.mode === 'devnet-escrow')
   const summary = {
     totalJobs: list.length,
@@ -50,7 +72,7 @@ export async function state() {
   }
   return {
     jobs: list,
-    agents: listConnectedAgents(),
+    agents: listConnectedAgents(demoSessionId),
     summary,
     setup: {
       wallets: w,
@@ -65,10 +87,7 @@ export async function state() {
 }
 
 export function resetJobsForTest(): void {
-  resetDemoRun()
-  resetMcpDemoSession()
-  jobs.clear()
-  connectedAgents.clear()
+  resetStoresForTest()
 }
 
 export async function resetCoralBusForDemo(): Promise<void> {
@@ -85,7 +104,10 @@ export async function resetCoralBusForDemo(): Promise<void> {
 
 export function createHandler(options: HandlerOptions = {}): http.RequestListener {
   return async (req, res) => {
-    res.setHeader('Access-Control-Allow-Origin', '*')
+    const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin
+    const allowedOrigin = corsOrigin(origin)
+    if (allowedOrigin) res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
+    if (allowedOrigin && allowedOrigin !== '*') res.setHeader('Vary', 'Origin')
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id, MCP-Protocol-Version')
     res.setHeader('Access-Control-Expose-Headers', 'Mcp-Session-Id')
@@ -96,7 +118,9 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
         if (url.pathname === '/mcp') requireMcpOrigin(req, res)
         return send(res, 204, {})
       }
-      const demoRunner = options.demoRunner || localDemoRunner
+      const demoRoute = url.pathname.startsWith('/api/demo/')
+      const demoSessionId = demoRoute ? ensureDemoSession(req, res) : undefined
+      const demoRunner = options.demoRunner || (demoSessionId ? localDemoRunnerForSession(demoSessionId) : localDemoRunner)
       const agentRoute = url.pathname.match(/^\/api\/agent\/jobs(?:\/([^/]+)\/(bids|award|delivery|artifacts|panel-opinions|panel-review|settle))?$/)
       const agentsRoute = url.pathname.match(/^\/api\/agents(?:\/([^/]+)\/(revoke))?$/)
       const route = url.pathname.match(/^\/api\/jobs\/([^/]+)\/(claim|messages|submission|review|dispute|refund|cancel)$/)
@@ -104,29 +128,49 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       const milestoneRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/milestones\/([^/]+)\/complete$/)
       const artifactRoute = url.pathname.match(/^\/api\/jobs\/([^/]+)\/artifacts\/([^/]+)$/)
 
+      if (req.method === 'GET' && url.pathname === '/api/coral/health') {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 1500)
+        try {
+          const upstream = await fetch(`${CORAL_BUS_API}/health`, { signal: controller.signal })
+          const body = await upstream.json().catch(() => ({}))
+          return send(res, upstream.ok ? 200 : 502, body)
+        } finally {
+          clearTimeout(timeout)
+        }
+      }
+
       if (url.pathname === '/mcp') return await handleMcpRequest(req, res, options)
 
+      if (req.method === 'GET' && url.pathname === '/api/demo/platform' && demoSessionId) {
+        if (await runBackendTicks(options)) await saveJobs()
+        return send(res, 200, await state(demoSessionId))
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/demo/jobs' && demoSessionId) {
+        const createdJob = createDemoRunJob(await readJson(req), demoSessionId)
+        await saveJobs()
+        return send(res, 201, { ...(await state(demoSessionId)), createdJob })
+      }
+
       if (url.pathname === '/api/demo/reset') {
-        requireLocalRequest(req)
         if (req.method === 'POST') {
-          cleanDemoState()
-          await resetCoralBusForDemo()
+          cleanDemoState(demoSessionId)
+          if (/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::|\/|$)/.test(PUBLIC_BASE_URL)) await resetCoralBusForDemo()
           await saveJobs()
           await saveAgents()
-          return send(res, 200, { ...(await state()), demo: demoStatus(), mcp: mcpDemoStatus(false) })
+          return send(res, 200, { ...(await state(demoSessionId)), demo: demoStatus(demoSessionId), mcp: mcpDemoStatus(false, demoSessionId) })
         }
         return send(res, 404, { error: 'not found' })
       }
 
       if (url.pathname === '/api/demo/mcp-session') {
-        requireLocalRequest(req)
-        if (req.method === 'GET') return send(res, 200, mcpDemoStatus(false))
-        if (req.method === 'POST') return send(res, 200, await startMcpDemoSession(await readJson(req)))
+        if (req.method === 'GET') return send(res, 200, mcpDemoStatus(false, demoSessionId))
+        if (req.method === 'POST') return send(res, 200, await startMcpDemoSession(await readJson(req), demoSessionId))
         return send(res, 404, { error: 'not found' })
       }
 
       if (url.pathname === '/api/demo/agent-run') {
-        requireLocalRequest(req)
         if (req.method === 'GET') return send(res, 200, sanitizeDemoStatus(await demoRunner.status()))
         if (req.method === 'POST') return send(res, 200, sanitizeDemoStatus(await demoRunner.start(await readJson(req))))
         return send(res, 404, { error: 'not found' })
@@ -142,7 +186,7 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
           ...created,
           env: [
             'AGENT_TRANSPORT=api',
-            `AGENT_API_BASE=http://localhost:${PORT}`,
+            `AGENT_API_BASE=${PUBLIC_BASE_URL}`,
             `AGENT_API_TOKEN=${created.token}`,
             `AGENT_NAME=${created.agent.name}`,
             created.agent.wallet ? `DEMO_WORKER_WALLET=${created.agent.wallet}` : '',
@@ -170,6 +214,7 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
           const [, id, action] = agentRoute
           const job = jobs.get(id)
           if (!job) fail('job not found', 404)
+          if (auth.kind === 'agent' && auth.agent.demoSessionId && job.demoSessionId !== auth.agent.demoSessionId) fail('job not found', 404)
           const body = await readJson(req)
           if (action === 'bids') {
             const bid = recordAgentBid(job, auth.kind === 'agent'

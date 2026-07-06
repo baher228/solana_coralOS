@@ -63,6 +63,7 @@ export function mcpAgentJob(job: Job) {
 }
 
 function mcpCanSeeJob(auth: McpAgentAuth, job: Job): boolean {
+  if (auth.agent.demoSessionId && job.demoSessionId !== auth.agent.demoSessionId) return false
   return job.status === 'open' || job.marketplace?.awardedBid?.by === auth.agent.name
 }
 

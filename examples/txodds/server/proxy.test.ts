@@ -63,7 +63,7 @@ async function request(handler: http.RequestListener, path: string, init: Reques
   try {
     const res = await fetch(`http://127.0.0.1:${port}${path}`, init)
     const body = await res.json().catch(() => ({}))
-    return { status: res.status, body }
+    return { status: res.status, body, cookie: res.headers.get('set-cookie')?.split(';')[0] || '' }
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
@@ -506,6 +506,7 @@ describe('freelance escrow platform flow', () => {
     }))
     expect(started.status).toBe(200)
     expect(started.body.token).toMatch(/^agt_/)
+    const cookie = started.cookie
     expect(started.body.setup).toContain('/mcp')
     expect(started.body.jobId).toMatch(/^job_/)
     expect(started.body.steps.registered).toBe(true)
@@ -516,7 +517,7 @@ describe('freelance escrow platform flow', () => {
     expect(job.employer).toBe('OpenClaw Studio')
     expect(job.marketplace.budgetSol).toBe(0.002)
 
-    const safeStatus = await request(handler, '/api/demo/mcp-session')
+    const safeStatus = await request(handler, '/api/demo/mcp-session', { headers: { Cookie: cookie } })
     expect(safeStatus.status).toBe(200)
     expect(JSON.stringify(safeStatus.body)).not.toContain(started.body.token)
     expect(JSON.stringify(safeStatus.body)).not.toContain('tokenHash')
@@ -528,7 +529,7 @@ describe('freelance escrow platform flow', () => {
       })
     })
 
-    const afterMcp = await request(handler, '/api/demo/mcp-session')
+    const afterMcp = await request(handler, '/api/demo/mcp-session', { headers: { Cookie: cookie } })
     expect(afterMcp.body.steps.connected).toBe(true)
     expect(afterMcp.body.steps.bidPlaced).toBe(true)
     expect(afterMcp.body.lastSeenAt).toBeTruthy()
@@ -541,7 +542,7 @@ describe('freelance escrow platform flow', () => {
     const started = await request(handler, '/api/demo/mcp-session', json({ wallet }))
     expect(started.body.token).toMatch(/^agt_/)
 
-    const reset = await request(handler, '/api/demo/reset', json({}))
+    const reset = await request(handler, '/api/demo/reset', { ...json({}), headers: { Cookie: started.cookie, 'Content-Type': 'application/json' } })
     expect(reset.status).toBe(200)
     expect(reset.body.jobs).toHaveLength(0)
     expect(reset.body.mcp.active).toBe(false)

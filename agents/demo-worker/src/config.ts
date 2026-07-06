@@ -13,6 +13,7 @@ export interface WorkerConfig {
   deliveryPort: number
   deliveryUrl: string
   generatedRoot: string
+  publicPreviewBaseUrl: string
   generateDelivery: boolean
   transport: string
   apiBase: string
@@ -33,6 +34,7 @@ export function readConfig(): WorkerConfig {
     deliveryPort: Number(process.env.DEMO_DELIVERY_PORT ?? 4177),
     deliveryUrl: process.env.DEMO_DELIVERY_URL || '',
     generatedRoot: process.env.DEMO_DELIVERY_DIR || path.join(tmpdir(), 'solana-coralos-demo-worker'),
+    publicPreviewBaseUrl: process.env.DEMO_PUBLIC_PREVIEW_BASE_URL || '',
     generateDelivery: process.env.DEMO_GENERATE_DELIVERY === '1',
     transport: (process.env.AGENT_TRANSPORT || 'api').toLowerCase(),
     apiBase: process.env.AGENT_API_BASE || process.env.PLATFORM_API_URL || 'http://localhost:8801',

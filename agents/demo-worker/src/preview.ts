@@ -51,6 +51,11 @@ export function createPreviewResolver(config: WorkerConfig) {
     if (config.deliveryUrl) return config.deliveryUrl
     if (config.generateDelivery) {
       const rel = await generatedPreviewPath(job, config)
+      if (config.publicPreviewBaseUrl) {
+        const url = new URL(`${rel}/`, `${config.publicPreviewBaseUrl.replace(/\/+$/, '')}/`).toString()
+        console.error(`[${config.agentName}] serving generated delivery at ${url}`)
+        return url
+      }
       fixtureUrl ||= await serveDirectory(config.generatedRoot, config.deliveryPort)
       const url = new URL(`${rel}/`, fixtureUrl).toString()
       console.error(`[${config.agentName}] serving generated delivery at ${url}`)
