@@ -1524,7 +1524,8 @@ button.escrow-ghost:hover:not(:disabled) {
   padding: 18px;
 }
 
-/* App shell fits the viewport on desktop: only the content pane scrolls. */
+/* App shell fits the viewport on desktop: the page never scrolls as a whole,
+   long panels (tables, detail, ledgers) scroll inside their own frame. */
 @media (min-width: 1181px) {
   .escrow-app {
     height: 100dvh;
@@ -1537,12 +1538,36 @@ button.escrow-ghost:hover:not(:disabled) {
   }
   .escrow-content {
     height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .escrow-topbar { flex: none; }
+  .escrow-error { flex: none; }
+  /* The active view fills the remaining height. */
+  .escrow-content > .escrow-view,
+  .escrow-content > .escrow-workspace-grid {
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
   }
-  .escrow-topbar {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+  /* Views built around a list + detail workspace: fill, don't scroll the frame. */
+  .escrow-content > .escrow-view:has(> .escrow-workspace-grid) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .escrow-content > .escrow-view:has(> .escrow-workspace-grid) > .escrow-workspace-grid {
+    flex: 1;
+    min-height: 0;
+  }
+  .escrow-content > .escrow-workspace-grid { overflow: hidden; }
+  /* Inner panels take the scroll instead of the page. */
+  .escrow-workspace-grid > .escrow-main-panel,
+  .escrow-workspace-grid > .escrow-detail {
+    min-height: 0;
+    overflow-y: auto;
   }
 }
 
