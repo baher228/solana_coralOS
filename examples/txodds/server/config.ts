@@ -56,9 +56,16 @@ export function publicUrl(pathname = ''): string {
 }
 
 export function corsOrigin(origin?: string): string | undefined {
-  if (!origin) return CORS_ALLOWED_ORIGINS.length ? undefined : '*'
-  if (!CORS_ALLOWED_ORIGINS.length || CORS_ALLOWED_ORIGINS.includes('*') || CORS_ALLOWED_ORIGINS.includes(origin)) return origin
-  return undefined
+  const list = CORS_ALLOWED_ORIGINS
+  if (list.includes('*')) return origin || '*'
+  if (list.includes(origin || '')) return origin
+  if (list.length) return undefined
+  // No explicit allowlist. In production (OPERATOR_TOKEN set) do NOT reflect
+  // arbitrary browser origins; only answer credential-less no-Origin callers.
+  // In local dev, stay permissive for convenience.
+  const strict = Boolean(process.env.OPERATOR_TOKEN?.trim())
+  if (!origin) return '*'
+  return strict ? undefined : origin
 }
 
 export async function loadEnv() {

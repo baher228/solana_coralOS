@@ -8,6 +8,8 @@ import { Keypair } from '@solana/web3.js'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { afterEach, describe, expect, it } from 'vitest'
+import { corsOrigin } from './config.js'
+import { rateLimited, resetRateLimitForTest } from './http/rate-limit.js'
 import {
   agentBidWallet,
   approveReviewedJob,
@@ -830,6 +832,7 @@ describe('freelance escrow platform flow', () => {
 
   it('collects Coral panel artifacts from local file repos', async () => {
     const restoreBuyer = withBuyerKey()
+    process.env.REVIEW_ALLOW_CODE_EXECUTION = '1' // this test exercises the (opt-in) repo build path
     try {
       const job = openTask()
       recordAgentBid(job, { by: 'demo-worker', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.001 })
@@ -846,6 +849,29 @@ describe('freelance escrow platform flow', () => {
 
       expect(review.artifactRun?.repo.status).toBe('pass')
       expect(review.artifactRun?.repo.summary).toMatch(/Local repository/)
+    } finally {
+      delete process.env.REVIEW_ALLOW_CODE_EXECUTION
+      restoreBuyer()
+    }
+  })
+
+  it('skips repository build/test execution unless explicitly enabled', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'demo-worker', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.001 })
+      await awardAgentBid(job, { by: 'demo-worker' }, fakeEscrow())
+      const repoDir = await fs.mkdtemp(path.join(os.tmpdir(), 'txodds-local-repo-'))
+      await fs.writeFile(path.join(repoDir, 'index.html'), '<title>Local</title>')
+      submitJob(job, {
+        repo: pathToFileURL(repoDir).href,
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
+      })
+
+      const review = await collectPanelReviewArtifacts(job, {})
+
+      expect(review.artifactRun?.repo.status).toBe('skipped')
+      expect(review.artifactRun?.repo.summary).toMatch(/execution is disabled/)
     } finally {
       restoreBuyer()
     }
@@ -1304,6 +1330,48 @@ describe('single-operator authentication and request limits', () => {
     const res = await request(handler, '/api/import', json({ jobs: 'not-an-array' }))
     expect(res.status).toBe(400)
     expect(String(res.body.error)).not.toContain('at Object')
+  })
+})
+
+describe('security hardening', () => {
+  it('reflects browser origins in dev but blocks them in production (no allowlist)', () => {
+    const prev = process.env.OPERATOR_TOKEN
+    delete process.env.OPERATOR_TOKEN
+    expect(corsOrigin('https://evil.test')).toBe('https://evil.test')
+    process.env.OPERATOR_TOKEN = 'operator-secret'
+    try {
+      expect(corsOrigin('https://evil.test')).toBeUndefined()
+    } finally {
+      if (prev == null) delete process.env.OPERATOR_TOKEN
+      else process.env.OPERATOR_TOKEN = prev
+    }
+  })
+
+  it('rate-limits a client after the configured maximum', () => {
+    const prev = process.env.RATE_LIMIT_MAX
+    process.env.RATE_LIMIT_MAX = '2'
+    resetRateLimitForTest()
+    const req = { headers: {}, socket: { remoteAddress: '9.9.9.9' } } as never
+    try {
+      expect(rateLimited(req).limited).toBe(false)
+      expect(rateLimited(req).limited).toBe(false)
+      expect(rateLimited(req).limited).toBe(true)
+    } finally {
+      if (prev == null) delete process.env.RATE_LIMIT_MAX
+      else process.env.RATE_LIMIT_MAX = prev
+      resetRateLimitForTest()
+    }
+  })
+
+  it('disables demo endpoints when DISABLE_DEMO=1', async () => {
+    process.env.DISABLE_DEMO = '1'
+    try {
+      const handler = createHandler()
+      const res = await request(handler, '/api/demo/seed', json({}))
+      expect(res.status).toBe(404)
+    } finally {
+      delete process.env.DISABLE_DEMO
+    }
   })
 })
 

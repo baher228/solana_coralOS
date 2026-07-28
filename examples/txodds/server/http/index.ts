@@ -9,6 +9,7 @@ import { approveReviewedJob, assessDisputeWithAi, assessJobWithAi, assessJobWith
 import { agentBidWallet, awardAgentBid, cancelJob, claimJob, completeMilestone, createJob, deliveryReviewMode, recordAgentBid, refundJob, runAgentMarketTick, settleAgentEscrow, submitAgentDelivery, submitJob } from '../domain/index.js'
 import { addEvent, fail, now, terminal, walletsWithBalances } from '../domain/utils.js'
 import { agentJob, agentVisibleJobs, operatorAuthEnabled, readJson, requireAgentAuth, requireOperator, send } from './agent.js'
+import { rateLimited } from './rate-limit.js'
 import { runBackendTicks } from './ticks.js'
 import type { HandlerOptions } from './types.js'
 import { handleMcpRequest, mcpAgentJob, requireMcpOrigin } from '../mcp/index.js'
@@ -118,6 +119,18 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       if (req.method === 'OPTIONS') {
         if (url.pathname === '/mcp') requireMcpOrigin(req, res)
         return send(res, 204, {})
+      }
+      if (url.pathname !== '/api/health') {
+        const limit = rateLimited(req)
+        if (limit.limited) {
+          res.setHeader('Retry-After', Math.ceil(limit.retryAfterMs / 1000).toString())
+          return send(res, 429, { error: 'too many requests' })
+        }
+      }
+      // Demo/sample endpoints are for local exploration only; disable them in
+      // production so they can't be used to mutate or seed real state.
+      if (process.env.DISABLE_DEMO === '1' && url.pathname.startsWith('/api/demo/')) {
+        return send(res, 404, { error: 'not found' })
       }
       // Single-operator gate: when OPERATOR_TOKEN is configured, every API route
       // requires it except the health probe and the separately-authenticated

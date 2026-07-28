@@ -35,6 +35,13 @@ Approve only when every material acceptance item is demonstrated by inspected ar
 A public preview URL is optional when the submitted repository can be built and the backend captures local-build screenshots. Do not rely on 127.0.0.1/localhost preview URLs unless they were produced by backend artifact collection.
 Return only JSON with this shape: {"score":0-100,"recommendation":"approve|revision|dispute","confidence":0-100,"summary":"...","criteriaResults":[{"label":"...","status":"pass|fail|unclear","reason":"...","evidence":"..."}],"missing":["..."],"criticalRisks":["..."],"risks":["..."],"releaseEligible":false,"revisionInstructions":"..."}.`
 
+// Cloning a submitted repo and running its build/test scripts executes untrusted
+// code on the server. Off by default; only enable behind a sandbox (container /
+// gVisor / no-network). When disabled, review still inspects public preview URLs.
+function codeExecutionAllowed(): boolean {
+  return process.env.REVIEW_ALLOW_CODE_EXECUTION === '1'
+}
+
 function safeReviewEnv(): NodeJS.ProcessEnv {
   const keys = ['PATH', 'Path', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA']
   return Object.fromEntries(keys.flatMap((key) => process.env[key] ? [[key, process.env[key] as string]] : []))
@@ -321,7 +328,13 @@ export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
   if (workerEvidence.length) {
     await addArtifact(run, dir, 'link', 'Worker-submitted media evidence', 'worker-evidence.json', JSON.stringify(workerEvidence, null, 2), 'application/json')
   }
-  if (job.submission?.repo) {
+  if (job.submission?.repo && !codeExecutionAllowed()) {
+    run.repo = {
+      status: 'skipped',
+      summary: 'Repository build/test execution is disabled on this server (set REVIEW_ALLOW_CODE_EXECUTION=1 to enable inside a sandbox)',
+      url: job.submission.repo,
+    }
+  } else if (job.submission?.repo) {
     const cloneUrl = githubCloneUrl(job.submission.repo)
     const localRepo = cloneUrl ? null : fileRepoPath(job.submission.repo)
     if (!cloneUrl && !localRepo) {
