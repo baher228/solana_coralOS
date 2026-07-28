@@ -286,6 +286,7 @@ export function hydrateJob(input: unknown): Job | null {
       escrow: source.settlement?.escrow || devnet?.escrow || `local-${reference.slice(0, 12)}`,
       ...(source.settlement?.release ? { release: source.settlement.release } : {}),
       ...(source.settlement?.refund ? { refund: source.settlement.refund } : {}),
+      ...(source.settlement?.settlementError ? { settlementError: String(source.settlement.settlementError) } : {}),
       ...(devnet ? { devnet } : {}),
       events: Array.isArray(source.settlement?.events) ? source.settlement.events : [],
     },

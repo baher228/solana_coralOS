@@ -1,4 +1,4 @@
-import { Keypair, PublicKey } from '@solana/web3.js'
+import { Connection, Keypair, PublicKey } from '@solana/web3.js'
 import { deposit as escrowDeposit, escrowPda, makeProgram, release as escrowRelease, refund as escrowRefund } from '../../agent/escrow.ts'
 import { BID_WINDOW_MS, DEFAULT_RPC_URL, ESCROW_DEADLINE_SECS } from '../config.js'
 import { jobs } from '../store.js'
@@ -152,6 +152,9 @@ export interface DevnetEscrowAdapter {
   deposit(input: DevnetEscrowAdapterInput): Promise<string>
   release(input: DevnetEscrowAdapterInput): Promise<string>
   refund(input: DevnetEscrowAdapterInput): Promise<string>
+  // Optional: report whether the escrow PDA still exists on-chain. Used to make
+  // settlement idempotent after a crash between an on-chain tx and the DB save.
+  escrowExists?(input: DevnetEscrowAdapterInput): Promise<boolean>
 }
 
 const liveDevnetEscrowAdapter: DevnetEscrowAdapter = {
@@ -167,6 +170,50 @@ const liveDevnetEscrowAdapter: DevnetEscrowAdapter = {
     const program = await makeProgram(input.buyer, input.rpcUrl)
     return escrowRefund(program, input.buyer, input.reference)
   },
+  async escrowExists(input) {
+    const connection = new Connection(input.rpcUrl, 'confirmed')
+    const account = await connection.getAccountInfo(escrowPda(input.buyer.publicKey, input.reference))
+    return account !== null
+  },
+}
+
+// A settlement/deposit tx may confirm on-chain and then the process can die before
+// the DB save. On the next attempt the same instruction fails (PDA already
+// created for deposit, or already closed for release/refund). If the on-chain
+// state already reflects our intended action, reconcile the DB instead of
+// retrying forever.
+async function depositWithReconcile(adapter: DevnetEscrowAdapter, input: DevnetEscrowAdapterInput): Promise<string> {
+  try {
+    return await adapter.deposit(input)
+  } catch (e) {
+    if (adapter.escrowExists && await adapter.escrowExists(input)) return 'reconciled-deposit'
+    throw e
+  }
+}
+
+async function settleWithReconcile(adapter: DevnetEscrowAdapter, action: 'release' | 'refund', input: DevnetEscrowAdapterInput): Promise<string> {
+  try {
+    return action === 'release' ? await adapter.release(input) : await adapter.refund(input)
+  } catch (e) {
+    // If the escrow account is already gone, the tx we intended almost certainly
+    // landed on a previous attempt; record it as settled instead of retrying.
+    if (adapter.escrowExists && !(await adapter.escrowExists(input))) return `reconciled-${action}`
+    throw e
+  }
+}
+
+/**
+ * Resolve the payout wallet for a connected agent's bid. If the agent registered
+ * a payout wallet, bids are bound to it (a bid can't redirect funds to an
+ * arbitrary address). Agents without a registered wallet may supply one.
+ */
+export function agentBidWallet(agent: { wallet?: string }, requested?: string): string | undefined {
+  const bid = String(requested || '').trim()
+  if (agent.wallet) {
+    if (bid && bid !== agent.wallet) fail('bid wallet must match your registered payout wallet', 403)
+    return agent.wallet
+  }
+  return bid || undefined
 }
 
 export function ensureMarketplace(job: Job): MarketplaceState {
@@ -251,7 +298,7 @@ export async function awardAgentBid(
   const deadlineSecs = Number.isFinite(rawDeadlineSecs) && rawDeadlineSecs > 0 ? rawDeadlineSecs : ESCROW_DEADLINE_SECS
   const deadlineAt = deadlineFromNowSecs(deadlineSecs)
   const rpcUrl = process.env.SOLANA_RPC_URL || DEFAULT_RPC_URL
-  const depositSig = await adapter.deposit({ buyer, seller, reference, amountSol: winner.priceSol, deadlineSecs, rpcUrl })
+  const depositSig = await depositWithReconcile(adapter, { buyer, seller, reference, amountSol: winner.priceSol, deadlineSecs, rpcUrl })
   const escrow = escrowPda(buyer.publicKey, reference).toBase58()
   marketplace.status = 'awarded'
   marketplace.awardedBid = winner
@@ -345,13 +392,14 @@ export async function settleAgentEscrow(
   const input = escrowInput(job)
   const releaseAt = job.review?.autoReleaseAt || (job.review?.releaseEligible ? deadlineFrom(job.review.at) : '')
   if (job.review?.releaseEligible && releaseAt && new Date(releaseAt).getTime() <= at.getTime() && !activeDispute(job)) {
-    markDevnetReleased(job, await adapter.release(input))
+    markDevnetReleased(job, await settleWithReconcile(adapter, 'release', input))
     return 'released'
   }
   const escrowExpired = new Date(job.settlement.devnet.deadlineAt).getTime() <= at.getTime()
   const reviewedAndRejected = Boolean(job.review && job.review.source !== 'fallback' && !job.review.releaseEligible)
-  if (escrowExpired && !job.review?.releaseEligible && (!job.submission || reviewedAndRejected)) {
-    markDevnetRefunded(job, await adapter.refund(input))
+  // Never auto-refund while a dispute is still open; the dispute must resolve first.
+  if (escrowExpired && !job.review?.releaseEligible && !activeDispute(job) && (!job.submission || reviewedAndRejected)) {
+    markDevnetRefunded(job, await settleWithReconcile(adapter, 'refund', input))
     return 'refunded'
   }
   return null
@@ -385,8 +433,19 @@ export async function runAgentMarketTick(
     if (job.settlement.mode === 'devnet-escrow' && !terminal.has(job.status)) {
       try {
         if (await settleAgentEscrow(job, adapter, at)) changed += 1
-      } catch {
-        // Settlement can remain pending until review/deadline/network state changes.
+        if (job.settlement.settlementError) {
+          delete job.settlement.settlementError
+          changed += 1
+        }
+      } catch (e) {
+        // Settlement can remain pending until review/deadline/network state
+        // changes, but surface the error so stuck escrows are visible to ops.
+        const message = (e as Error).message
+        if (job.settlement.settlementError !== message) {
+          job.settlement.settlementError = message
+          addEvent(job, 'system', 'settlement_error', message)
+          changed += 1
+        }
       }
     }
   }
