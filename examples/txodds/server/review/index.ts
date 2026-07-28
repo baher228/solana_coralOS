@@ -739,7 +739,16 @@ export function recordPanelOpinions(job: Job, input: Record<string, unknown> = {
 function releaseReviewedJob(job: Job, actor: Actor, summary: string): Review {
   if (!job.review) fail('AI review is required before release', 409)
   const releasedAt = now()
-  job.review = { ...job.review, approved: true, recommendation: 'approve' }
+  job.review = { ...job.review, approved: true, recommendation: 'approve', releaseEligible: true }
+  if (job.settlement.mode === 'devnet-escrow') {
+    // Real escrow may only be released by the on-chain settlement path
+    // (settleAgentEscrow). Faking a `demo-release-*` marker here would report the
+    // job as released in local state while the funds stayed locked on-chain.
+    if (!job.review.autoReleaseAt) job.review.autoReleaseAt = deadlineFrom(job.review.at)
+    addSettlementEvent(job, 'reviewed', 'Approved for release; awaiting on-chain devnet settlement')
+    addEvent(job, actor, 'release_pending', summary)
+    return job.review
+  }
   job.status = 'released'
   job.settlement.release = `demo-release-${job.reference.slice(0, 10)}`
   job.milestones = job.milestones.map((m) => ({ ...m, status: 'complete', completedAt: m.completedAt || releasedAt }))
