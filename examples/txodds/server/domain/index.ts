@@ -157,6 +157,9 @@ function validateAgentDeliveryEvidence(submission: Submission): void {
 
 export interface DevnetEscrowAdapterInput {
   buyer: Keypair
+  // Settlement authority. In production this is a distinct KMS-held key; the funding wallet
+  // (buyer) and the settlement authority (arbiter) should not be the same hot key.
+  arbiter: Keypair
   seller: PublicKey
   reference: PublicKey
   amountSol: number
@@ -173,18 +176,39 @@ export interface DevnetEscrowAdapter {
   escrowExists?(input: DevnetEscrowAdapterInput): Promise<boolean>
 }
 
+// Minimum lamports the fee payer should hold beyond the deposit amount so a
+// settlement can't fail mid-flight for lack of fees. Configurable via env.
+function feeBufferLamports(): number {
+  const configured = Number(process.env.SETTLEMENT_FEE_BUFFER_LAMPORTS)
+  return Number.isFinite(configured) && configured >= 0 ? configured : 10_000_000 // ~0.01 SOL
+}
+
+async function preflightBalance(rpcUrl: string, payer: PublicKey, requiredLamports: number): Promise<void> {
+  const connection = new Connection(rpcUrl, 'confirmed')
+  const balance = await connection.getBalance(payer)
+  const needed = requiredLamports + feeBufferLamports()
+  if (balance < needed) {
+    fail(`insufficient balance for settlement: ${payer.toBase58()} has ${balance} lamports, needs ${needed}`, 503)
+  }
+}
+
 const liveDevnetEscrowAdapter: DevnetEscrowAdapter = {
   async deposit(input) {
+    // Buyer funds the escrow.
+    await preflightBalance(input.rpcUrl, input.buyer.publicKey, Math.round(input.amountSol * 1e9))
     const program = await makeProgram(input.buyer, input.rpcUrl)
-    return escrowDeposit(program, input.buyer, input.seller, input.reference, input.amountSol, input.deadlineSecs)
+    return escrowDeposit(program, input.buyer, input.seller, input.reference, input.amountSol, input.deadlineSecs, input.arbiter.publicKey)
   },
   async release(input) {
-    const program = await makeProgram(input.buyer, input.rpcUrl)
-    return escrowRelease(program, input.buyer, input.seller, input.reference)
+    // Arbiter authorizes + pays fees for settlement.
+    await preflightBalance(input.rpcUrl, input.arbiter.publicKey, 0)
+    const program = await makeProgram(input.arbiter, input.rpcUrl)
+    return escrowRelease(program, input.arbiter, input.buyer.publicKey, input.seller, input.arbiter.publicKey, input.reference)
   },
   async refund(input) {
-    const program = await makeProgram(input.buyer, input.rpcUrl)
-    return escrowRefund(program, input.buyer, input.reference)
+    await preflightBalance(input.rpcUrl, input.arbiter.publicKey, 0)
+    const program = await makeProgram(input.arbiter, input.rpcUrl)
+    return escrowRefund(program, input.arbiter, input.buyer.publicKey, input.arbiter.publicKey, input.reference)
   },
   async escrowExists(input) {
     const connection = new Connection(input.rpcUrl, 'confirmed')
@@ -245,6 +269,13 @@ function buyerKeypair(): Keypair {
   return buyer
 }
 
+// The arbiter is the settlement authority. It defaults to the buyer key for backward
+// compatibility, but production should set a distinct ARBITER_KEYPAIR_B58 (ideally a KMS signer)
+// so custody (funding) and settlement authority are separated.
+function arbiterKeypair(): Keypair {
+  return keypair('ARBITER_KEYPAIR_B58') || buyerKeypair()
+}
+
 function escrowInput(job: Job): DevnetEscrowAdapterInput {
   const devnet = job.settlement.devnet
   if (!devnet) fail('devnet escrow is required', 409)
@@ -254,6 +285,7 @@ function escrowInput(job: Job): DevnetEscrowAdapterInput {
   if (!seller || !reference) fail('devnet escrow state is invalid', 409)
   return {
     buyer,
+    arbiter: arbiterKeypair(),
     seller,
     reference,
     amountSol: devnet.amountSol,
@@ -315,7 +347,7 @@ export async function awardAgentBid(
   const deadlineAt = deadlineFromNowSecs(deadlineSecs)
   const rpcUrl = process.env.SOLANA_RPC_URL || DEFAULT_RPC_URL
   const depositSig = await recordedSettlement(job.id, 'deposit', () =>
-    depositWithReconcile(adapter, { buyer, seller, reference, amountSol: winner.priceSol, deadlineSecs, rpcUrl }))
+    depositWithReconcile(adapter, { buyer, arbiter: arbiterKeypair(), seller, reference, amountSol: winner.priceSol, deadlineSecs, rpcUrl }))
   const escrow = escrowPda(buyer.publicKey, reference).toBase58()
   marketplace.status = 'awarded'
   marketplace.awardedBid = winner

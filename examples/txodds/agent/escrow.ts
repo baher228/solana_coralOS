@@ -44,16 +44,18 @@ export async function deposit(
     .signers([buyer]).rpc()
 }
 
-export async function release(program: Program, buyer: Keypair, seller: PublicKey, reference: PublicKey): Promise<string> {
+// Settlement (release/refund) is authorized by the arbiter. `signer` is the arbiter keypair; in
+// production this is where a KMS/HSM signer replaces an in-process keypair (see makeProgram).
+export async function release(program: Program, signer: Keypair, buyer: PublicKey, seller: PublicKey, arbiter: PublicKey, reference: PublicKey): Promise<string> {
   return (program.methods as any)
     .release()
-    .accounts({ buyer: buyer.publicKey, seller, arbiter: buyer.publicKey, escrow: escrowPda(buyer.publicKey, reference) })
-    .signers([buyer]).rpc()
+    .accounts({ buyer, seller, arbiter, escrow: escrowPda(buyer, reference) })
+    .signers([signer]).rpc()
 }
 
-export async function refund(program: Program, buyer: Keypair, reference: PublicKey): Promise<string> {
+export async function refund(program: Program, signer: Keypair, buyer: PublicKey, arbiter: PublicKey, reference: PublicKey): Promise<string> {
   return (program.methods as any)
     .refund()
-    .accounts({ buyer: buyer.publicKey, arbiter: buyer.publicKey, escrow: escrowPda(buyer.publicKey, reference) })
-    .signers([buyer]).rpc()
+    .accounts({ buyer, arbiter, escrow: escrowPda(buyer, reference) })
+    .signers([signer]).rpc()
 }
