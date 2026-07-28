@@ -1236,3 +1236,108 @@ describe('freelance escrow platform flow', () => {
     expect(() => completeMilestone(cancelled, cancelled.milestones[0].id)).toThrow(/cannot complete milestones/)
   })
 })
+
+describe('single-operator authentication and request limits', () => {
+  function withEnv(key: string, value: string | undefined) {
+    const previous = process.env[key]
+    if (value == null) delete process.env[key]
+    else process.env[key] = value
+    return () => {
+      if (previous == null) delete process.env[key]
+      else process.env[key] = previous
+    }
+  }
+
+  const jobBody = {
+    title: 'Gated deliverable',
+    scope: 'A scoped deliverable with enough detail to pass validation.',
+    acceptanceCriteria: 'Clear acceptance criteria are present for review.',
+    amountSol: 0.01,
+  }
+
+  it('leaves the API open when OPERATOR_TOKEN is unset', async () => {
+    const handler = createHandler()
+    expect((await request(handler, '/api/state')).status).toBe(200)
+    expect((await request(handler, '/api/jobs', json(jobBody))).status).toBe(201)
+  })
+
+  it('requires the operator token on reads and mutations when configured', async () => {
+    const restore = withEnv('OPERATOR_TOKEN', 'operator-secret')
+    try {
+      const handler = createHandler()
+      expect((await request(handler, '/api/state')).status).toBe(401)
+      expect((await request(handler, '/api/state', { headers: { Authorization: 'Bearer wrong' } })).status).toBe(401)
+      expect((await request(handler, '/api/state', { headers: { Authorization: 'Bearer operator-secret' } })).status).toBe(200)
+      expect((await request(handler, '/api/jobs', json(jobBody))).status).toBe(401)
+      expect((await request(handler, '/api/jobs', json(jobBody, 'operator-secret'))).status).toBe(201)
+    } finally {
+      restore()
+    }
+  })
+
+  it('keeps the health probe public even when a token is configured', async () => {
+    const restore = withEnv('OPERATOR_TOKEN', 'operator-secret')
+    try {
+      const handler = createHandler()
+      expect((await request(handler, '/api/health')).status).toBe(200)
+    } finally {
+      restore()
+    }
+  })
+
+  it('rejects request bodies larger than the configured limit', async () => {
+    const restore = withEnv('MAX_BODY_BYTES', '64')
+    try {
+      const handler = createHandler()
+      const res = await request(handler, '/api/jobs', json({ ...jobBody, scope: 'x'.repeat(5000) }))
+      expect(res.status).toBe(413)
+    } finally {
+      restore()
+    }
+  })
+
+  it('does not leak internal error details on unexpected failures', async () => {
+    // /api/import with a non-array jobs field throws a client error (400), while
+    // a thrown internal error must surface as a generic message.
+    const handler = createHandler()
+    const res = await request(handler, '/api/import', json({ jobs: 'not-an-array' }))
+    expect(res.status).toBe(400)
+    expect(String(res.body.error)).not.toContain('at Object')
+  })
+})
+
+describe('devnet escrow money-safety', () => {
+  it('never fakes an on-chain release for devnet jobs during dispute review', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
+      })
+      await assessJobWithAi(job, aiApprove(), collectArtifacts())
+      disputeJob(job, { by: 'employer', note: 'The delivery allegedly misses the mobile acceptance item shown in the brief.' })
+
+      const review = await assessDisputeWithAi(job, aiApprove({ summary: 'Dispute is unsupported by the inspected artifacts.' }), collectArtifacts())
+
+      // The dispute resolves in favor of release, but the DB must NOT claim a
+      // release happened — only the on-chain settlement path may do that.
+      expect(review.releaseEligible).toBe(true)
+      expect(job.status).not.toBe('released')
+      expect(job.settlement.release).toBeUndefined()
+      expect(job.settlement.devnet?.release).toBeUndefined()
+
+      // The on-chain settlement path performs the actual release.
+      job.review!.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
+      expect(await settleAgentEscrow(job, fakeEscrow(), new Date())).toBe('released')
+      expect(job.status).toBe('released')
+      expect(job.settlement.devnet?.release).toBe('sig-release')
+    } finally {
+      restoreBuyer()
+    }
+  })
+})
