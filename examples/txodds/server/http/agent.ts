@@ -37,6 +37,20 @@ function bearerToken(req: http.IncomingMessage): string | undefined {
   return auth?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim()
 }
 
+// Browser <img>/<a> navigations can't set an Authorization header, so allow the
+// operator token via ?operator_token= on GET requests only (artifact images,
+// downloads). Mutations remain header-only to keep the token out of write URLs.
+function operatorRequestToken(req: http.IncomingMessage): string | undefined {
+  const header = bearerToken(req)
+  if (header) return header
+  if ((req.method || 'GET').toUpperCase() !== 'GET') return undefined
+  try {
+    return new URL(req.url || '/', 'http://localhost').searchParams.get('operator_token')?.trim() || undefined
+  } catch {
+    return undefined
+  }
+}
+
 function tokensMatch(provided: string, expected: string): boolean {
   const a = Buffer.from(provided)
   const b = Buffer.from(expected)
@@ -56,7 +70,7 @@ export function operatorAuthEnabled(): boolean {
 export function requireOperator(req: http.IncomingMessage): void {
   const expected = process.env.OPERATOR_TOKEN?.trim()
   if (!expected) return
-  const token = bearerToken(req)
+  const token = operatorRequestToken(req)
   if (!token || !tokensMatch(token, expected)) fail('operator authentication required', 401)
 }
 

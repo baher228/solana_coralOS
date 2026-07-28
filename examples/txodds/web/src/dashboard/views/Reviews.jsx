@@ -1,9 +1,13 @@
 import React from 'react'
-import { API } from '../lib/api.js'
+import { API, operatorToken } from '../lib/api.js'
 import { statusText } from '../lib/format.js'
 
 export function artifactHref(job, artifact) {
-  return `${API}/api/jobs/${job.id}/artifacts/${artifact.id}`
+  // <img>/<a> can't send an Authorization header, so pass the operator token
+  // (when configured) as a query param the server accepts for GET requests.
+  const token = operatorToken()
+  const query = token ? `?operator_token=${encodeURIComponent(token)}` : ''
+  return `${API}/api/jobs/${job.id}/artifacts/${artifact.id}${query}`
 }
 
 export function ArtifactStatus({ label, item }) {
