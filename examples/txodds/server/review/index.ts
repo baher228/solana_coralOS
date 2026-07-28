@@ -590,15 +590,14 @@ export function reviewJob(job: Job): Review {
     revisionInstructions: score >= 45 && hasEvidence ? '' : 'Provide clearer delivery evidence before release.',
   }
   job.review = review
-  job.status = review.approved ? 'released' : 'revision_requested'
   if (review.approved) {
-    job.settlement.release = `demo-release-${job.reference.slice(0, 10)}`
-    job.milestones = job.milestones.map((m) => ({ ...m, status: 'complete', completedAt: m.completedAt || review.at }))
-    addSettlementEvent(job, 'released', `Released ${job.amountSol} SOL to ${job.worker}`)
-  } else {
-    addSettlementEvent(job, 'reviewed', 'Review requested clearer delivery evidence')
+    // releaseReviewedJob keeps devnet escrow on the on-chain settlement path
+    // instead of stamping a fake local release marker.
+    return releaseReviewedJob(job, 'agent', review.summary)
   }
-  addEvent(job, 'agent', review.approved ? 'released' : 'revision_requested', review.summary)
+  job.status = 'revision_requested'
+  addSettlementEvent(job, 'reviewed', 'Review requested clearer delivery evidence')
+  addEvent(job, 'agent', 'revision_requested', review.summary)
   return review
 }
 
