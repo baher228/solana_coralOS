@@ -1,7 +1,7 @@
 import { api as request } from '../../shared/api.js'
 import { ACCOUNTS_URL, DEFAULT_ACCOUNTS } from './config.js'
 
-export { API } from '../../shared/api.js'
+export { API, operatorToken, setOperatorToken } from '../../shared/api.js'
 
 export function api(path, body) {
   return request(path, body)

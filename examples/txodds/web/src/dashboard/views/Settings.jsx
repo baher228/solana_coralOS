@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { API, api } from '../lib/api.js'
+import { API, api, operatorToken, setOperatorToken } from '../lib/api.js'
 import { formatTime, short } from '../lib/format.js'
 import { Empty, Field } from '../components/Common.jsx'
 
@@ -9,6 +9,7 @@ export function Settings({ data, act, refresh }) {
   const [agentForm, setAgentForm] = useState({ name: 'demo-worker', wallet: '' })
   const [createdAgent, setCreatedAgent] = useState(null)
   const [demoMcp, setDemoMcp] = useState(null)
+  const [operatorKey, setOperatorKey] = useState(operatorToken())
   const setAgent = (key) => (e) => setAgentForm({ ...agentForm, [key]: e.target.value })
   const agents = data.agents || []
   const mcpSetup = createdAgent ? [
@@ -95,6 +96,17 @@ export function Settings({ data, act, refresh }) {
                 : <b>Revoked</b>}
             </div>
           )) : <Empty title="No connected agents" body="Create an agent token to let a worker poll jobs, bid, and deliver." />}
+        </div>
+      </section>
+      <section className="escrow-main-panel">
+        <div className="escrow-section-head"><h2>Operator access</h2><span>{operatorToken() ? 'key set' : 'open'}</span></div>
+        <p className="escrow-muted">When the API runs with <code>OPERATOR_TOKEN</code>, paste the same key here so this dashboard can authenticate. Stored only in this browser.</p>
+        <div className="escrow-form-grid">
+          <Field label="Operator key"><input type="password" value={operatorKey} onInput={(e) => setOperatorKey(e.target.value)} placeholder="paste OPERATOR_TOKEN" /></Field>
+        </div>
+        <div className="escrow-action-bar">
+          <button className="escrow-primary" onClick={() => { setOperatorToken(operatorKey.trim()); refresh() }}>Save key</button>
+          <button className="escrow-ghost" onClick={() => { setOperatorToken(''); setOperatorKey(''); refresh() }}>Clear</button>
         </div>
       </section>
       <section className="escrow-main-panel">
