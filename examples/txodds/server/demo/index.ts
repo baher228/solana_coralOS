@@ -1,4 +1,3 @@
-import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { DEMO_MAX_WORKERS, DEMO_SESSION_TTL_MS, INTERNAL_API_BASE, ROOT_DIR, publicUrl } from '../config.js'
 import {

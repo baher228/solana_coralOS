@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto'
 import type { ChildProcess } from 'node:child_process'
-import type { ConnectedAgent, DemoRunStatus, DevnetEscrow, Dispute, Job, MarketplaceBid, MarketplaceState, Milestone, Status } from './types.js'
+import type { ConnectedAgent, DevnetEscrow, Dispute, Job, MarketplaceBid, MarketplaceState, Milestone, Status } from './types.js'
 import { persistenceBackend } from './persistence.js'
 import { deadlineFromNowSecs, fail, makeMilestones, now, participantName, publicKey, referenceFor, statuses, wallets } from './domain/utils.js'
 

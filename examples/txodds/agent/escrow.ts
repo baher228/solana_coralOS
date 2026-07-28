@@ -29,7 +29,6 @@ export async function makeProgram(buyer: Keypair, rpcUrl: string): Promise<Progr
   return new anchor.Program(idl, provider)
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // The backend acts as both buyer (funder) and arbiter (settlement authority) using a single
 // platform key. A production deployment can pass a distinct `arbiter` to separate custody from
 // settlement; the on-chain program supports it directly.

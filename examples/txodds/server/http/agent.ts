@@ -1,6 +1,6 @@
 import type http from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
-import { connectedAgents, hashToken, jobs, saveAgents } from '../store.js'
+import { connectedAgents, hashToken, jobs } from '../store.js'
 import { DEFAULT_MAX_BODY_BYTES } from '../config.js'
 import type { AgentAuth, Job } from '../types.js'
 import { ensureMarketplace, pendingPanelReviewJob } from '../domain/index.js'

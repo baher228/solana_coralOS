@@ -3,7 +3,7 @@ import { deposit as escrowDeposit, escrowPda, makeProgram, release as escrowRele
 import { BID_WINDOW_MS, DEFAULT_RPC_URL, ESCROW_DEADLINE_SECS } from '../config.js'
 import { jobs } from '../store.js'
 import type { Actor, DeliveryReviewMode, Job, MarketplaceBid, MarketplaceState, Milestone, Submission } from '../types.js'
-import { activeDispute, addEvent, addSettlementEvent, deadlineFrom, deadlineFromNowSecs, ensureStatus, fail, makeMilestones, normalizeBody, now, participantName, publicKey, referenceFor, terminal, wallets, keypair } from './utils.js'
+import { activeDispute, addEvent, addSettlementEvent, deadlineFrom, deadlineFromNowSecs, ensureStatus, fail, normalizeBody, now, participantName, publicKey, referenceFor, terminal, wallets, keypair } from './utils.js'
 import { persistenceBackend, type SettlementAction } from '../persistence.js'
 
 // Record settlement intent in the durable outbox before signing, and the outcome

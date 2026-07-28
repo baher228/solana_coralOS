@@ -4,10 +4,10 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { complete, parseJsonReply } from '../../../../packages/agent-runtime/src/llm/complete.ts'
-import { AUTO_RELEASE_MS, MAX_LOG_CHARS, MAX_SNIPPET_CHARS, REVIEW_DIR, REVIEW_TIMEOUT_MS } from '../config.js'
+import { MAX_LOG_CHARS, MAX_SNIPPET_CHARS, REVIEW_DIR, REVIEW_TIMEOUT_MS } from '../config.js'
 import { jobs } from '../store.js'
 import type { Actor, ArtifactKind, ArtifactResult, ArtifactRun, BuildArtifact, Dispute, Job, PreviewArtifact, RepoArtifact, Review, ReviewArtifact, ReviewCheck, ReviewCheckStatus, ReviewPanel, ReviewPanelOpinion, ReviewRecommendation, ReviewSource, TestArtifact } from '../types.js'
-import { activeDispute, addEvent, addSettlementEvent, deadlineFrom, ensureStatus, fail, now, terminal } from '../domain/utils.js'
+import { activeDispute, addEvent, addSettlementEvent, deadlineFrom, ensureStatus, fail, now } from '../domain/utils.js'
 
 export type ReviewCompletion = (opts: { system: string; user: string; maxTokens?: number }) => Promise<string>
 export type ArtifactCollector = (job: Job) => Promise<ArtifactRun>
@@ -769,7 +769,7 @@ function releaseReviewedJob(job: Job, actor: Actor, summary: string): Review {
   return job.review
 }
 
-export function approveReviewedJob(job: Job, input: Record<string, unknown> = {}): Review {
+export function approveReviewedJob(job: Job, _input: Record<string, unknown> = {}): Review {
   ensureStatus(job, ['submitted', 'revision_requested'], 'approve')
   if (!job.submission) fail('worker submission is required')
   if (!job.review) fail('AI review is required before release', 409)
