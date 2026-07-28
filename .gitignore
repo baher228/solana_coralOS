@@ -47,3 +47,8 @@ WALLETS.txt
 # Local demo state
 examples/txodds/.data/
 examples/txodds/.data-test/
+
+# Playwright e2e output
+test-results/
+playwright-report/
+playwright/.cache/

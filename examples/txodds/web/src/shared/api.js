@@ -36,7 +36,14 @@ export async function api(path, body) {
     body: body == null ? undefined : JSON.stringify(body),
   })
   const text = await res.text()
-  const data = text ? JSON.parse(text) : {}
+  let data = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    // Non-JSON error page (e.g. 502/504 from a proxy) - surface a clean message.
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+    throw new Error('unexpected non-JSON response')
+  }
   if (!res.ok) throw new Error(data.error || res.statusText)
   return data
 }

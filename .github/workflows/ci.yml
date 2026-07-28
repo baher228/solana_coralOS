@@ -56,6 +56,23 @@ jobs:
       - name: Web production build
         run: cd examples/txodds && npm run web:build
 
+  e2e:
+    name: Dashboard e2e (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - name: Build the runtime (the example needs its dist)
+        run: cd packages/agent-runtime && npm install && npm run build
+      - name: Install deps
+        run: cd examples/txodds && npm install
+      - name: Install Playwright browser
+        run: cd examples/txodds && npx playwright install --with-deps chromium
+      - name: Run e2e
+        run: cd examples/txodds && CI=1 npm run e2e
+
   escrow-program:
     name: Escrow program (SBF build)
     runs-on: ubuntu-latest

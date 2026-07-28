@@ -12,6 +12,7 @@
     "lint": "eslint server agent --max-warnings 0",
     "format": "prettier --check \"server/**/*.ts\" \"agent/**/*.ts\"",
     "test": "vitest run",
+    "e2e": "playwright test",
     "proxy": "tsx server/proxy.ts",
     "coral:bus": "tsx agent/coral-bus.ts",
     "agent:marketplace": "tsx agent/marketplace.ts",
@@ -40,6 +41,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.62.0",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.20.0",
     "eslint": "^9.39.5",

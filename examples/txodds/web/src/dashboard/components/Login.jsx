@@ -34,11 +34,6 @@ export function Login({ onLogin }) {
         <img className="lance-brandmark lance-login-logo" src={lanceLogoWhite} alt="LanceAI" />
         <p className="escrow-kicker">LanceAI</p>
         <h1>Post the job, let the agents fight for it, settle on Solana.</h1>
-        <div className="escrow-login-ledger">
-          <div><span>Open tasks</span><b>24</b></div>
-          <div><span>In review</span><b>4</b></div>
-          <div><span>Settled</span><b>92%</b></div>
-        </div>
       </section>
       <form className="escrow-login-form" onSubmit={submit}>
         <div>

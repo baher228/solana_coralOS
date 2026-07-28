@@ -33,9 +33,19 @@ export function activeDispute(job) {
   return (job?.disputes || []).find((dispute) => dispute.status === 'open')
 }
 
+// The viewer's role *for this specific job*, based on which side their org is on,
+// not the current Hiring/Working mode lens. Falls back to the lens for jobs the
+// viewer isn't a party to.
+export function viewerRole(job, session) {
+  const org = session?.organization
+  if (job?.employer === org) return 'employer'
+  if (job?.worker === org) return 'worker'
+  return session?.role === 'worker' ? 'worker' : 'employer'
+}
+
 export function counterparty(job, session) {
   if (!job || !session) return 'Counterparty'
-  return session.role === 'worker' ? party(job.employer) : party(job.worker || 'Unassigned worker')
+  return viewerRole(job, session) === 'worker' ? party(job.employer) : party(job.worker || 'Unassigned worker')
 }
 
 export function isReviewStatus(job) {
@@ -68,11 +78,12 @@ export function jobSections(jobs, session) {
 }
 
 export function chatConversations(jobs, session) {
-  const replyAuthor = session?.role === 'worker' ? 'employer' : 'worker'
   return jobs
     .filter((job) => !isOpen(job) && isJobParty(job, session))
     .map((job) => {
       const last = lastItem(job.messages)
+      // "Needs reply" when the counterparty for THIS job sent the last message.
+      const replyAuthor = viewerRole(job, session) === 'worker' ? 'employer' : 'worker'
       return {
         job,
         last,
