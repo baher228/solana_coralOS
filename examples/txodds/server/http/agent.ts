@@ -1,12 +1,25 @@
 import type http from 'node:http'
+import { timingSafeEqual } from 'node:crypto'
 import { connectedAgents, hashToken, jobs, saveAgents } from '../store.js'
+import { DEFAULT_MAX_BODY_BYTES } from '../config.js'
 import type { AgentAuth, Job } from '../types.js'
 import { ensureMarketplace, pendingPanelReviewJob } from '../domain/index.js'
 import { fail, now, terminal } from '../domain/utils.js'
 
+function maxBodyBytes(): number {
+  const configured = Number(process.env.MAX_BODY_BYTES)
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_MAX_BODY_BYTES
+}
+
 export async function readJson(req: http.IncomingMessage): Promise<Record<string, unknown>> {
+  const limit = maxBodyBytes()
   const chunks: Buffer[] = []
-  for await (const chunk of req) chunks.push(Buffer.from(chunk))
+  let size = 0
+  for await (const chunk of req) {
+    size += chunk.length
+    if (size > limit) fail('request body is too large', 413)
+    chunks.push(Buffer.from(chunk))
+  }
   if (!chunks.length) return {}
   try {
     const data = JSON.parse(Buffer.concat(chunks).toString('utf8'))
@@ -16,6 +29,35 @@ export async function readJson(req: http.IncomingMessage): Promise<Record<string
     if ((e as { status?: number }).status) throw e
     fail('invalid JSON body')
   }
+}
+
+function bearerToken(req: http.IncomingMessage): string | undefined {
+  const raw = req.headers.authorization
+  const auth = Array.isArray(raw) ? raw[0] : raw
+  return auth?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim()
+}
+
+function tokensMatch(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
+}
+
+/**
+ * Single-operator gate. When OPERATOR_TOKEN is set, every non-public, non-agent
+ * API route requires that bearer token. When it is unset the API stays open so
+ * local development and tests keep working unchanged.
+ */
+export function operatorAuthEnabled(): boolean {
+  return Boolean(process.env.OPERATOR_TOKEN?.trim())
+}
+
+export function requireOperator(req: http.IncomingMessage): void {
+  const expected = process.env.OPERATOR_TOKEN?.trim()
+  if (!expected) return
+  const token = bearerToken(req)
+  if (!token || !tokensMatch(token, expected)) fail('operator authentication required', 401)
 }
 
 export function requireLocalRequest(req: http.IncomingMessage): void {

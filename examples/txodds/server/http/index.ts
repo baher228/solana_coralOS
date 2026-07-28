@@ -8,7 +8,7 @@ import { cleanDemoState, createDemoRunJob, demoSessionJobs, demoStatus, localDem
 import { approveReviewedJob, assessDisputeWithAi, assessJobWithAi, assessJobWithPanel, collectPanelReviewArtifacts, disputeJob, panelReviewRequest, recordPanelOpinions, requestRevisionJob, reviewJob } from '../review/index.js'
 import { awardAgentBid, cancelJob, claimJob, completeMilestone, createJob, deliveryReviewMode, recordAgentBid, refundJob, runAgentMarketTick, settleAgentEscrow, submitAgentDelivery, submitJob } from '../domain/index.js'
 import { addEvent, fail, now, terminal, walletsWithBalances } from '../domain/utils.js'
-import { agentJob, agentVisibleJobs, readJson, requireAgentAuth, send } from './agent.js'
+import { agentJob, agentVisibleJobs, operatorAuthEnabled, readJson, requireAgentAuth, requireOperator, send } from './agent.js'
 import { runBackendTicks } from './ticks.js'
 import type { HandlerOptions } from './types.js'
 import { handleMcpRequest, mcpAgentJob, requireMcpOrigin } from '../mcp/index.js'
@@ -118,6 +118,15 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       if (req.method === 'OPTIONS') {
         if (url.pathname === '/mcp') requireMcpOrigin(req, res)
         return send(res, 204, {})
+      }
+      // Single-operator gate: when OPERATOR_TOKEN is configured, every API route
+      // requires it except the health probe and the separately-authenticated
+      // worker-agent (`/api/agent/*`, `/mcp`) surfaces.
+      if (operatorAuthEnabled()) {
+        const p = url.pathname
+        const publicPath = p === '/api/health'
+        const agentAuthedPath = p === '/mcp' || p === '/api/coral/health' || p.startsWith('/api/agent/')
+        if (p.startsWith('/api') && !publicPath && !agentAuthedPath) requireOperator(req)
       }
       const demoRoute = url.pathname.startsWith('/api/demo/')
       const demoSessionId = demoRoute ? ensureDemoSession(req, res) : undefined
@@ -387,7 +396,15 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       }
       send(res, 404, { error: 'not found' })
     } catch (e) {
-      send(res, (e as { status?: number }).status || 500, { error: (e as Error).message })
+      // Deliberate failures carry an explicit status and a safe, client-facing
+      // message. Anything without a status is unexpected: log it server-side and
+      // return a generic error so stack traces / internals are never leaked.
+      const explicit = (e as { status?: number }).status
+      if (!explicit) {
+        console.error('[freelance-escrow] request error:', e)
+        return send(res, 500, { error: 'internal server error' })
+      }
+      send(res, explicit, { error: (e as Error).message })
     }
   }
 }

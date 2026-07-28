@@ -29,6 +29,7 @@ export const DATA_FILE = `${DATA_DIR}jobs.json`
 export const AGENTS_FILE = `${DATA_DIR}agents.json`
 export const REVIEW_DIR = `${DATA_DIR}reviews`
 export const PORT = Number(process.env.PORT ?? 8801)
+export const DEFAULT_MAX_BODY_BYTES = 1_048_576
 export const ROOT_DIR = path.resolve(fileURLToPath(new URL('../../../', import.meta.url)))
 export const PUBLIC_BASE_URL = (process.env.PUBLIC_BASE_URL || `http://localhost:${PORT}`).replace(/\/+$/, '')
 export const INTERNAL_API_BASE = (process.env.PLATFORM_API_URL || `http://127.0.0.1:${PORT}`).replace(/\/+$/, '')

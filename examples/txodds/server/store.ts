@@ -63,9 +63,17 @@ export async function loadJobs(): Promise<void> {
   }
 }
 
+// Write via a temp file + atomic rename so a crash mid-write can never leave a
+// truncated/corrupt JSON file that would drop escrow state on restart.
+async function writeFileAtomic(file: string, contents: string): Promise<void> {
+  const tmp = `${file}.${randomBytes(6).toString('hex')}.tmp`
+  await fs.writeFile(tmp, contents)
+  await fs.rename(tmp, file)
+}
+
 export async function saveJobs(): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true })
-  await fs.writeFile(DATA_FILE, JSON.stringify([...jobs.values()], null, 2))
+  await writeFileAtomic(DATA_FILE, JSON.stringify([...jobs.values()], null, 2))
 }
 
 export function hashToken(token: string): string {
@@ -117,7 +125,7 @@ export async function loadAgents(): Promise<void> {
 
 export async function saveAgents(): Promise<void> {
   await fs.mkdir(DATA_DIR, { recursive: true })
-  await fs.writeFile(AGENTS_FILE, JSON.stringify([...connectedAgents.values()], null, 2))
+  await writeFileAtomic(AGENTS_FILE, JSON.stringify([...connectedAgents.values()], null, 2))
 }
 
 export function listConnectedAgents(demoSessionId?: string) {
