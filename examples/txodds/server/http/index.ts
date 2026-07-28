@@ -6,7 +6,7 @@ import { CORAL_BUS_API, DEMO_SESSION_TTL_MS, PORT, PUBLIC_BASE_URL, REVIEW_DIR, 
 import { createConnectedAgent, hydrateJob, jobs, listConnectedAgents, resetStoresForTest, revokeConnectedAgent, saveAgents, saveJobs } from '../store.js'
 import { cleanDemoState, createDemoRunJob, demoSessionJobs, demoStatus, localDemoRunner, localDemoRunnerForSession, mcpDemoStatus, recoverDemoSessionId, sanitizeDemoStatus, startMcpDemoSession, touchDemoSession } from '../demo/index.js'
 import { approveReviewedJob, assessDisputeWithAi, assessJobWithAi, assessJobWithPanel, collectPanelReviewArtifacts, disputeJob, panelReviewRequest, recordPanelOpinions, requestRevisionJob, reviewJob } from '../review/index.js'
-import { awardAgentBid, cancelJob, claimJob, completeMilestone, createJob, deliveryReviewMode, recordAgentBid, refundJob, runAgentMarketTick, settleAgentEscrow, submitAgentDelivery, submitJob } from '../domain/index.js'
+import { agentBidWallet, awardAgentBid, cancelJob, claimJob, completeMilestone, createJob, deliveryReviewMode, recordAgentBid, refundJob, runAgentMarketTick, settleAgentEscrow, submitAgentDelivery, submitJob } from '../domain/index.js'
 import { addEvent, fail, now, terminal, walletsWithBalances } from '../domain/utils.js'
 import { agentJob, agentVisibleJobs, operatorAuthEnabled, readJson, requireAgentAuth, requireOperator, send } from './agent.js'
 import { runBackendTicks } from './ticks.js'
@@ -228,7 +228,7 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
           const body = await readJson(req)
           if (action === 'bids') {
             const bid = recordAgentBid(job, auth.kind === 'agent'
-              ? { ...body, by: auth.agent.name, wallet: body.wallet || auth.agent.wallet }
+              ? { ...body, by: auth.agent.name, wallet: agentBidWallet(auth.agent, body.wallet as string | undefined) }
               : body)
             await saveJobs()
             if (auth.kind === 'agent') await saveAgents()
