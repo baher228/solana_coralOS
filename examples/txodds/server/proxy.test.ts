@@ -9,6 +9,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
+  agentBidWallet,
   approveReviewedJob,
   awardAgentBid,
   assessDisputeWithAi,
@@ -1338,6 +1339,182 @@ describe('devnet escrow money-safety', () => {
       expect(job.settlement.devnet?.release).toBe('sig-release')
     } finally {
       restoreBuyer()
+    }
+  })
+
+  it('does not fake a release for devnet jobs via the legacy reviewJob path', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive marketplace task card with budget, scope, mobile proof, preview URL, and repo link for each acceptance item.',
+      })
+
+      const review = reviewJob(job)
+
+      expect(review.approved).toBe(true)
+      expect(job.status).not.toBe('released')
+      expect(job.settlement.release).toBeUndefined()
+      expect(job.settlement.devnet?.release).toBeUndefined()
+      expect(job.review?.releaseEligible).toBe(true)
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('reconciles settlement when the escrow was already released on-chain (crash before save)', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const reconciling: DevnetEscrowAdapter = {
+        async deposit() { return 'sig-deposit' },
+        async release() { throw new Error('AccountNotFound: escrow account does not exist') },
+        async refund() { throw new Error('AccountNotFound: escrow account does not exist') },
+        async escrowExists() { return false },
+      }
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
+      })
+      await assessJobWithAi(job, aiApprove(), collectArtifacts())
+      job.review!.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
+
+      expect(await settleAgentEscrow(job, reconciling, new Date())).toBe('released')
+      expect(job.status).toBe('released')
+      expect(job.settlement.devnet?.release).toBe('reconciled-release')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('reconciles an award when the deposit already landed on-chain (crash before save)', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const depositReconcile: DevnetEscrowAdapter = {
+        async deposit() { throw new Error('custom program error: account already in use') },
+        async release() { return 'sig-release' },
+        async refund() { return 'sig-refund' },
+        async escrowExists() { return true },
+      }
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+
+      await awardAgentBid(job, {}, depositReconcile)
+
+      expect(job.settlement.mode).toBe('devnet-escrow')
+      expect(job.settlement.devnet?.deposit).toBe('reconciled-deposit')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('surfaces settlement errors on the job and clears them on success', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const failing: DevnetEscrowAdapter = {
+        async deposit() { return 'sig-deposit' },
+        async release() { throw new Error('rpc endpoint unavailable') },
+        async refund() { throw new Error('rpc endpoint unavailable') },
+        async escrowExists() { return true },
+      }
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
+      })
+      await assessJobWithAi(job, aiApprove(), collectArtifacts())
+      job.review!.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
+
+      await runAgentMarketTick(failing, new Date())
+      expect(job.settlement.settlementError).toContain('rpc endpoint unavailable')
+      expect(job.events.some((event) => event.type === 'settlement_error')).toBe(true)
+
+      await runAgentMarketTick(fakeEscrow(), new Date())
+      expect(job.status).toBe('released')
+      expect(job.settlement.settlementError).toBeUndefined()
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('does not auto-refund a devnet escrow while a dispute is open', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Delivery evidence with preview URL and public repo link.',
+      })
+      await assessJobWithAi(job, aiReply({
+        score: 20,
+        recommendation: 'revision',
+        confidence: 40,
+        summary: 'Acceptance items are missing.',
+        criteriaResults: [{ label: 'Mobile proof', status: 'fail', reason: 'No mobile evidence.', evidence: 'none' }],
+        missing: ['mobile acceptance proof'],
+        risks: [],
+        criticalRisks: [],
+        revisionInstructions: 'Add mobile evidence.',
+      }), collectArtifacts())
+      disputeJob(job, { by: 'employer', note: 'The delivery is missing the required mobile acceptance evidence.' })
+      job.settlement.devnet!.deadlineAt = new Date(Date.now() - 1000).toISOString()
+
+      expect(await settleAgentEscrow(job, fakeEscrow(), new Date())).toBeNull()
+      expect(job.status).toBe('disputed')
+      expect(job.settlement.refund).toBeUndefined()
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('binds an agent bid to its registered payout wallet', () => {
+    expect(agentBidWallet({ wallet: 'RegisteredWalletPubkey' }, 'RegisteredWalletPubkey')).toBe('RegisteredWalletPubkey')
+    expect(agentBidWallet({ wallet: 'RegisteredWalletPubkey' }, undefined)).toBe('RegisteredWalletPubkey')
+    expect(() => agentBidWallet({ wallet: 'RegisteredWalletPubkey' }, 'AttackerWalletPubkey')).toThrow(/must match your registered payout wallet/)
+    expect(agentBidWallet({}, 'WorkerSuppliedWallet')).toBe('WorkerSuppliedWallet')
+    expect(agentBidWallet({}, undefined)).toBeUndefined()
+  })
+})
+
+describe('operator token on GET artifact/read routes', () => {
+  function withEnv(key: string, value: string | undefined) {
+    const previous = process.env[key]
+    if (value == null) delete process.env[key]
+    else process.env[key] = value
+    return () => {
+      if (previous == null) delete process.env[key]
+      else process.env[key] = previous
+    }
+  }
+
+  it('accepts the operator token via query param on GET but not on mutations', async () => {
+    const restore = withEnv('OPERATOR_TOKEN', 'operator-secret')
+    try {
+      const handler = createHandler()
+      expect((await request(handler, '/api/state?operator_token=operator-secret')).status).toBe(200)
+      expect((await request(handler, '/api/state?operator_token=nope')).status).toBe(401)
+      // A write must not authenticate via a query token (keeps tokens out of write URLs).
+      const body = { title: 'Gated', scope: 'A scoped deliverable with detail.', acceptanceCriteria: 'Clear acceptance criteria present.', amountSol: 0.01 }
+      expect((await request(handler, '/api/jobs?operator_token=operator-secret', json(body))).status).toBe(401)
+    } finally {
+      restore()
     }
   })
 })
