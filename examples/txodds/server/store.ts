@@ -1,8 +1,7 @@
-import fs from 'node:fs/promises'
 import { createHash, randomBytes } from 'node:crypto'
 import type { ChildProcess } from 'node:child_process'
-import { AGENTS_FILE, DATA_DIR, DATA_FILE } from './config.js'
 import type { ConnectedAgent, DemoRunStatus, DevnetEscrow, Dispute, Job, MarketplaceBid, MarketplaceState, Milestone, Status } from './types.js'
+import { persistenceBackend } from './persistence.js'
 import { deadlineFromNowSecs, fail, makeMilestones, now, participantName, publicKey, referenceFor, statuses, wallets } from './domain/utils.js'
 
 export interface McpDemoState {
@@ -52,28 +51,14 @@ export function resetStoresForTest(): void {
 }
 
 export async function loadJobs(): Promise<void> {
-  try {
-    const list = JSON.parse(await fs.readFile(DATA_FILE, 'utf8')) as unknown[]
-    for (const job of list) {
-      const hydrated = hydrateJob(job)
-      if (hydrated) jobs.set(hydrated.id, hydrated)
-    }
-  } catch {
-    // Fresh checkout: no local state yet.
+  for (const raw of await persistenceBackend().loadJobs()) {
+    const hydrated = hydrateJob(raw)
+    if (hydrated) jobs.set(hydrated.id, hydrated)
   }
 }
 
-// Write via a temp file + atomic rename so a crash mid-write can never leave a
-// truncated/corrupt JSON file that would drop escrow state on restart.
-async function writeFileAtomic(file: string, contents: string): Promise<void> {
-  const tmp = `${file}.${randomBytes(6).toString('hex')}.tmp`
-  await fs.writeFile(tmp, contents)
-  await fs.rename(tmp, file)
-}
-
 export async function saveJobs(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true })
-  await writeFileAtomic(DATA_FILE, JSON.stringify([...jobs.values()], null, 2))
+  await persistenceBackend().saveJobs([...jobs.values()])
 }
 
 export function hashToken(token: string): string {
@@ -112,20 +97,14 @@ function hydrateConnectedAgent(input: unknown): ConnectedAgent | null {
 }
 
 export async function loadAgents(): Promise<void> {
-  try {
-    const list = JSON.parse(await fs.readFile(AGENTS_FILE, 'utf8')) as unknown[]
-    for (const agent of list) {
-      const hydrated = hydrateConnectedAgent(agent)
-      if (hydrated) connectedAgents.set(hydrated.id, hydrated)
-    }
-  } catch {
-    // No connected agents yet.
+  for (const raw of await persistenceBackend().loadAgents()) {
+    const hydrated = hydrateConnectedAgent(raw)
+    if (hydrated) connectedAgents.set(hydrated.id, hydrated)
   }
 }
 
 export async function saveAgents(): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true })
-  await writeFileAtomic(AGENTS_FILE, JSON.stringify([...connectedAgents.values()], null, 2))
+  await persistenceBackend().saveAgents([...connectedAgents.values()])
 }
 
 export function listConnectedAgents(demoSessionId?: string) {

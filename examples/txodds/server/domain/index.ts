@@ -4,6 +4,22 @@ import { BID_WINDOW_MS, DEFAULT_RPC_URL, ESCROW_DEADLINE_SECS } from '../config.
 import { jobs } from '../store.js'
 import type { Actor, DeliveryReviewMode, Job, MarketplaceBid, MarketplaceState, Milestone, Submission } from '../types.js'
 import { activeDispute, addEvent, addSettlementEvent, deadlineFrom, deadlineFromNowSecs, ensureStatus, fail, makeMilestones, normalizeBody, now, participantName, publicKey, referenceFor, terminal, wallets, keypair } from './utils.js'
+import { persistenceBackend, type SettlementAction } from '../persistence.js'
+
+// Record settlement intent in the durable outbox before signing, and the outcome
+// after. In the file-backed dev store these are no-ops; against Postgres they
+// leave an audit trail so an on-chain tx can be reconciled with local state.
+async function recordedSettlement(jobId: string, action: SettlementAction, run: () => Promise<string>): Promise<string> {
+  const intent = await persistenceBackend().recordSettlementIntent(jobId, action)
+  try {
+    const signature = await run()
+    await persistenceBackend().markSettlement(intent, 'confirmed', { signature })
+    return signature
+  } catch (e) {
+    await persistenceBackend().markSettlement(intent, 'failed', { error: (e as Error).message })
+    throw e
+  }
+}
 
 export function createJob(input: Record<string, unknown>): Job {
   const { openTask, ...payload } = normalizeBody(input)
@@ -298,7 +314,8 @@ export async function awardAgentBid(
   const deadlineSecs = Number.isFinite(rawDeadlineSecs) && rawDeadlineSecs > 0 ? rawDeadlineSecs : ESCROW_DEADLINE_SECS
   const deadlineAt = deadlineFromNowSecs(deadlineSecs)
   const rpcUrl = process.env.SOLANA_RPC_URL || DEFAULT_RPC_URL
-  const depositSig = await depositWithReconcile(adapter, { buyer, seller, reference, amountSol: winner.priceSol, deadlineSecs, rpcUrl })
+  const depositSig = await recordedSettlement(job.id, 'deposit', () =>
+    depositWithReconcile(adapter, { buyer, seller, reference, amountSol: winner.priceSol, deadlineSecs, rpcUrl }))
   const escrow = escrowPda(buyer.publicKey, reference).toBase58()
   marketplace.status = 'awarded'
   marketplace.awardedBid = winner
@@ -392,14 +409,14 @@ export async function settleAgentEscrow(
   const input = escrowInput(job)
   const releaseAt = job.review?.autoReleaseAt || (job.review?.releaseEligible ? deadlineFrom(job.review.at) : '')
   if (job.review?.releaseEligible && releaseAt && new Date(releaseAt).getTime() <= at.getTime() && !activeDispute(job)) {
-    markDevnetReleased(job, await settleWithReconcile(adapter, 'release', input))
+    markDevnetReleased(job, await recordedSettlement(job.id, 'release', () => settleWithReconcile(adapter, 'release', input)))
     return 'released'
   }
   const escrowExpired = new Date(job.settlement.devnet.deadlineAt).getTime() <= at.getTime()
   const reviewedAndRejected = Boolean(job.review && job.review.source !== 'fallback' && !job.review.releaseEligible)
   // Never auto-refund while a dispute is still open; the dispute must resolve first.
   if (escrowExpired && !job.review?.releaseEligible && !activeDispute(job) && (!job.submission || reviewedAndRejected)) {
-    markDevnetRefunded(job, await settleWithReconcile(adapter, 'refund', input))
+    markDevnetRefunded(job, await recordedSettlement(job.id, 'refund', () => settleWithReconcile(adapter, 'refund', input)))
     return 'refunded'
   }
   return null
