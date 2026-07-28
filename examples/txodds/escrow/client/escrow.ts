@@ -32,26 +32,49 @@ export async function deposit(
   reference: PublicKey,
   amountSol: number,
   deadlineSecs: number,
+  arbiter: PublicKey = buyer.publicKey,
 ): Promise<string> {
   const deadline = new BN(Math.floor(Date.now() / 1000) + deadlineSecs)
   return program.methods
     .initialize(new BN(Math.round(amountSol * LAMPORTS_PER_SOL)), reference, deadline)
-    .accounts({ buyer: buyer.publicKey, seller, escrow: escrowPda(buyer.publicKey, reference) })
+    .accounts({ buyer: buyer.publicKey, seller, arbiter, escrow: escrowPda(buyer.publicKey, reference) })
     .signers([buyer])
     .rpc()
 }
 
-/** Buyer confirms delivery → pay the seller and close the escrow. */
+/**
+ * Arbiter accepts the delivery, permanently blocking refunds so the escrow can only be released to
+ * the seller. Use this before releasing when the platform (arbiter) is separate from the buyer.
+ */
+export async function approve(
+  program: Program<any>,
+  arbiter: Keypair,
+  buyer: PublicKey,
+  reference: PublicKey,
+): Promise<string> {
+  return program.methods
+    .approve()
+    .accounts({ arbiter: arbiter.publicKey, escrow: escrowPda(buyer, reference) })
+    .signers([arbiter])
+    .rpc()
+}
+
+/**
+ * Confirm delivery → pay the seller and close the escrow. Signable by the buyer or the arbiter;
+ * pass whichever keypair is settling as `signer`.
+ */
 export async function release(
   program: Program<any>,
-  buyer: Keypair,
+  signer: Keypair,
+  buyer: PublicKey,
   seller: PublicKey,
+  arbiter: PublicKey,
   reference: PublicKey,
 ): Promise<string> {
   return program.methods
     .release()
-    .accounts({ buyer: buyer.publicKey, seller, escrow: escrowPda(buyer.publicKey, reference) })
-    .signers([buyer])
+    .accounts({ buyer, seller, arbiter, escrow: escrowPda(buyer, reference) })
+    .signers([signer])
     .rpc()
 }
 
@@ -75,15 +98,20 @@ export async function isFunded(
   return partiesOk && amountOk
 }
 
-/** Buyer reclaims the deposit after the deadline (seller never delivered). */
+/**
+ * Reclaim the deposit to the buyer after the deadline (seller never delivered). Signable by the
+ * buyer or the arbiter, and only while the delivery has not been approved.
+ */
 export async function refund(
   program: Program<any>,
-  buyer: Keypair,
+  signer: Keypair,
+  buyer: PublicKey,
+  arbiter: PublicKey,
   reference: PublicKey,
 ): Promise<string> {
   return program.methods
     .refund()
-    .accounts({ buyer: buyer.publicKey, escrow: escrowPda(buyer.publicKey, reference) })
-    .signers([buyer])
+    .accounts({ buyer, arbiter, escrow: escrowPda(buyer, reference) })
+    .signers([signer])
     .rpc()
 }
