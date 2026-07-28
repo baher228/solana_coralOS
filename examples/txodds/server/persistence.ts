@@ -32,6 +32,8 @@ export interface Persistence {
   markSettlement(id: string | null, status: SettlementStatus, detail: { signature?: string; error?: string }): Promise<void>
   /** Run `fn` only if this instance holds the settlement leader lock; otherwise resolve undefined. */
   withLeaderLock<T>(fn: () => Promise<T>): Promise<T | undefined>
+  /** Readiness check: resolves true when the backend is reachable. */
+  ping(): Promise<boolean>
   close(): Promise<void>
 }
 
@@ -69,6 +71,7 @@ class FilePersistence implements Persistence {
   async recordSettlementIntent(): Promise<string | null> { return null }
   async markSettlement(): Promise<void> {}
   async withLeaderLock<T>(fn: () => Promise<T>): Promise<T | undefined> { return fn() }
+  async ping(): Promise<boolean> { return true }
   async close(): Promise<void> {}
 }
 
@@ -204,6 +207,15 @@ class PgPersistence implements Persistence {
       }
     } finally {
       client.release()
+    }
+  }
+
+  async ping(): Promise<boolean> {
+    try {
+      await this.pool.query('SELECT 1')
+      return true
+    } catch {
+      return false
     }
   }
 

@@ -10,6 +10,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { afterEach, describe, expect, it } from 'vitest'
 import { corsOrigin } from './config.js'
 import { rateLimited, resetRateLimitForTest } from './http/rate-limit.js'
+import { renderMetrics } from './metrics.js'
 import {
   agentBidWallet,
   approveReviewedJob,
@@ -66,7 +67,7 @@ async function request(handler: http.RequestListener, path: string, init: Reques
   try {
     const res = await fetch(`http://127.0.0.1:${port}${path}`, init)
     const body = await res.json().catch(() => ({}))
-    return { status: res.status, body, cookie: res.headers.get('set-cookie')?.split(';')[0] || '' }
+    return { status: res.status, body, cookie: res.headers.get('set-cookie')?.split(';')[0] || '', requestId: res.headers.get('x-request-id') || '' }
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
@@ -1330,6 +1331,27 @@ describe('single-operator authentication and request limits', () => {
     const res = await request(handler, '/api/import', json({ jobs: 'not-an-array' }))
     expect(res.status).toBe(400)
     expect(String(res.body.error)).not.toContain('at Object')
+  })
+})
+
+describe('observability', () => {
+  it('serves Prometheus metrics with known series', async () => {
+    const handler = createHandler()
+    const res = await request(handler, '/metrics')
+    expect(res.status).toBe(200)
+    expect(renderMetrics()).toContain('txodds_jobs_total')
+  })
+
+  it('exposes liveness and readiness probes', async () => {
+    const handler = createHandler()
+    expect((await request(handler, '/api/health/live')).status).toBe(200)
+    expect((await request(handler, '/api/health/ready')).status).toBe(200)
+  })
+
+  it('sets a request id header on responses', async () => {
+    const handler = createHandler()
+    const res = await request(handler, '/api/health')
+    expect(res.requestId).toMatch(/[0-9a-f-]{36}/)
   })
 })
 

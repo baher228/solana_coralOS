@@ -4,6 +4,7 @@ import { loadAgents, loadJobs, saveJobs } from './store.js'
 import { createHandler } from './http/index.js'
 import { runBackendTicks } from './http/ticks.js'
 import { databaseEnabled, persistenceBackend } from './persistence.js'
+import { logger } from './logger.js'
 
 export * from './types.js'
 export { loadEnv } from './config.js'
@@ -29,12 +30,12 @@ export async function startServer(): Promise<void> {
         if (await runBackendTicks({})) await saveJobs()
       })
     } catch (e) {
-      console.error(`[freelance-escrow] market tick: ${(e as Error).message}`)
+      logger.error('market tick failed', { error: e as Error })
     } finally {
       tickRunning = false
     }
   }, 5000).unref()
   http.createServer(createHandler()).listen(PORT, () => {
-    console.error(`[freelance-escrow] API on http://localhost:${PORT} (persistence: ${databaseEnabled() ? 'postgres' : 'file'})`)
+    logger.info('api listening', { port: PORT, persistence: databaseEnabled() ? 'postgres' : 'file' })
   })
 }

@@ -1,5 +1,5 @@
 import type http from 'node:http'
-import { randomBytes } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { CORAL_BUS_API, DEMO_SESSION_TTL_MS, PORT, PUBLIC_BASE_URL, REVIEW_DIR, corsOrigin } from '../config.js'
@@ -10,6 +10,9 @@ import { agentBidWallet, awardAgentBid, cancelJob, claimJob, completeMilestone, 
 import { addEvent, fail, now, terminal, walletsWithBalances } from '../domain/utils.js'
 import { agentJob, agentVisibleJobs, operatorAuthEnabled, readJson, requireAgentAuth, requireOperator, send } from './agent.js'
 import { rateLimited } from './rate-limit.js'
+import { logger } from '../logger.js'
+import { incr, renderMetrics } from '../metrics.js'
+import { persistenceBackend } from '../persistence.js'
 import { runBackendTicks } from './ticks.js'
 import type { HandlerOptions } from './types.js'
 import { handleMcpRequest, mcpAgentJob, requireMcpOrigin } from '../mcp/index.js'
@@ -106,6 +109,14 @@ export async function resetCoralBusForDemo(): Promise<void> {
 
 export function createHandler(options: HandlerOptions = {}): http.RequestListener {
   return async (req, res) => {
+    const requestId = randomUUID()
+    const startedAt = Date.now()
+    res.setHeader('X-Request-Id', requestId)
+    res.on('finish', () => {
+      incr('txodds_http_requests_total')
+      if (res.statusCode >= 500) incr('txodds_http_errors_total')
+      logger.info('request', { requestId, method: req.method, path: (req.url || '').split('?')[0], status: res.statusCode, ms: Date.now() - startedAt })
+    })
     const origin = Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin
     const allowedOrigin = corsOrigin(origin)
     if (allowedOrigin) res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
@@ -120,7 +131,14 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
         if (url.pathname === '/mcp') requireMcpOrigin(req, res)
         return send(res, 204, {})
       }
-      if (url.pathname !== '/api/health') {
+      // Prometheus scrape endpoint (not under /api, so not operator-gated; firewall it).
+      if (req.method === 'GET' && url.pathname === '/metrics') {
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'text/plain; version=0.0.4')
+        return res.end(renderMetrics())
+      }
+      const healthPath = url.pathname === '/api/health' || url.pathname.startsWith('/api/health/')
+      if (!healthPath && url.pathname !== '/metrics') {
         const limit = rateLimited(req)
         if (limit.limited) {
           res.setHeader('Retry-After', Math.ceil(limit.retryAfterMs / 1000).toString())
@@ -137,7 +155,7 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       // worker-agent (`/api/agent/*`, `/mcp`) surfaces.
       if (operatorAuthEnabled()) {
         const p = url.pathname
-        const publicPath = p === '/api/health'
+        const publicPath = p === '/api/health' || p.startsWith('/api/health/')
         const agentAuthedPath = p === '/mcp' || p === '/api/coral/health' || p.startsWith('/api/agent/')
         if (p.startsWith('/api') && !publicPath && !agentAuthedPath) requireOperator(req)
       }
@@ -297,6 +315,14 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       if (req.method === 'GET' && url.pathname === '/api/health') {
         return send(res, 200, { ok: true, product: 'freelance-escrow-platform', ...(await state()).setup })
       }
+      // Liveness: process is up. Readiness: storage backend is reachable.
+      if (req.method === 'GET' && url.pathname === '/api/health/live') {
+        return send(res, 200, { status: 'ok' })
+      }
+      if (req.method === 'GET' && url.pathname === '/api/health/ready') {
+        const ready = await persistenceBackend().ping()
+        return send(res, ready ? 200 : 503, { status: ready ? 'ready' : 'unavailable' })
+      }
       if (req.method === 'GET' && artifactRoute) {
         const [, id, artifactId] = artifactRoute
         const job = jobs.get(id)
@@ -414,7 +440,7 @@ export function createHandler(options: HandlerOptions = {}): http.RequestListene
       // return a generic error so stack traces / internals are never leaked.
       const explicit = (e as { status?: number }).status
       if (!explicit) {
-        console.error('[freelance-escrow] request error:', e)
+        logger.error('request error', { requestId, error: e as Error })
         return send(res, 500, { error: 'internal server error' })
       }
       send(res, explicit, { error: (e as Error).message })
