@@ -4,14 +4,46 @@ export const API = window.FREELANCE_API
 
 export const CORAL_BUS = window.CORAL_BUS_API ?? ''
 
+const OPERATOR_TOKEN_KEY = 'operatorToken'
+
+// Single-operator API key. Persisted in localStorage (or injected via
+// window.OPERATOR_TOKEN) and sent as a Bearer token so the dashboard keeps
+// working when the backend has OPERATOR_TOKEN configured.
+export function operatorToken() {
+  if (typeof window !== 'undefined' && window.OPERATOR_TOKEN) return String(window.OPERATOR_TOKEN)
+  try {
+    return (typeof localStorage !== 'undefined' && localStorage.getItem(OPERATOR_TOKEN_KEY)) || ''
+  } catch {
+    return ''
+  }
+}
+
+export function setOperatorToken(token) {
+  try {
+    if (token) localStorage.setItem(OPERATOR_TOKEN_KEY, token)
+    else localStorage.removeItem(OPERATOR_TOKEN_KEY)
+  } catch {}
+}
+
 export async function api(path, body) {
+  const headers = {}
+  if (body != null) headers['Content-Type'] = 'application/json'
+  const token = operatorToken()
+  if (token) headers['Authorization'] = `Bearer ${token}`
   const res = await fetch(`${API}${path}`, {
     method: body == null ? 'GET' : 'POST',
-    headers: body == null ? undefined : { 'Content-Type': 'application/json' },
+    headers: Object.keys(headers).length ? headers : undefined,
     body: body == null ? undefined : JSON.stringify(body),
   })
   const text = await res.text()
-  const data = text ? JSON.parse(text) : {}
+  let data = {}
+  try {
+    data = text ? JSON.parse(text) : {}
+  } catch {
+    // Non-JSON error page (e.g. 502/504 from a proxy) - surface a clean message.
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
+    throw new Error('unexpected non-JSON response')
+  }
   if (!res.ok) throw new Error(data.error || res.statusText)
   return data
 }

@@ -22,6 +22,22 @@ jobs:
   txodds:
     name: Freelance Escrow Platform (typecheck + tests)
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: txodds
+          POSTGRES_PASSWORD: txodds
+          POSTGRES_DB: txodds_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgres://txodds:txodds@127.0.0.1:5432/txodds_test
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -29,5 +45,44 @@ jobs:
           node-version: 20
       - name: Build the runtime (the example needs its dist)
         run: cd packages/agent-runtime && npm install && npm run build
-      - name: Freelance escrow platform (typecheck + tests)
-        run: cd examples/txodds && npm install && npm run typecheck && npm test
+      - name: Install deps
+        run: cd examples/txodds && npm install
+      - name: Lint
+        run: cd examples/txodds && npm run lint
+      - name: Typecheck
+        run: cd examples/txodds && npm run typecheck
+      - name: Tests (incl. PostgreSQL persistence)
+        run: cd examples/txodds && npm test
+      - name: Web production build
+        run: cd examples/txodds && npm run web:build
+
+  e2e:
+    name: Dashboard e2e (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - name: Build the runtime (the example needs its dist)
+        run: cd packages/agent-runtime && npm install && npm run build
+      - name: Install deps
+        run: cd examples/txodds && npm install
+      - name: Install Playwright browser
+        run: cd examples/txodds && npx playwright install --with-deps chromium
+      - name: Run e2e
+        run: cd examples/txodds && CI=1 npm run e2e
+
+  escrow-program:
+    name: Escrow program (SBF build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Rust (stable)
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+      - name: Install Solana toolchain (cargo-build-sbf)
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
+          echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
+      - name: Build program to SBF bytecode
+        run: cd examples/txodds/escrow && cargo-build-sbf

@@ -29,27 +29,32 @@ export async function makeProgram(buyer: Keypair, rpcUrl: string): Promise<Progr
   return new anchor.Program(idl, provider)
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// The backend acts as both buyer (funder) and arbiter (settlement authority) using a single
+// platform key. A production deployment can pass a distinct `arbiter` to separate custody from
+// settlement; the on-chain program supports it directly.
 export async function deposit(
   program: Program, buyer: Keypair, seller: PublicKey, reference: PublicKey, amountSol: number, deadlineSecs: number,
+  arbiter: PublicKey = buyer.publicKey,
 ): Promise<string> {
   const deadline = new BN(Math.floor(Date.now() / 1000) + deadlineSecs)
   return (program.methods as any)
     .initialize(new BN(Math.round(amountSol * LAMPORTS_PER_SOL)), reference, deadline)
-    .accounts({ buyer: buyer.publicKey, seller, escrow: escrowPda(buyer.publicKey, reference) })
+    .accounts({ buyer: buyer.publicKey, seller, arbiter, escrow: escrowPda(buyer.publicKey, reference) })
     .signers([buyer]).rpc()
 }
 
-export async function release(program: Program, buyer: Keypair, seller: PublicKey, reference: PublicKey): Promise<string> {
+// Settlement (release/refund) is authorized by the arbiter. `signer` is the arbiter keypair; in
+// production this is where a KMS/HSM signer replaces an in-process keypair (see makeProgram).
+export async function release(program: Program, signer: Keypair, buyer: PublicKey, seller: PublicKey, arbiter: PublicKey, reference: PublicKey): Promise<string> {
   return (program.methods as any)
     .release()
-    .accounts({ buyer: buyer.publicKey, seller, escrow: escrowPda(buyer.publicKey, reference) })
-    .signers([buyer]).rpc()
+    .accounts({ buyer, seller, arbiter, escrow: escrowPda(buyer, reference) })
+    .signers([signer]).rpc()
 }
 
-export async function refund(program: Program, buyer: Keypair, reference: PublicKey): Promise<string> {
+export async function refund(program: Program, signer: Keypair, buyer: PublicKey, arbiter: PublicKey, reference: PublicKey): Promise<string> {
   return (program.methods as any)
     .refund()
-    .accounts({ buyer: buyer.publicKey, escrow: escrowPda(buyer.publicKey, reference) })
-    .signers([buyer]).rpc()
+    .accounts({ buyer, arbiter, escrow: escrowPda(buyer, reference) })
+    .signers([signer]).rpc()
 }

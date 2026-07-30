@@ -3,6 +3,8 @@ import { loadEnv, PORT } from './config.js'
 import { loadAgents, loadJobs, saveJobs } from './store.js'
 import { createHandler } from './http/index.js'
 import { runBackendTicks } from './http/ticks.js'
+import { databaseEnabled, persistenceBackend } from './persistence.js'
+import { logger } from './logger.js'
 
 export * from './types.js'
 export { loadEnv } from './config.js'
@@ -13,6 +15,8 @@ export { createHandler, resetJobsForTest } from './http/index.js'
 
 export async function startServer(): Promise<void> {
   await loadEnv()
+  const persistence = persistenceBackend()
+  await persistence.init()
   await loadJobs()
   await loadAgents()
   let tickRunning = false
@@ -20,14 +24,18 @@ export async function startServer(): Promise<void> {
     if (tickRunning) return
     tickRunning = true
     try {
-      if (await runBackendTicks({})) await saveJobs()
+      // Only the instance holding the advisory leader lock settles escrow, so
+      // running multiple API instances can't double-award or double-settle.
+      await persistence.withLeaderLock(async () => {
+        if (await runBackendTicks({})) await saveJobs()
+      })
     } catch (e) {
-      console.error(`[freelance-escrow] market tick: ${(e as Error).message}`)
+      logger.error('market tick failed', { error: e as Error })
     } finally {
       tickRunning = false
     }
   }, 5000).unref()
   http.createServer(createHandler()).listen(PORT, () => {
-    console.error(`[freelance-escrow] API on http://localhost:${PORT}`)
+    logger.info('api listening', { port: PORT, persistence: databaseEnabled() ? 'postgres' : 'file' })
   })
 }

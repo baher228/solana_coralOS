@@ -6,10 +6,9 @@ import * as z from 'zod'
 import { jobs, saveAgents, saveJobs } from '../store.js'
 import type { AgentAuth, Job } from '../types.js'
 import type { HandlerOptions } from '../http/types.js'
-import { runBackendTicks } from '../http/ticks.js'
 import { agentJob, requireAgentAuth } from '../http/agent.js'
 import { assessJobWithAi } from '../review/index.js'
-import { deliveryReviewMode, recordAgentBid, runAgentMarketTick, submitAgentDelivery } from '../domain/index.js'
+import { agentBidWallet, deliveryReviewMode, recordAgentBid, runAgentMarketTick, submitAgentDelivery } from '../domain/index.js'
 import { addEvent, fail } from '../domain/utils.js'
 
 export type McpAgentAuth = Extract<AgentAuth, { kind: 'agent' }>
@@ -111,7 +110,6 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
     description: 'List open jobs and jobs already awarded to the authenticated worker agent.',
     annotations: { readOnlyHint: true, openWorldHint: false },
   }, async () => {
-    if (await runBackendTicks(options)) await saveJobs()
     const visible = mcpVisibleJobs(auth)
     return mcpResult(`Found ${visible.length} visible job(s).`, { jobs: visible })
   })
@@ -140,7 +138,7 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
     const job = requireMcpJob(auth, jobId)
     const bid = recordAgentBid(job, {
       by: auth.agent.name,
-      wallet: wallet || auth.agent.wallet,
+      wallet: agentBidWallet(auth.agent, wallet),
       priceSol,
       note,
     })
@@ -182,7 +180,6 @@ function createTxoddsMcpServer(auth: McpAgentAuth, options: HandlerOptions): Mcp
     description: 'Show the authenticated worker agent profile and visible job counts.',
     annotations: { readOnlyHint: true, openWorldHint: false },
   }, async () => {
-    if (await runBackendTicks(options)) await saveJobs()
     const visible = mcpVisibleJobs(auth)
     return mcpResult(`Agent ${auth.agent.name} is ${auth.agent.status}.`, {
       agent: {

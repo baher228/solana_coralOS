@@ -8,7 +8,11 @@ import { Keypair } from '@solana/web3.js'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js'
 import { afterEach, describe, expect, it } from 'vitest'
+import { corsOrigin } from './config.js'
+import { rateLimited, resetRateLimitForTest } from './http/rate-limit.js'
+import { renderMetrics } from './metrics.js'
 import {
+  agentBidWallet,
   approveReviewedJob,
   awardAgentBid,
   assessDisputeWithAi,
@@ -63,7 +67,7 @@ async function request(handler: http.RequestListener, path: string, init: Reques
   try {
     const res = await fetch(`http://127.0.0.1:${port}${path}`, init)
     const body = await res.json().catch(() => ({}))
-    return { status: res.status, body, cookie: res.headers.get('set-cookie')?.split(';')[0] || '' }
+    return { status: res.status, body, cookie: res.headers.get('set-cookie')?.split(';')[0] || '', requestId: res.headers.get('x-request-id') || '' }
   } finally {
     await new Promise<void>((resolve) => server.close(() => resolve()))
   }
@@ -829,6 +833,7 @@ describe('freelance escrow platform flow', () => {
 
   it('collects Coral panel artifacts from local file repos', async () => {
     const restoreBuyer = withBuyerKey()
+    process.env.REVIEW_ALLOW_CODE_EXECUTION = '1' // this test exercises the (opt-in) repo build path
     try {
       const job = openTask()
       recordAgentBid(job, { by: 'demo-worker', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.001 })
@@ -845,6 +850,29 @@ describe('freelance escrow platform flow', () => {
 
       expect(review.artifactRun?.repo.status).toBe('pass')
       expect(review.artifactRun?.repo.summary).toMatch(/Local repository/)
+    } finally {
+      delete process.env.REVIEW_ALLOW_CODE_EXECUTION
+      restoreBuyer()
+    }
+  })
+
+  it('skips repository build/test execution unless explicitly enabled', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'demo-worker', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.001 })
+      await awardAgentBid(job, { by: 'demo-worker' }, fakeEscrow())
+      const repoDir = await fs.mkdtemp(path.join(os.tmpdir(), 'txodds-local-repo-'))
+      await fs.writeFile(path.join(repoDir, 'index.html'), '<title>Local</title>')
+      submitJob(job, {
+        repo: pathToFileURL(repoDir).href,
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, preview URL, and delivery notes.',
+      })
+
+      const review = await collectPanelReviewArtifacts(job, {})
+
+      expect(review.artifactRun?.repo.status).toBe('skipped')
+      expect(review.artifactRun?.repo.summary).toMatch(/execution is disabled/)
     } finally {
       restoreBuyer()
     }
@@ -1234,5 +1262,349 @@ describe('freelance escrow platform flow', () => {
     cancelJob(cancelled)
     expect(cancelled.status).toBe('cancelled')
     expect(() => completeMilestone(cancelled, cancelled.milestones[0].id)).toThrow(/cannot complete milestones/)
+  })
+})
+
+describe('single-operator authentication and request limits', () => {
+  function withEnv(key: string, value: string | undefined) {
+    const previous = process.env[key]
+    if (value == null) delete process.env[key]
+    else process.env[key] = value
+    return () => {
+      if (previous == null) delete process.env[key]
+      else process.env[key] = previous
+    }
+  }
+
+  const jobBody = {
+    title: 'Gated deliverable',
+    scope: 'A scoped deliverable with enough detail to pass validation.',
+    acceptanceCriteria: 'Clear acceptance criteria are present for review.',
+    amountSol: 0.01,
+  }
+
+  it('leaves the API open when OPERATOR_TOKEN is unset', async () => {
+    const handler = createHandler()
+    expect((await request(handler, '/api/state')).status).toBe(200)
+    expect((await request(handler, '/api/jobs', json(jobBody))).status).toBe(201)
+  })
+
+  it('requires the operator token on reads and mutations when configured', async () => {
+    const restore = withEnv('OPERATOR_TOKEN', 'operator-secret')
+    try {
+      const handler = createHandler()
+      expect((await request(handler, '/api/state')).status).toBe(401)
+      expect((await request(handler, '/api/state', { headers: { Authorization: 'Bearer wrong' } })).status).toBe(401)
+      expect((await request(handler, '/api/state', { headers: { Authorization: 'Bearer operator-secret' } })).status).toBe(200)
+      expect((await request(handler, '/api/jobs', json(jobBody))).status).toBe(401)
+      expect((await request(handler, '/api/jobs', json(jobBody, 'operator-secret'))).status).toBe(201)
+    } finally {
+      restore()
+    }
+  })
+
+  it('keeps the health probe public even when a token is configured', async () => {
+    const restore = withEnv('OPERATOR_TOKEN', 'operator-secret')
+    try {
+      const handler = createHandler()
+      expect((await request(handler, '/api/health')).status).toBe(200)
+    } finally {
+      restore()
+    }
+  })
+
+  it('rejects request bodies larger than the configured limit', async () => {
+    const restore = withEnv('MAX_BODY_BYTES', '64')
+    try {
+      const handler = createHandler()
+      const res = await request(handler, '/api/jobs', json({ ...jobBody, scope: 'x'.repeat(5000) }))
+      expect(res.status).toBe(413)
+    } finally {
+      restore()
+    }
+  })
+
+  it('does not leak internal error details on unexpected failures', async () => {
+    // /api/import with a non-array jobs field throws a client error (400), while
+    // a thrown internal error must surface as a generic message.
+    const handler = createHandler()
+    const res = await request(handler, '/api/import', json({ jobs: 'not-an-array' }))
+    expect(res.status).toBe(400)
+    expect(String(res.body.error)).not.toContain('at Object')
+  })
+})
+
+describe('observability', () => {
+  it('serves Prometheus metrics with known series', async () => {
+    const handler = createHandler()
+    const res = await request(handler, '/metrics')
+    expect(res.status).toBe(200)
+    expect(renderMetrics()).toContain('txodds_jobs_total')
+  })
+
+  it('exposes liveness and readiness probes', async () => {
+    const handler = createHandler()
+    expect((await request(handler, '/api/health/live')).status).toBe(200)
+    expect((await request(handler, '/api/health/ready')).status).toBe(200)
+  })
+
+  it('sets a request id header on responses', async () => {
+    const handler = createHandler()
+    const res = await request(handler, '/api/health')
+    expect(res.requestId).toMatch(/[0-9a-f-]{36}/)
+  })
+})
+
+describe('security hardening', () => {
+  it('reflects browser origins in dev but blocks them in production (no allowlist)', () => {
+    const prev = process.env.OPERATOR_TOKEN
+    delete process.env.OPERATOR_TOKEN
+    expect(corsOrigin('https://evil.test')).toBe('https://evil.test')
+    process.env.OPERATOR_TOKEN = 'operator-secret'
+    try {
+      expect(corsOrigin('https://evil.test')).toBeUndefined()
+    } finally {
+      if (prev == null) delete process.env.OPERATOR_TOKEN
+      else process.env.OPERATOR_TOKEN = prev
+    }
+  })
+
+  it('rate-limits a client after the configured maximum', () => {
+    const prev = process.env.RATE_LIMIT_MAX
+    process.env.RATE_LIMIT_MAX = '2'
+    resetRateLimitForTest()
+    const req = { headers: {}, socket: { remoteAddress: '9.9.9.9' } } as never
+    try {
+      expect(rateLimited(req).limited).toBe(false)
+      expect(rateLimited(req).limited).toBe(false)
+      expect(rateLimited(req).limited).toBe(true)
+    } finally {
+      if (prev == null) delete process.env.RATE_LIMIT_MAX
+      else process.env.RATE_LIMIT_MAX = prev
+      resetRateLimitForTest()
+    }
+  })
+
+  it('disables demo endpoints when DISABLE_DEMO=1', async () => {
+    process.env.DISABLE_DEMO = '1'
+    try {
+      const handler = createHandler()
+      const res = await request(handler, '/api/demo/seed', json({}))
+      expect(res.status).toBe(404)
+    } finally {
+      delete process.env.DISABLE_DEMO
+    }
+  })
+})
+
+describe('devnet escrow money-safety', () => {
+  it('never fakes an on-chain release for devnet jobs during dispute review', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
+      })
+      await assessJobWithAi(job, aiApprove(), collectArtifacts())
+      disputeJob(job, { by: 'employer', note: 'The delivery allegedly misses the mobile acceptance item shown in the brief.' })
+
+      const review = await assessDisputeWithAi(job, aiApprove({ summary: 'Dispute is unsupported by the inspected artifacts.' }), collectArtifacts())
+
+      // The dispute resolves in favor of release, but the DB must NOT claim a
+      // release happened — only the on-chain settlement path may do that.
+      expect(review.releaseEligible).toBe(true)
+      expect(job.status).not.toBe('released')
+      expect(job.settlement.release).toBeUndefined()
+      expect(job.settlement.devnet?.release).toBeUndefined()
+
+      // The on-chain settlement path performs the actual release.
+      job.review!.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
+      expect(await settleAgentEscrow(job, fakeEscrow(), new Date())).toBe('released')
+      expect(job.status).toBe('released')
+      expect(job.settlement.devnet?.release).toBe('sig-release')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('does not fake a release for devnet jobs via the legacy reviewJob path', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive marketplace task card with budget, scope, mobile proof, preview URL, and repo link for each acceptance item.',
+      })
+
+      const review = reviewJob(job)
+
+      expect(review.approved).toBe(true)
+      expect(job.status).not.toBe('released')
+      expect(job.settlement.release).toBeUndefined()
+      expect(job.settlement.devnet?.release).toBeUndefined()
+      expect(job.review?.releaseEligible).toBe(true)
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('reconciles settlement when the escrow was already released on-chain (crash before save)', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const reconciling: DevnetEscrowAdapter = {
+        async deposit() { return 'sig-deposit' },
+        async release() { throw new Error('AccountNotFound: escrow account does not exist') },
+        async refund() { throw new Error('AccountNotFound: escrow account does not exist') },
+        async escrowExists() { return false },
+      }
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
+      })
+      await assessJobWithAi(job, aiApprove(), collectArtifacts())
+      job.review!.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
+
+      expect(await settleAgentEscrow(job, reconciling, new Date())).toBe('released')
+      expect(job.status).toBe('released')
+      expect(job.settlement.devnet?.release).toBe('reconciled-release')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('reconciles an award when the deposit already landed on-chain (crash before save)', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const depositReconcile: DevnetEscrowAdapter = {
+        async deposit() { throw new Error('custom program error: account already in use') },
+        async release() { return 'sig-release' },
+        async refund() { return 'sig-refund' },
+        async escrowExists() { return true },
+      }
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+
+      await awardAgentBid(job, {}, depositReconcile)
+
+      expect(job.settlement.mode).toBe('devnet-escrow')
+      expect(job.settlement.devnet?.deposit).toBe('reconciled-deposit')
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('surfaces settlement errors on the job and clears them on success', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const failing: DevnetEscrowAdapter = {
+        async deposit() { return 'sig-deposit' },
+        async release() { throw new Error('rpc endpoint unavailable') },
+        async refund() { throw new Error('rpc endpoint unavailable') },
+        async escrowExists() { return true },
+      }
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Responsive checkout includes pricing, accessible buttons, mobile proof, deployment notes, preview URL, and repo link.',
+      })
+      await assessJobWithAi(job, aiApprove(), collectArtifacts())
+      job.review!.autoReleaseAt = new Date(Date.now() - 1000).toISOString()
+
+      await runAgentMarketTick(failing, new Date())
+      expect(job.settlement.settlementError).toContain('rpc endpoint unavailable')
+      expect(job.events.some((event) => event.type === 'settlement_error')).toBe(true)
+
+      await runAgentMarketTick(fakeEscrow(), new Date())
+      expect(job.status).toBe('released')
+      expect(job.settlement.settlementError).toBeUndefined()
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('does not auto-refund a devnet escrow while a dispute is open', async () => {
+    const restoreBuyer = withBuyerKey()
+    try {
+      const job = openTask()
+      recordAgentBid(job, { by: 'devnet-agent', wallet: Keypair.generate().publicKey.toBase58(), priceSol: 0.002 })
+      await awardAgentBid(job, {}, fakeEscrow())
+      submitAgentDelivery(job, {
+        by: 'devnet-agent',
+        url: 'https://example.test/preview',
+        repo: 'https://github.com/example/repo',
+        notes: 'Delivery evidence with preview URL and public repo link.',
+      })
+      await assessJobWithAi(job, aiReply({
+        score: 20,
+        recommendation: 'revision',
+        confidence: 40,
+        summary: 'Acceptance items are missing.',
+        criteriaResults: [{ label: 'Mobile proof', status: 'fail', reason: 'No mobile evidence.', evidence: 'none' }],
+        missing: ['mobile acceptance proof'],
+        risks: [],
+        criticalRisks: [],
+        revisionInstructions: 'Add mobile evidence.',
+      }), collectArtifacts())
+      disputeJob(job, { by: 'employer', note: 'The delivery is missing the required mobile acceptance evidence.' })
+      job.settlement.devnet!.deadlineAt = new Date(Date.now() - 1000).toISOString()
+
+      expect(await settleAgentEscrow(job, fakeEscrow(), new Date())).toBeNull()
+      expect(job.status).toBe('disputed')
+      expect(job.settlement.refund).toBeUndefined()
+    } finally {
+      restoreBuyer()
+    }
+  })
+
+  it('binds an agent bid to its registered payout wallet', () => {
+    expect(agentBidWallet({ wallet: 'RegisteredWalletPubkey' }, 'RegisteredWalletPubkey')).toBe('RegisteredWalletPubkey')
+    expect(agentBidWallet({ wallet: 'RegisteredWalletPubkey' }, undefined)).toBe('RegisteredWalletPubkey')
+    expect(() => agentBidWallet({ wallet: 'RegisteredWalletPubkey' }, 'AttackerWalletPubkey')).toThrow(/must match your registered payout wallet/)
+    expect(agentBidWallet({}, 'WorkerSuppliedWallet')).toBe('WorkerSuppliedWallet')
+    expect(agentBidWallet({}, undefined)).toBeUndefined()
+  })
+})
+
+describe('operator token on GET artifact/read routes', () => {
+  function withEnv(key: string, value: string | undefined) {
+    const previous = process.env[key]
+    if (value == null) delete process.env[key]
+    else process.env[key] = value
+    return () => {
+      if (previous == null) delete process.env[key]
+      else process.env[key] = previous
+    }
+  }
+
+  it('accepts the operator token via query param on GET but not on mutations', async () => {
+    const restore = withEnv('OPERATOR_TOKEN', 'operator-secret')
+    try {
+      const handler = createHandler()
+      expect((await request(handler, '/api/state?operator_token=operator-secret')).status).toBe(200)
+      expect((await request(handler, '/api/state?operator_token=nope')).status).toBe(401)
+      // A write must not authenticate via a query token (keeps tokens out of write URLs).
+      const body = { title: 'Gated', scope: 'A scoped deliverable with detail.', acceptanceCriteria: 'Clear acceptance criteria present.', amountSol: 0.01 }
+      expect((await request(handler, '/api/jobs?operator_token=operator-secret', json(body))).status).toBe(401)
+    } finally {
+      restore()
+    }
   })
 })

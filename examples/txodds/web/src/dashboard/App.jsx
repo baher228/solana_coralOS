@@ -35,8 +35,17 @@ export function App() {
     saveMode(next)
   }
 
+  // Never trust the response shape (malformed import, proxy glitch): coerce to a
+  // safe default so a bad payload can't white-screen the dashboard.
+  const normalize = (d) => ({
+    jobs: Array.isArray(d?.jobs) ? d.jobs : [],
+    summary: d?.summary || {},
+    setup: d?.setup || { wallets: {}, note: '' },
+    agents: Array.isArray(d?.agents) ? d.agents : [],
+  })
+
   const refresh = async () => {
-    const next = await api('/api/platform')
+    const next = normalize(await api('/api/platform'))
     setData(next)
     setSelectedId((current) => next.jobs.some((job) => job.id === current) ? current : preferredJobId(next.jobs, lens))
   }
@@ -58,7 +67,7 @@ export function App() {
     setBusy(true)
     setError('')
     try {
-      const next = await api('/api/jobs', payload)
+      const next = normalize(await api('/api/jobs', payload))
       setData(next)
       setSelectedId(next.jobs[0]?.id || '')
       setView('jobs')

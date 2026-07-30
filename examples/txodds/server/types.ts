@@ -132,6 +132,7 @@ export interface Settlement {
   release?: string
   refund?: string
   devnet?: DevnetEscrow
+  settlementError?: string
   events: SettlementEvent[]
 }
 export interface Job {

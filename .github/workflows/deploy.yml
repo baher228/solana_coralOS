@@ -1,0 +1,20 @@
+name: Build images
+
+# Builds the API and web container images on version tags. Pushing to a registry
+# requires configuring registry credentials (secrets) and adding a login + push
+# step; kept build-only here so it runs without secrets.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch: {}
+
+jobs:
+  images:
+    name: Build API + web images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build API image
+        run: docker build -f deploy/docker/api.Dockerfile -t txodds-api:${{ github.sha }} .
+      - name: Build web image
+        run: docker build -f deploy/docker/web.Dockerfile -t txodds-web:${{ github.sha }} .

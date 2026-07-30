@@ -61,8 +61,8 @@ export function WalletView({ data, selected, selectedId, setSelectedId, session,
           </div>
           {selectedJob ? (
             <div className="escrow-action-bar wallet">
-              <button className="escrow-ghost" disabled={isTerminal(selectedJob) || isOpen(selectedJob)} onClick={() => act(() => api(`/api/jobs/${selectedJob.id}/refund`, {}))}>Refund selected escrow</button>
-              <button className="escrow-ghost" disabled={isTerminal(selectedJob) || selectedJob.submission} onClick={() => act(() => api(`/api/jobs/${selectedJob.id}/cancel`, {}))}>Cancel selected escrow</button>
+              <button className="escrow-ghost" disabled={isTerminal(selectedJob) || isOpen(selectedJob) || selectedJob.settlement?.mode === 'devnet-escrow'} onClick={() => act(() => api(`/api/jobs/${selectedJob.id}/refund`, {}))}>Refund selected escrow</button>
+              <button className="escrow-ghost" disabled={isTerminal(selectedJob) || selectedJob.submission || selectedJob.settlement?.mode === 'devnet-escrow'} onClick={() => act(() => api(`/api/jobs/${selectedJob.id}/cancel`, {}))}>Cancel selected escrow</button>
             </div>
           ) : null}
         </section>

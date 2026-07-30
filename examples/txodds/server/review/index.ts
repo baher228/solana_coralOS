@@ -4,10 +4,10 @@ import { spawn } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { complete, parseJsonReply } from '../../../../packages/agent-runtime/src/llm/complete.ts'
-import { AUTO_RELEASE_MS, MAX_LOG_CHARS, MAX_SNIPPET_CHARS, REVIEW_DIR, REVIEW_TIMEOUT_MS } from '../config.js'
+import { MAX_LOG_CHARS, MAX_SNIPPET_CHARS, REVIEW_DIR, REVIEW_TIMEOUT_MS } from '../config.js'
 import { jobs } from '../store.js'
 import type { Actor, ArtifactKind, ArtifactResult, ArtifactRun, BuildArtifact, Dispute, Job, PreviewArtifact, RepoArtifact, Review, ReviewArtifact, ReviewCheck, ReviewCheckStatus, ReviewPanel, ReviewPanelOpinion, ReviewRecommendation, ReviewSource, TestArtifact } from '../types.js'
-import { activeDispute, addEvent, addSettlementEvent, deadlineFrom, ensureStatus, fail, now, terminal } from '../domain/utils.js'
+import { activeDispute, addEvent, addSettlementEvent, deadlineFrom, ensureStatus, fail, now } from '../domain/utils.js'
 
 export type ReviewCompletion = (opts: { system: string; user: string; maxTokens?: number }) => Promise<string>
 export type ArtifactCollector = (job: Job) => Promise<ArtifactRun>
@@ -34,6 +34,13 @@ Reject keyword stuffing, generic promises, unsupported claims, and links that co
 Approve only when every material acceptance item is demonstrated by inspected artifacts.
 A public preview URL is optional when the submitted repository can be built and the backend captures local-build screenshots. Do not rely on 127.0.0.1/localhost preview URLs unless they were produced by backend artifact collection.
 Return only JSON with this shape: {"score":0-100,"recommendation":"approve|revision|dispute","confidence":0-100,"summary":"...","criteriaResults":[{"label":"...","status":"pass|fail|unclear","reason":"...","evidence":"..."}],"missing":["..."],"criticalRisks":["..."],"risks":["..."],"releaseEligible":false,"revisionInstructions":"..."}.`
+
+// Cloning a submitted repo and running its build/test scripts executes untrusted
+// code on the server. Off by default; only enable behind a sandbox (container /
+// gVisor / no-network). When disabled, review still inspects public preview URLs.
+function codeExecutionAllowed(): boolean {
+  return process.env.REVIEW_ALLOW_CODE_EXECUTION === '1'
+}
 
 function safeReviewEnv(): NodeJS.ProcessEnv {
   const keys = ['PATH', 'Path', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA']
@@ -321,7 +328,13 @@ export async function collectReviewArtifacts(job: Job): Promise<ArtifactRun> {
   if (workerEvidence.length) {
     await addArtifact(run, dir, 'link', 'Worker-submitted media evidence', 'worker-evidence.json', JSON.stringify(workerEvidence, null, 2), 'application/json')
   }
-  if (job.submission?.repo) {
+  if (job.submission?.repo && !codeExecutionAllowed()) {
+    run.repo = {
+      status: 'skipped',
+      summary: 'Repository build/test execution is disabled on this server (set REVIEW_ALLOW_CODE_EXECUTION=1 to enable inside a sandbox)',
+      url: job.submission.repo,
+    }
+  } else if (job.submission?.repo) {
     const cloneUrl = githubCloneUrl(job.submission.repo)
     const localRepo = cloneUrl ? null : fileRepoPath(job.submission.repo)
     if (!cloneUrl && !localRepo) {
@@ -590,15 +603,14 @@ export function reviewJob(job: Job): Review {
     revisionInstructions: score >= 45 && hasEvidence ? '' : 'Provide clearer delivery evidence before release.',
   }
   job.review = review
-  job.status = review.approved ? 'released' : 'revision_requested'
   if (review.approved) {
-    job.settlement.release = `demo-release-${job.reference.slice(0, 10)}`
-    job.milestones = job.milestones.map((m) => ({ ...m, status: 'complete', completedAt: m.completedAt || review.at }))
-    addSettlementEvent(job, 'released', `Released ${job.amountSol} SOL to ${job.worker}`)
-  } else {
-    addSettlementEvent(job, 'reviewed', 'Review requested clearer delivery evidence')
+    // releaseReviewedJob keeps devnet escrow on the on-chain settlement path
+    // instead of stamping a fake local release marker.
+    return releaseReviewedJob(job, 'agent', review.summary)
   }
-  addEvent(job, 'agent', review.approved ? 'released' : 'revision_requested', review.summary)
+  job.status = 'revision_requested'
+  addSettlementEvent(job, 'reviewed', 'Review requested clearer delivery evidence')
+  addEvent(job, 'agent', 'revision_requested', review.summary)
   return review
 }
 
@@ -739,7 +751,16 @@ export function recordPanelOpinions(job: Job, input: Record<string, unknown> = {
 function releaseReviewedJob(job: Job, actor: Actor, summary: string): Review {
   if (!job.review) fail('AI review is required before release', 409)
   const releasedAt = now()
-  job.review = { ...job.review, approved: true, recommendation: 'approve' }
+  job.review = { ...job.review, approved: true, recommendation: 'approve', releaseEligible: true }
+  if (job.settlement.mode === 'devnet-escrow') {
+    // Real escrow may only be released by the on-chain settlement path
+    // (settleAgentEscrow). Faking a `demo-release-*` marker here would report the
+    // job as released in local state while the funds stayed locked on-chain.
+    if (!job.review.autoReleaseAt) job.review.autoReleaseAt = deadlineFrom(job.review.at)
+    addSettlementEvent(job, 'reviewed', 'Approved for release; awaiting on-chain devnet settlement')
+    addEvent(job, actor, 'release_pending', summary)
+    return job.review
+  }
   job.status = 'released'
   job.settlement.release = `demo-release-${job.reference.slice(0, 10)}`
   job.milestones = job.milestones.map((m) => ({ ...m, status: 'complete', completedAt: m.completedAt || releasedAt }))
@@ -748,7 +769,7 @@ function releaseReviewedJob(job: Job, actor: Actor, summary: string): Review {
   return job.review
 }
 
-export function approveReviewedJob(job: Job, input: Record<string, unknown> = {}): Review {
+export function approveReviewedJob(job: Job, _input: Record<string, unknown> = {}): Review {
   ensureStatus(job, ['submitted', 'revision_requested'], 'approve')
   if (!job.submission) fail('worker submission is required')
   if (!job.review) fail('AI review is required before release', 409)
