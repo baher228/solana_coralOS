@@ -25,12 +25,7 @@ test-ledger/
 buyer-keypair.json
 seller-keypair.json
 
-# Locks (students generate on npm install)
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-bun.lock
-bun.lockb
+# npm lockfiles are committed so CI and production builds resolve the same tree.
 
 # Misc
 *.log
