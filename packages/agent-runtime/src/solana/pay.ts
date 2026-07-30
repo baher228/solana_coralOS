@@ -5,7 +5,16 @@
  * (the audit's duplication finding). All connections go through `solanaConnection()`, so the devnet
  * guard applies everywhere a payment moves.
  */
-import { Keypair, PublicKey, SystemInstruction, SystemProgram, Transaction, LAMPORTS_PER_SOL, sendAndConfirmTransaction } from '@solana/web3.js'
+import {
+  Keypair,
+  PublicKey,
+  SystemInstruction,
+  SystemProgram,
+  Transaction,
+  TransactionMessage,
+  LAMPORTS_PER_SOL,
+  sendAndConfirmTransaction,
+} from '@solana/web3.js'
 import { solanaConnection } from './connection.js'
 
 /** Return from {@link generatePaymentUrl}. */
@@ -70,24 +79,43 @@ export async function verifyPayment(sig: string, opts: { recipient: string; amou
   try {
     const response = await solanaConnection().getTransaction(sig, {
       commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
     })
     if (!response?.meta || response.meta.err) return false
-    const { message, signatures } = response.transaction
-    const instruction = Transaction.populate(message, signatures).instructions.at(-1)
-    if (!instruction) return false
-    const transfer = SystemInstruction.decodeTransfer(instruction)
+    const { message } = response.transaction
     const recipient = new PublicKey(opts.recipient)
     const reference = new PublicKey(opts.reference)
     const expectedLamports = Math.round(opts.amountSol * LAMPORTS_PER_SOL)
     if (!Number.isSafeInteger(expectedLamports) || expectedLamports <= 0) return false
-    if (!transfer.toPubkey.equals(recipient) || transfer.lamports < expectedLamports) return false
-    const extraKeys = instruction.keys.slice(2)
-    if (extraKeys.length !== 1 || !extraKeys[0].pubkey.equals(reference)) return false
-    const accountIndex = message.accountKeys.findIndex((key) => key.equals(recipient))
+
+    const loadedAddresses = response.meta.loadedAddresses ?? { writable: [], readonly: [] }
+    const accountKeys =
+      message.version === 'legacy'
+        ? message.accountKeys
+        : [...message.staticAccountKeys, ...loadedAddresses.writable, ...loadedAddresses.readonly]
+    const accountIndex = accountKeys.findIndex((key) => key.equals(recipient))
     if (accountIndex < 0) return false
     const received = response.meta.postBalances[accountIndex] - response.meta.preBalances[accountIndex]
     if (received < expectedLamports) return false
-    return true
+
+    const instructions = TransactionMessage.decompile(
+      message,
+      message.version === 0 ? { accountKeysFromLookups: loadedAddresses } : undefined,
+    ).instructions
+    return instructions.some((instruction) => {
+      try {
+        const transfer = SystemInstruction.decodeTransfer(instruction)
+        const extraKeys = instruction.keys.slice(2)
+        return (
+          transfer.toPubkey.equals(recipient) &&
+          transfer.lamports >= expectedLamports &&
+          extraKeys.length === 1 &&
+          extraKeys[0].pubkey.equals(reference)
+        )
+      } catch {
+        return false
+      }
+    })
   } catch {
     return false
   }

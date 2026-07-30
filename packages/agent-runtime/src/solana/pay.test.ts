@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from 'vitest'
-import { Keypair, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } from '@solana/web3.js'
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionMessage,
+  LAMPORTS_PER_SOL,
+} from '@solana/web3.js'
 import bs58 from 'bs58'
 import { solanaConnection } from './connection.js'
 import { generatePaymentUrl, loadKeypairB58, verifyPayment } from './pay.js'
@@ -33,36 +40,60 @@ describe('generatePaymentUrl', () => {
 })
 
 describe('verifyPayment', () => {
-  it('accepts only a confirmed SOL transfer carrying the expected reference', async () => {
-    const payer = Keypair.generate()
-    const recipient = Keypair.generate().publicKey
-    const reference = Keypair.generate().publicKey
-    const amountSol = 0.001
+  function paymentInstruction(
+    payer: PublicKey,
+    recipient: PublicKey,
+    reference: PublicKey,
+    lamports: number,
+  ) {
     const instruction = SystemProgram.transfer({
-      fromPubkey: payer.publicKey,
+      fromPubkey: payer,
       toPubkey: recipient,
-      lamports: amountSol * LAMPORTS_PER_SOL,
+      lamports,
     })
     instruction.keys.push({
       pubkey: reference,
       isSigner: false,
       isWritable: false,
     })
+    return instruction
+  }
+
+  function mockTransaction(message: {
+    staticAccountKeys: PublicKey[]
+    version: 'legacy' | 0
+  }, recipient: PublicKey, lamports: number) {
+    const accountKeys = message.staticAccountKeys
+    const recipientIndex = accountKeys.findIndex((key) => key.equals(recipient))
+    const preBalances = accountKeys.map(() => 0)
+    const postBalances = [...preBalances]
+    postBalances[recipientIndex] = lamports
+    const getTransaction = vi.fn().mockResolvedValue({
+      transaction: { message, signatures: [] },
+      meta: {
+        err: null,
+        preBalances,
+        postBalances,
+        loadedAddresses: { writable: [], readonly: [] },
+      },
+    })
+    vi.mocked(solanaConnection).mockReturnValue({ getTransaction } as never)
+    return getTransaction
+  }
+
+  it('accepts only a confirmed SOL transfer carrying the expected reference', async () => {
+    const payer = Keypair.generate()
+    const recipient = Keypair.generate().publicKey
+    const reference = Keypair.generate().publicKey
+    const amountSol = 0.001
+    const lamports = amountSol * LAMPORTS_PER_SOL
+    const instruction = paymentInstruction(payer.publicKey, recipient, reference, lamports)
     const transaction = new Transaction({
       feePayer: payer.publicKey,
       recentBlockhash: Keypair.generate().publicKey.toBase58(),
     }).add(instruction)
     const message = transaction.compileMessage()
-    const recipientIndex = message.accountKeys.findIndex((key) => key.equals(recipient))
-    const preBalances = message.accountKeys.map(() => 0)
-    const postBalances = [...preBalances]
-    postBalances[recipientIndex] = amountSol * LAMPORTS_PER_SOL
-    vi.mocked(solanaConnection).mockReturnValue({
-      getTransaction: vi.fn().mockResolvedValue({
-        transaction: { message, signatures: [] },
-        meta: { err: null, preBalances, postBalances },
-      }),
-    } as never)
+    const getTransaction = mockTransaction(message, recipient, lamports)
 
     await expect(
       verifyPayment('signature', {
@@ -78,6 +109,61 @@ describe('verifyPayment', () => {
         reference: Keypair.generate().publicKey.toBase58(),
       }),
     ).resolves.toBe(false)
+    expect(getTransaction).toHaveBeenCalledWith('signature', {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
+    })
+  })
+
+  it('finds the referenced transfer when a wallet appends another instruction', async () => {
+    const payer = Keypair.generate()
+    const recipient = Keypair.generate().publicKey
+    const reference = Keypair.generate().publicKey
+    const amountSol = 0.001
+    const lamports = amountSol * LAMPORTS_PER_SOL
+    const instruction = paymentInstruction(payer.publicKey, recipient, reference, lamports)
+    const trailingInstruction = SystemProgram.transfer({
+      fromPubkey: payer.publicKey,
+      toPubkey: Keypair.generate().publicKey,
+      lamports: 1,
+    })
+    const message = new Transaction({
+      feePayer: payer.publicKey,
+      recentBlockhash: Keypair.generate().publicKey.toBase58(),
+    })
+      .add(instruction, trailingInstruction)
+      .compileMessage()
+    mockTransaction(message, recipient, lamports)
+
+    await expect(
+      verifyPayment('signature', {
+        recipient: recipient.toBase58(),
+        amountSol,
+        reference: reference.toBase58(),
+      }),
+    ).resolves.toBe(true)
+  })
+
+  it('verifies versioned transactions', async () => {
+    const payer = Keypair.generate()
+    const recipient = Keypair.generate().publicKey
+    const reference = Keypair.generate().publicKey
+    const amountSol = 0.001
+    const lamports = amountSol * LAMPORTS_PER_SOL
+    const message = new TransactionMessage({
+      payerKey: payer.publicKey,
+      recentBlockhash: Keypair.generate().publicKey.toBase58(),
+      instructions: [paymentInstruction(payer.publicKey, recipient, reference, lamports)],
+    }).compileToV0Message()
+    mockTransaction(message, recipient, lamports)
+
+    await expect(
+      verifyPayment('signature', {
+        recipient: recipient.toBase58(),
+        amountSol,
+        reference: reference.toBase58(),
+      }),
+    ).resolves.toBe(true)
   })
 })
 
