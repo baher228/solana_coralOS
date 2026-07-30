@@ -1,6 +1,6 @@
 # API image for the Freelance Escrow Platform. Build context = repo root:
 #   docker build -f deploy/docker/api.Dockerfile -t txodds-api .
-FROM node:20-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app
 # agent-runtime is a file: dependency of the example; install + build it first.
 COPY packages/agent-runtime/package.json packages/agent-runtime/package-lock.json packages/agent-runtime/
@@ -12,7 +12,7 @@ COPY examples/txodds/package.json examples/txodds/package-lock.json examples/txo
 RUN cd examples/txodds && npm ci --no-audit --no-fund
 COPY examples/txodds examples/txodds
 
-FROM node:20-slim
+FROM node:26-slim
 WORKDIR /app
 COPY --from=build /app /app
 WORKDIR /app/examples/txodds

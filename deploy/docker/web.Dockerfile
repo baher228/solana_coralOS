@@ -1,7 +1,7 @@
 # Web image: build the Vite dashboard and serve it with nginx (which reverse-proxies
 # /api and /mcp to the API container). Build context = repo root:
 #   docker build -f deploy/docker/web.Dockerfile -t txodds-web .
-FROM node:20-slim AS build
+FROM node:26-slim AS build
 WORKDIR /app
 COPY packages/agent-runtime packages/agent-runtime
 RUN cd packages/agent-runtime && npm ci --no-audit --no-fund
