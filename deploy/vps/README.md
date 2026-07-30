@@ -12,10 +12,10 @@ Install Node 20+, npm, git, Nginx, and systemd on the VPS, then clone the repo:
 ```sh
 git clone <repo-url> /opt/solana_coralOS
 cd /opt/solana_coralOS
-npm install --prefix scripts
+npm ci --prefix scripts
 node scripts/setup.js
-npm install --prefix examples/txodds
-npm install --prefix agents/demo-worker
+npm ci --prefix examples/txodds
+npm ci --prefix agents/demo-worker
 npx --prefix examples/txodds playwright install --with-deps chromium
 ```
 
