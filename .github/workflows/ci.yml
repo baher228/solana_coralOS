@@ -15,9 +15,10 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 20
-      - run: cd packages/agent-runtime && npm install
+      - run: cd packages/agent-runtime && npm ci
       - run: cd packages/agent-runtime && npm run typecheck
       - run: cd packages/agent-runtime && npm test
+      - run: cd packages/agent-runtime && npm audit --omit=dev --audit-level=high
 
   txodds:
     name: Freelance Escrow Platform (typecheck + tests)
@@ -44,15 +45,17 @@ jobs:
         with:
           node-version: 20
       - name: Build the runtime (the example needs its dist)
-        run: cd packages/agent-runtime && npm install && npm run build
+        run: cd packages/agent-runtime && npm ci && npm run build
       - name: Install deps
-        run: cd examples/txodds && npm install
+        run: cd examples/txodds && npm ci
       - name: Lint
         run: cd examples/txodds && npm run lint
       - name: Typecheck
         run: cd examples/txodds && npm run typecheck
       - name: Tests (incl. PostgreSQL persistence)
         run: cd examples/txodds && npm test
+      - name: Production dependency audit
+        run: cd examples/txodds && npm audit --omit=dev --audit-level=high
       - name: Web production build
         run: cd examples/txodds && npm run web:build
 
@@ -65,9 +68,9 @@ jobs:
         with:
           node-version: 20
       - name: Build the runtime (the example needs its dist)
-        run: cd packages/agent-runtime && npm install && npm run build
+        run: cd packages/agent-runtime && npm ci && npm run build
       - name: Install deps
-        run: cd examples/txodds && npm install
+        run: cd examples/txodds && npm ci
       - name: Install Playwright browser
         run: cd examples/txodds && npx playwright install --with-deps chromium
       - name: Run e2e
@@ -86,3 +89,13 @@ jobs:
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
       - name: Build program to SBF bytecode
         run: cd examples/txodds/escrow && cargo-build-sbf
+
+  containers:
+    name: Production container images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build API image
+        run: docker build -f deploy/docker/api.Dockerfile -t txodds-api:${{ github.sha }} .
+      - name: Build web image
+        run: docker build -f deploy/docker/web.Dockerfile -t txodds-web:${{ github.sha }} .

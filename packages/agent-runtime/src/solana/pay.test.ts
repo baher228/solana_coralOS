@@ -1,13 +1,27 @@
-import { describe, it, expect } from 'vitest'
-import { Keypair, PublicKey } from '@solana/web3.js'
+import { describe, it, expect, vi } from 'vitest'
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionMessage,
+  LAMPORTS_PER_SOL,
+} from '@solana/web3.js'
 import bs58 from 'bs58'
-import { generatePaymentUrl, loadKeypairB58 } from './pay.js'
+import { solanaConnection } from './connection.js'
+import { generatePaymentUrl, loadKeypairB58, verifyPayment } from './pay.js'
+
+vi.mock('./connection.js', () => ({ solanaConnection: vi.fn() }))
 
 describe('generatePaymentUrl', () => {
   const recipient = Keypair.generate().publicKey.toBase58()
 
   it('encodes a solana: URL with amount + a fresh reference', () => {
-    const p = generatePaymentUrl({ recipient, amountSol: 0.0004, message: 'risk-score' })
+    const p = generatePaymentUrl({
+      recipient,
+      amountSol: 0.0004,
+      message: 'risk-score',
+    })
     expect(p.url.startsWith('solana:')).toBe(true)
     expect(p.url).toContain(recipient)
     expect(p.amountSol).toBe(0.0004)
@@ -18,6 +32,138 @@ describe('generatePaymentUrl', () => {
     const a = generatePaymentUrl({ recipient, amountSol: 0.0001 })
     const b = generatePaymentUrl({ recipient, amountSol: 0.0001 })
     expect(a.reference).not.toBe(b.reference)
+  })
+
+  it('rejects amounts smaller than one lamport', () => {
+    expect(() => generatePaymentUrl({ recipient, amountSol: 0.0000000001 })).toThrow(/Invalid amount/)
+  })
+})
+
+describe('verifyPayment', () => {
+  function paymentInstruction(
+    payer: PublicKey,
+    recipient: PublicKey,
+    reference: PublicKey,
+    lamports: number,
+  ) {
+    const instruction = SystemProgram.transfer({
+      fromPubkey: payer,
+      toPubkey: recipient,
+      lamports,
+    })
+    instruction.keys.push({
+      pubkey: reference,
+      isSigner: false,
+      isWritable: false,
+    })
+    return instruction
+  }
+
+  function mockTransaction(message: {
+    staticAccountKeys: PublicKey[]
+    version: 'legacy' | 0
+  }, recipient: PublicKey, lamports: number) {
+    const accountKeys = message.staticAccountKeys
+    const recipientIndex = accountKeys.findIndex((key) => key.equals(recipient))
+    const preBalances = accountKeys.map(() => 0)
+    const postBalances = [...preBalances]
+    postBalances[recipientIndex] = lamports
+    const getTransaction = vi.fn().mockResolvedValue({
+      transaction: { message, signatures: [] },
+      meta: {
+        err: null,
+        preBalances,
+        postBalances,
+        loadedAddresses: { writable: [], readonly: [] },
+      },
+    })
+    vi.mocked(solanaConnection).mockReturnValue({ getTransaction } as never)
+    return getTransaction
+  }
+
+  it('accepts only a confirmed SOL transfer carrying the expected reference', async () => {
+    const payer = Keypair.generate()
+    const recipient = Keypair.generate().publicKey
+    const reference = Keypair.generate().publicKey
+    const amountSol = 0.001
+    const lamports = amountSol * LAMPORTS_PER_SOL
+    const instruction = paymentInstruction(payer.publicKey, recipient, reference, lamports)
+    const transaction = new Transaction({
+      feePayer: payer.publicKey,
+      recentBlockhash: Keypair.generate().publicKey.toBase58(),
+    }).add(instruction)
+    const message = transaction.compileMessage()
+    const getTransaction = mockTransaction(message, recipient, lamports)
+
+    await expect(
+      verifyPayment('signature', {
+        recipient: recipient.toBase58(),
+        amountSol,
+        reference: reference.toBase58(),
+      }),
+    ).resolves.toBe(true)
+    await expect(
+      verifyPayment('signature', {
+        recipient: recipient.toBase58(),
+        amountSol,
+        reference: Keypair.generate().publicKey.toBase58(),
+      }),
+    ).resolves.toBe(false)
+    expect(getTransaction).toHaveBeenCalledWith('signature', {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
+    })
+  })
+
+  it('finds the referenced transfer when a wallet appends another instruction', async () => {
+    const payer = Keypair.generate()
+    const recipient = Keypair.generate().publicKey
+    const reference = Keypair.generate().publicKey
+    const amountSol = 0.001
+    const lamports = amountSol * LAMPORTS_PER_SOL
+    const instruction = paymentInstruction(payer.publicKey, recipient, reference, lamports)
+    const trailingInstruction = SystemProgram.transfer({
+      fromPubkey: payer.publicKey,
+      toPubkey: Keypair.generate().publicKey,
+      lamports: 1,
+    })
+    const message = new Transaction({
+      feePayer: payer.publicKey,
+      recentBlockhash: Keypair.generate().publicKey.toBase58(),
+    })
+      .add(instruction, trailingInstruction)
+      .compileMessage()
+    mockTransaction(message, recipient, lamports)
+
+    await expect(
+      verifyPayment('signature', {
+        recipient: recipient.toBase58(),
+        amountSol,
+        reference: reference.toBase58(),
+      }),
+    ).resolves.toBe(true)
+  })
+
+  it('verifies versioned transactions', async () => {
+    const payer = Keypair.generate()
+    const recipient = Keypair.generate().publicKey
+    const reference = Keypair.generate().publicKey
+    const amountSol = 0.001
+    const lamports = amountSol * LAMPORTS_PER_SOL
+    const message = new TransactionMessage({
+      payerKey: payer.publicKey,
+      recentBlockhash: Keypair.generate().publicKey.toBase58(),
+      instructions: [paymentInstruction(payer.publicKey, recipient, reference, lamports)],
+    }).compileToV0Message()
+    mockTransaction(message, recipient, lamports)
+
+    await expect(
+      verifyPayment('signature', {
+        recipient: recipient.toBase58(),
+        amountSol,
+        reference: reference.toBase58(),
+      }),
+    ).resolves.toBe(true)
   })
 })
 

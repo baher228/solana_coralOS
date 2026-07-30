@@ -4,9 +4,11 @@
   "private": true,
   "description": "Freelance escrow agent demo on the Solana CoralOS backbone. Run it with `npm run dev`.",
   "type": "module",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "dev": "node scripts/txodds.js",
+    "dev": "node api.js && node scripts/txodds.js",
     "dev:demo": "node scripts/txodds-demo.js",
     "coral:bus": "npm --prefix examples/txodds run coral:bus",
     "agent:demo-worker": "npm --prefix agents/demo-worker run dev",

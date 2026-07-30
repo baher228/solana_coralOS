@@ -26,7 +26,6 @@
     "@pay/agent-runtime": "file:../../packages/agent-runtime",
     "@radix-ui/react-collapsible": "^1.1.15",
     "@radix-ui/react-tabs": "^1.1.16",
-    "@solana/spl-token": "^0.4.14",
     "@solana/web3.js": "^1.98.4",
     "@xyflow/react": "^12.11.1",
     "axios": "^1.11.0",

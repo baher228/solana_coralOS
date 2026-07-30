@@ -1,11 +1,9 @@
 # Security Policy
 
-## Reporting Security Problems
+## Reporting a vulnerability
 
-**DO NOT CREATE A GITHUB ISSUE** to report a security problem.
+Do not open a public issue for a suspected vulnerability.
 
-Instead please use this [Report a Vulnerability](https://github.com/trilltino/solana_coralOS/security/advisories/new) link.
-
-Provide a helpful title and detailed description of the problem.
-
-Expect a response as fast as possible in the advisory, typically within 72 hours.
+Use GitHub's private [Report a vulnerability](https://github.com/baher228/solana_coralOS/security/advisories/new)
+form and include affected versions, reproduction steps, impact, and any suggested
+mitigation. We aim to acknowledge reports within 72 hours.

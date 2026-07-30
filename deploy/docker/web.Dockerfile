@@ -4,9 +4,9 @@
 FROM node:20-slim AS build
 WORKDIR /app
 COPY packages/agent-runtime packages/agent-runtime
-RUN cd packages/agent-runtime && npm install --no-audit --no-fund
-COPY examples/txodds/package.json examples/txodds/
-RUN cd examples/txodds && npm install --no-audit --no-fund
+RUN cd packages/agent-runtime && npm ci --no-audit --no-fund
+COPY examples/txodds/package.json examples/txodds/package-lock.json examples/txodds/
+RUN cd examples/txodds && npm ci --no-audit --no-fund
 COPY examples/txodds examples/txodds
 RUN cd examples/txodds && npm run web:build
 

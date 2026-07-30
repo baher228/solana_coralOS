@@ -8,13 +8,13 @@
 import {
   Keypair,
   PublicKey,
+  SystemInstruction,
   SystemProgram,
   Transaction,
+  TransactionMessage,
   LAMPORTS_PER_SOL,
   sendAndConfirmTransaction,
 } from '@solana/web3.js'
-import { encodeURL, validateTransfer } from '@solana/pay'
-import BigNumber from 'bignumber.js'
 import { solanaConnection } from './connection.js'
 
 /** Return from {@link generatePaymentUrl}. */
@@ -52,43 +52,70 @@ export function loadKeypairB58(envVar: string): Keypair {
 }
 
 /** Generate a Solana Pay transfer URL tagged with a fresh, single-use reference key. */
-export function generatePaymentUrl(opts: {
-  recipient: string
-  amountSol: number
-  label?: string
-  message?: string
-}): PaymentUrl {
+export function generatePaymentUrl(opts: { recipient: string; amountSol: number; label?: string; message?: string }): PaymentUrl {
+  const lamports = Math.round(opts.amountSol * LAMPORTS_PER_SOL)
+  if (!Number.isSafeInteger(lamports) || lamports <= 0) throw new Error('Invalid amount')
   const reference = Keypair.generate().publicKey // unique per order — single-use binding
-  const url = encodeURL({
-    recipient: new PublicKey(opts.recipient),
-    amount: new BigNumber(opts.amountSol),
-    reference,
-    label: opts.label ?? 'Agent Service',
-    message: (opts.message ?? '').slice(0, 100),
-  })
-  return { url: url.toString(), reference: reference.toBase58(), amountSol: opts.amountSol }
+  const recipient = new PublicKey(opts.recipient)
+  const amount = (lamports / LAMPORTS_PER_SOL).toFixed(9).replace(/0+$/, '').replace(/\.$/, '')
+  const url = new URL(`solana:${recipient.toBase58()}`)
+  url.searchParams.set('amount', amount)
+  url.searchParams.set('reference', reference.toBase58())
+  url.searchParams.set('label', opts.label ?? 'Agent Service')
+  const message = (opts.message ?? '').slice(0, 100)
+  if (message) url.searchParams.set('message', message)
+  return {
+    url: url.toString(),
+    reference: reference.toBase58(),
+    amountSol: opts.amountSol,
+  }
 }
 
 /**
  * Verify on-chain that `sig` transferred `amountSol` to `recipient` carrying `reference`. Binding to
  * the per-order reference is what makes the proof non-transferable. Returns `false` on any error.
  */
-export async function verifyPayment(
-  sig: string,
-  opts: { recipient: string; amountSol: number; reference: string },
-): Promise<boolean> {
+export async function verifyPayment(sig: string, opts: { recipient: string; amountSol: number; reference: string }): Promise<boolean> {
   try {
-    await validateTransfer(
-      solanaConnection(),
-      sig,
-      {
-        recipient: new PublicKey(opts.recipient),
-        amount: new BigNumber(opts.amountSol),
-        reference: new PublicKey(opts.reference),
-      },
-      { commitment: 'confirmed' },
-    )
-    return true
+    const response = await solanaConnection().getTransaction(sig, {
+      commitment: 'confirmed',
+      maxSupportedTransactionVersion: 0,
+    })
+    if (!response?.meta || response.meta.err) return false
+    const { message } = response.transaction
+    const recipient = new PublicKey(opts.recipient)
+    const reference = new PublicKey(opts.reference)
+    const expectedLamports = Math.round(opts.amountSol * LAMPORTS_PER_SOL)
+    if (!Number.isSafeInteger(expectedLamports) || expectedLamports <= 0) return false
+
+    const loadedAddresses = response.meta.loadedAddresses ?? { writable: [], readonly: [] }
+    const accountKeys =
+      message.version === 'legacy'
+        ? message.accountKeys
+        : [...message.staticAccountKeys, ...loadedAddresses.writable, ...loadedAddresses.readonly]
+    const accountIndex = accountKeys.findIndex((key) => key.equals(recipient))
+    if (accountIndex < 0) return false
+    const received = response.meta.postBalances[accountIndex] - response.meta.preBalances[accountIndex]
+    if (received < expectedLamports) return false
+
+    const instructions = TransactionMessage.decompile(
+      message,
+      message.version === 0 ? { accountKeysFromLookups: loadedAddresses } : undefined,
+    ).instructions
+    return instructions.some((instruction) => {
+      try {
+        const transfer = SystemInstruction.decodeTransfer(instruction)
+        const extraKeys = instruction.keys.slice(2)
+        return (
+          transfer.toPubkey.equals(recipient) &&
+          transfer.lamports >= expectedLamports &&
+          extraKeys.length === 1 &&
+          extraKeys[0].pubkey.equals(reference)
+        )
+      } catch {
+        return false
+      }
+    })
   } catch {
     return false
   }
@@ -115,8 +142,14 @@ export async function signTransfer(
     lamports: Math.round(amountSol * LAMPORTS_PER_SOL),
   })
   if (opts.reference) {
-    ix.keys.push({ pubkey: new PublicKey(opts.reference), isSigner: false, isWritable: false })
+    ix.keys.push({
+      pubkey: new PublicKey(opts.reference),
+      isSigner: false,
+      isWritable: false,
+    })
   }
   const tx = new Transaction().add(ix)
-  return sendAndConfirmTransaction(solanaConnection(), tx, [keypair], { commitment: 'confirmed' })
+  return sendAndConfirmTransaction(solanaConnection(), tx, [keypair], {
+    commitment: 'confirmed',
+  })
 }
