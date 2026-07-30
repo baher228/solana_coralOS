@@ -10,7 +10,7 @@ RUN cd examples/txodds && npm ci --no-audit --no-fund
 COPY examples/txodds examples/txodds
 RUN cd examples/txodds && npm run web:build
 
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 COPY deploy/docker/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/examples/txodds/web/dist /usr/share/nginx/html
 EXPOSE 80
