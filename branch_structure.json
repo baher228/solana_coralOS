@@ -1,0 +1,33 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "0107",
+    "dependabot/npm_and_yarn/examples/txodds/axios-1.20.0",
+    "dependabot/npm_and_yarn/examples/txodds/escrow/brace-expansion-2.1.7",
+    "dependabot/npm_and_yarn/examples/txodds/multi-05c505ab13",
+    "dependabot/npm_and_yarn/examples/txodds/source-map-js-1.2.2",
+    "dependabot/npm_and_yarn/packages/agent-runtime/proxy-addr-2.0.8",
+    "main",
+    "origin"
+  ],
+  "parent": {
+    "0107": "main",
+    "dependabot/npm_and_yarn/examples/txodds/axios-1.20.0": "main",
+    "dependabot/npm_and_yarn/examples/txodds/escrow/brace-expansion-2.1.7": "main",
+    "dependabot/npm_and_yarn/examples/txodds/multi-05c505ab13": "main",
+    "dependabot/npm_and_yarn/examples/txodds/source-map-js-1.2.2": "main",
+    "dependabot/npm_and_yarn/packages/agent-runtime/proxy-addr-2.0.8": "main",
+    "main": null,
+    "origin": "main"
+  },
+  "order": [
+    "main",
+    "0107",
+    "dependabot/npm_and_yarn/examples/txodds/axios-1.20.0",
+    "dependabot/npm_and_yarn/examples/txodds/escrow/brace-expansion-2.1.7",
+    "dependabot/npm_and_yarn/examples/txodds/multi-05c505ab13",
+    "dependabot/npm_and_yarn/examples/txodds/source-map-js-1.2.2",
+    "dependabot/npm_and_yarn/packages/agent-runtime/proxy-addr-2.0.8",
+    "origin"
+  ]
+}
